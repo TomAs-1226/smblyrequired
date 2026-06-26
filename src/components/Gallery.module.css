@@ -1,0 +1,234 @@
+/* =========================================================================
+   Gallery — "THE SEASON" (IN THE PIT AND ON THE FIELD)
+   Editorial dense-masonry photo grid. Per-item col/row spans, navy scrim,
+   hover/focus caption reveal with a mono data-tag, transform-only scale-in.
+   Dashed HUD placeholder slots the team can fill later. Left-anchored.
+   ========================================================================= */
+
+.root {
+  position: relative;
+}
+
+/* --- Header: left-anchored eyebrow + headline + note --- */
+.head {
+  max-width: 60ch;
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 16ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.note {
+  color: var(--text-body);
+}
+
+/* --- Dense editorial grid --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: clamp(140px, 18vw, 220px);
+  grid-auto-flow: dense;
+  gap: clamp(12px, 1.6vw, 20px);
+}
+
+/* --- A tile (photo or placeholder) --- */
+.tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  /* batch reveal sets autoAlpha/y; declare a sane no-JS resting state */
+  will-change: transform, opacity;
+  isolation: isolate;
+}
+
+/* Size spans honored from data: 'wide' = 2 cols, 'tall' = 2 rows */
+.wide {
+  grid-column: span 2;
+}
+.tall {
+  grid-row: span 2;
+}
+
+/* --- Photo --- */
+.img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* cool navy grade to match the team band */
+  filter: saturate(0.94) contrast(1.03);
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+}
+
+/* Navy scrim — always faintly grounds the image, deepens on hover so the
+   caption reads. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(0deg, rgba(6, 19, 37, 0.78) 0%, rgba(6, 19, 37, 0.12) 46%, rgba(6, 19, 37, 0) 70%),
+    linear-gradient(180deg, rgba(6, 19, 37, 0.28) 0%, rgba(6, 19, 37, 0) 30%);
+  opacity: 0.7;
+  transition: opacity 0.45s ease;
+}
+
+/* --- Caption: data-tag + text, slides up on hover/focus --- */
+.cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: clamp(14px, 1.4vw, 20px);
+  transform: translateY(14px);
+  opacity: 0;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+.capTag {
+  /* mono data-tag — render on the dark scrim, gold dot stays as-is */
+  color: var(--accent-data);
+  font-size: 0.68rem;
+}
+.capText {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-small);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+/* Hover / focus state — scale photo, deepen scrim, lift caption in */
+.tile:hover .img,
+.tile:focus-visible .img {
+  transform: scale(1.06);
+  filter: saturate(1) contrast(1.05);
+}
+.tile:hover .scrim,
+.tile:focus-visible .scrim {
+  opacity: 0.95;
+}
+.tile:hover .cap,
+.tile:focus-visible .cap {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Cyan top-edge accent on hover — the telemetry tell */
+.tile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tile:hover::after,
+.tile:focus-visible::after {
+  width: 64px;
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* --- Placeholder "add a photo" slots — dashed HUD on sunken navy --- */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-4);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-strong);
+}
+.placeholder::after {
+  content: none; /* no cyan accent bar on placeholders */
+}
+.placeholderMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+}
+.placeholderText {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-small);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.placeholderTag {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* =========================================================================
+   Responsive — collapse cleanly to 2 then 1 column
+   ========================================================================= */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(150px, 32vw, 220px);
+  }
+  /* 'wide' would fill the whole 2-col row — keep it spanning both for impact */
+  .wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 540px) {
+  .grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: clamp(200px, 56vw, 280px);
+  }
+  .wide,
+  .tall {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  /* On a single column captions are easy to miss on touch — show them resting */
+  .cap {
+    transform: none;
+    opacity: 1;
+  }
+  .scrim {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .img,
+  .scrim,
+  .cap,
+  .tile::after {
+    transition: none;
+  }
+  .tile:hover .img,
+  .tile:focus-visible .img {
+    transform: none;
+  }
+}

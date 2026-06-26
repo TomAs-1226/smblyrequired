@@ -1,0 +1,414 @@
+/* =========================================================================
+   Tiers — "04 — Partnership": sponsorship tiers + logo wall
+   Left-anchored, asymmetric; graduated tier emphasis ascending to Title.
+   ========================================================================= */
+
+.root {
+  overflow: hidden;
+}
+
+/* --- Header: heavy left headline, intro hangs to the right --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: end;
+  gap: var(--sp-4) var(--sp-7);
+}
+.title {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-h1);
+  max-width: 14ch;
+}
+.intro {
+  padding-bottom: var(--sp-2);
+}
+
+/* --- Gold-accented placement note bar --- */
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  padding: var(--sp-3) var(--sp-4);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 46, 0.1), rgba(245, 184, 46, 0) 60%),
+    var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.note p {
+  color: var(--text-body);
+  font-size: var(--fs-body);
+  max-width: 86ch;
+}
+.note p strong {
+  color: var(--text-primary);
+}
+.noteIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.12);
+}
+
+/* --- Tier rail: graduated heights, raised top tiers; scrolls on mobile --- */
+.railWrap {
+  margin-top: var(--sp-6);
+}
+.rail {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  gap: var(--sp-3);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  /* graduated lift ascending bronze -> title */
+  margin-top: calc((4 - var(--step)) * 14px);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
+    box-shadow 0.3s, background 0.3s;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+}
+.cardRaised {
+  background: var(--surface-2);
+  box-shadow: var(--elev-2);
+}
+.cardFeatured {
+  background: var(--surface-2);
+  border-color: var(--border-accent);
+  box-shadow: var(--elev-feature), 0 0 26px rgba(56, 189, 248, 0.18);
+}
+.cardFeatured:hover {
+  border-color: var(--accent-data);
+}
+
+/* tier-colored top rule */
+.cardRule {
+  position: absolute;
+  top: 0;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  height: 3px;
+  border-radius: 0 0 2px 2px;
+  background: var(--tier);
+}
+
+.flag {
+  position: absolute;
+  top: -10px;
+  right: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--glow-data);
+}
+
+.tierName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tier);
+  margin-top: var(--sp-2);
+}
+.amount {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-2);
+}
+.plus {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.perks {
+  list-style: none;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.perks li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.45;
+}
+.perkStrong {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+.check {
+  color: var(--tier);
+  margin-top: 2px;
+}
+
+.railHint {
+  display: none;
+}
+
+/* --- Logo wall --- */
+.wall {
+  margin-top: var(--sp-8);
+}
+.wallHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-width: 60ch;
+}
+.wallTitle {
+  font-size: var(--fs-h3);
+}
+.wallSub {
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
+/* Title sponsors lead the wall — bigger, brighter feature plates */
+.platesTitle {
+  margin-top: var(--sp-5);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--sp-4);
+}
+.plateTitle {
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-height: 168px;
+  padding: var(--sp-5);
+  background:
+    linear-gradient(120deg, rgba(245, 184, 46, 0.1), rgba(245, 184, 46, 0) 58%),
+    var(--surface-2);
+  border-color: var(--border-strong);
+  border-top: 2px solid var(--accent-gold);
+  box-shadow: var(--elev-feature);
+}
+.plateTitle:hover {
+  background:
+    linear-gradient(120deg, rgba(245, 184, 46, 0.16), rgba(245, 184, 46, 0) 58%),
+    var(--surface-2);
+  border-color: var(--border-strong);
+}
+.plateTitle .plateName {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+}
+.plateFlag {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 184, 46, 0.4);
+  background: rgba(245, 184, 46, 0.1);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+
+.plates {
+  margin-top: var(--sp-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--sp-3);
+}
+.plate {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 104px;
+  padding: var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: border-color 0.3s, background 0.3s, transform 0.4s
+    cubic-bezier(0.16, 1, 0.3, 1);
+}
+.plate:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  transform: translateY(-3px);
+}
+.plateName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+.plateType {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* companies read larger; families compact & quieter */
+.plateCo .plateName {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+}
+.plateCo .plateType {
+  color: var(--accent-data);
+}
+.plateFam {
+  min-height: 88px;
+  background: var(--surface-sunken);
+}
+.plateFam .plateName {
+  font-size: 1.1rem;
+  color: var(--text-body);
+}
+
+.marquee {
+  margin-top: var(--sp-7);
+  padding-block: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+
+/* --- How to sponsor --- */
+.steps {
+  margin-top: var(--sp-8);
+}
+.stepsTitle {
+  font-size: var(--fs-h3);
+}
+.stepGrid {
+  margin-top: var(--sp-5);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-5);
+}
+.step {
+  position: relative;
+  padding-top: var(--sp-4);
+  border-top: 2px solid var(--border-strong);
+}
+.stepNum {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 5vw, 4rem);
+  line-height: 0.9;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--accent-data);
+  font-variant-numeric: tabular-nums;
+}
+.stepName {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-h3);
+}
+.stepBody {
+  margin-top: var(--sp-2);
+  color: var(--text-body);
+  font-size: var(--fs-body);
+  max-width: 36ch;
+}
+
+.tax {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  max-width: 92ch;
+  line-height: 1.55;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+
+@media (max-width: 980px) {
+  .head {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .intro {
+    padding-bottom: 0;
+  }
+  .stepGrid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+}
+
+@media (max-width: 760px) {
+  /* tiers become a horizontal scroll-snap rail */
+  .railWrap {
+    margin-inline: calc(-1 * var(--gutter));
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .railWrap::-webkit-scrollbar {
+    display: none;
+  }
+  .rail {
+    display: flex;
+    align-items: stretch;
+    padding-inline: var(--gutter);
+    gap: var(--sp-3);
+  }
+  .card {
+    flex: 0 0 78%;
+    max-width: 280px;
+    margin-top: 0;
+    scroll-snap-align: start;
+  }
+  .railHint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--sp-3);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .plate {
+    transition: none;
+  }
+}

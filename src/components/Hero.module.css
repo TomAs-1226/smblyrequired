@@ -1,0 +1,265 @@
+/* HERO — full-viewport first paint. Left-anchored copy, off-axis full-bleed
+   robot photo bleeding right, cool navy scrim keeps the type legible. */
+
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-top: calc(var(--nav-h) + clamp(24px, 6vh, 72px));
+  padding-bottom: clamp(96px, 14vh, 160px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---- Imagery ------------------------------------------------------------ */
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.image {
+  position: absolute;
+  top: 0;
+  /* Off-axis: pushed right, oversized so parallax never reveals an edge */
+  right: -6%;
+  width: 72%;
+  height: 116%;
+  object-fit: cover;
+  object-position: 60% 28%;
+  will-change: transform;
+}
+
+/* Cool navy scrim: opaque left (text zone) -> transparent right (image) */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      100deg,
+      var(--bg-void) 0%,
+      var(--bg-void) 28%,
+      rgba(6, 19, 37, 0.82) 46%,
+      rgba(6, 19, 37, 0.32) 66%,
+      rgba(11, 31, 58, 0.12) 100%
+    );
+}
+
+/* Top + bottom feathering for nav legibility and a cinematic floor */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(6, 19, 37, 0.7) 0%, transparent 22%),
+    linear-gradient(to top, var(--bg-void) 0%, transparent 30%);
+}
+
+/* Floating game-piece accents (subtle, decorative) */
+.ball {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 34% 30%,
+    var(--accent-gold-hi),
+    var(--accent-gold) 58%,
+    #c98a10 100%
+  );
+  opacity: 0.5;
+  filter: blur(0.2px);
+  pointer-events: none;
+}
+.ball1 {
+  width: 14px;
+  height: 14px;
+  top: 30%;
+  right: 16%;
+  opacity: 0.6;
+}
+.ball2 {
+  width: 9px;
+  height: 9px;
+  top: 58%;
+  right: 8%;
+  opacity: 0.4;
+}
+.ball3 {
+  width: 20px;
+  height: 20px;
+  top: 70%;
+  right: 30%;
+  opacity: 0.3;
+}
+
+/* ---- Copy --------------------------------------------------------------- */
+.inner {
+  position: relative;
+  z-index: 1;
+  /* No max-width here: it competed with the global .container cap and could
+     leave the headline mid-measure too narrow. The lead/copy cap their own
+     width below, so the headline gets the full content column. */
+}
+
+.headline {
+  margin-top: var(--sp-4);
+  font-size: var(--fs-display);
+  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  /* Let descenders/masked lines breathe so the reveal doesn't clip */
+  padding-bottom: 0.06em;
+}
+
+.accent {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.copy {
+  margin-top: var(--sp-5);
+  max-width: 52ch;
+}
+
+.lead {
+  color: var(--text-body);
+  max-width: 52ch;
+}
+.lead {
+  /* keep --fs-body-lg from the global .lead but tighten a touch */
+  line-height: 1.6;
+}
+
+/* ---- CTAs --------------------------------------------------------------- */
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+/* ---- Proof line --------------------------------------------------------- */
+.proof {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--sp-5);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  flex: none;
+}
+.sep {
+  color: var(--border-strong);
+}
+
+/* ---- Scroll cue --------------------------------------------------------- */
+.scrollCue {
+  position: absolute;
+  left: var(--gutter);
+  bottom: clamp(20px, 4vh, 40px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+.scrollCue:hover {
+  color: var(--text-primary);
+}
+.scrollChevron {
+  transform: rotate(180deg);
+  animation: hero-bob 2.4s ease-in-out infinite;
+}
+.scrollCue:hover .scrollChevron {
+  color: var(--accent-data);
+}
+
+@keyframes hero-bob {
+  0%,
+  100% {
+    transform: rotate(180deg) translateY(0);
+  }
+  50% {
+    transform: rotate(180deg) translateY(-4px);
+  }
+}
+
+/* ---- Responsive --------------------------------------------------------- */
+@media (max-width: 900px) {
+  .image {
+    right: -18%;
+    width: 96%;
+    object-position: 64% 24%;
+  }
+  /* Stronger scrim so copy stays legible over more image */
+  .scrim {
+    background: linear-gradient(
+      100deg,
+      var(--bg-void) 0%,
+      rgba(6, 19, 37, 0.92) 40%,
+      rgba(6, 19, 37, 0.62) 72%,
+      rgba(11, 31, 58, 0.32) 100%
+    );
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    align-items: flex-end;
+    min-height: 100svh;
+  }
+  .image {
+    right: 0;
+    width: 130%;
+    height: 70%;
+    top: 0;
+    object-position: 60% 26%;
+  }
+  .scrim {
+    background: linear-gradient(
+      to bottom,
+      rgba(6, 19, 37, 0.55) 0%,
+      rgba(6, 19, 37, 0.82) 46%,
+      var(--bg-void) 78%
+    );
+  }
+  .inner {
+    max-width: 100%;
+  }
+  .ctas {
+    margin-top: var(--sp-5);
+  }
+  .ctas .btn {
+    flex: 1 1 auto;
+  }
+  .scrollCue {
+    display: none;
+  }
+  .ball3 {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollChevron {
+    animation: none;
+  }
+}

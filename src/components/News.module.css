@@ -1,0 +1,174 @@
+/* =========================================================================
+   News — "06 — LATEST" (FROM THE SHOP AND THE FIELD)
+   Editorial feed: oversized featured lede + left-spined telemetry timeline.
+   Not uniform cards — mono date tags, tag chips, Oswald titles.
+   ========================================================================= */
+
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 80px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 16ch;
+}
+.note {
+  padding-bottom: 6px;
+}
+
+/* --- Shared tag chip --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  align-self: flex-start;
+}
+
+/* --- Featured (newest) entry --- */
+.featured {
+  margin-top: clamp(40px, 6vw, 72px);
+}
+.feature {
+  position: relative;
+  padding: clamp(28px, 3.5vw, 48px);
+  background: linear-gradient(
+    180deg,
+    var(--surface-1) 0%,
+    var(--surface-sunken) 140%
+  );
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.featureMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.latestFlag {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.featureTitle {
+  font-size: clamp(1.7rem, 3.4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.05;
+  max-width: 22ch;
+  margin-bottom: var(--sp-3);
+}
+.featureBlurb {
+  font-size: var(--fs-body-lg);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+/* --- Timeline feed --- */
+.feed {
+  list-style: none;
+  margin-top: clamp(40px, 6vw, 72px);
+  padding-left: clamp(20px, 3vw, 36px);
+  border-left: 1px solid var(--border-strong);
+}
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: clamp(16px, 3vw, 48px);
+  padding: clamp(24px, 3vw, 40px) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Spine node — cyan telemetry dot aligned to the left rule */
+.node {
+  position: absolute;
+  top: clamp(30px, 3.4vw, 46px);
+  left: calc(clamp(20px, 3vw, 36px) * -1 - 4px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+
+.itemDate {
+  padding-top: 3px;
+  align-self: start;
+  letter-spacing: 0.1em;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.itemTitle {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  line-height: 1.12;
+  margin-top: 2px;
+  max-width: 28ch;
+  transition: color 0.3s ease;
+}
+.item:hover .itemTitle {
+  color: var(--text-primary);
+}
+.itemBlurb {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 60ch;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    align-items: start;
+  }
+  .heading {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .featureMeta {
+    gap: var(--sp-2) var(--sp-3);
+  }
+  .latestFlag {
+    margin-left: 0;
+  }
+  .item {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+  .node {
+    top: clamp(24px, 5vw, 30px);
+  }
+}

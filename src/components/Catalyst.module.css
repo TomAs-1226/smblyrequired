@@ -1,0 +1,545 @@
+/* =========================================================================
+   Catalyst — "OPEN SOURCE · BUILT BY 5805" (WE BUILD TOOLS)
+   A premium open-source library landing block embedded in the site.
+   Asymmetric header, signature code-reduction visual (editor panel + metric),
+   non-uniform feature layout, stack chips, CTAs. Left-anchored, telemetry HUD.
+   ========================================================================= */
+
+.section {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Faint blueprint field, masked to fade at edges so it reads as backdrop */
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(120% 90% at 70% 18%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(120% 90% at 70% 18%, #000 0%, transparent 72%);
+  pointer-events: none;
+}
+
+/* --- Header: asymmetric narrative (left) + repo meta rail (right) --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: end;
+}
+
+.headLede {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  font-size: var(--fs-h1);
+  max-width: 13ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.headBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.tagline {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--accent-data);
+  max-width: 22ch;
+  padding-left: var(--sp-4);
+  border-left: 2px solid var(--border-accent);
+}
+
+/* Repo meta — sits at the baseline of the headline like a file header */
+.headMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-5);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.repoName {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-body-lg);
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+.repoIcon {
+  color: var(--accent-data);
+  flex: none;
+}
+.licenseTag {
+  letter-spacing: 0.06em;
+}
+
+/* --- Signature row: editor (wide, left) + metric (narrow, right) --- */
+.signature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: stretch;
+  margin-top: clamp(48px, 7vw, 96px);
+}
+
+/* The editor panel */
+.editor {
+  position: relative;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--elev-feature);
+  overflow: hidden;
+  min-width: 0;
+}
+.editorBar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px var(--sp-4);
+  background: linear-gradient(180deg, var(--surface-1), var(--surface-sunken));
+  border-bottom: 1px solid var(--border-hairline);
+}
+/* Traffic-tick dots — cyan, telemetry, not macOS rainbow */
+.dots {
+  display: inline-flex;
+  gap: 7px;
+  flex: none;
+}
+.dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+.dots i:first-child {
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.editorFile {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  letter-spacing: 0.02em;
+}
+.editorBadge {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  flex: none;
+}
+
+.code {
+  margin: 0;
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: clamp(0.78rem, 1.05vw, 0.95rem);
+  line-height: 1.85;
+  -webkit-overflow-scrolling: touch;
+}
+.code code {
+  display: block;
+  min-width: max-content;
+}
+.codeLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  white-space: pre;
+}
+.gutter {
+  flex: none;
+  width: 1.6em;
+  text-align: right;
+  color: var(--text-muted);
+  opacity: 0.45;
+  font-size: 0.85em;
+  user-select: none;
+}
+.codeText {
+  white-space: pre;
+  color: var(--text-body);
+}
+
+/* Syntax tinting — tasteful, three hues + plain */
+.tok_k {
+  color: var(--accent-data);
+}
+.tok_s {
+  color: var(--accent-gold-hi);
+}
+.tok_c {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.tok_f {
+  color: var(--text-primary);
+}
+.tok_p {
+  color: var(--text-body);
+}
+
+/* Blinking caret that lands after the last line */
+.caret {
+  display: inline-block;
+  width: 8px;
+  height: 1.05em;
+  margin-left: calc(1.6em + var(--sp-3));
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  vertical-align: text-bottom;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
+/* --- Metric: the wow contrast — 150+ → 8 --- */
+.metric {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: clamp(28px, 3vw, 44px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-gold);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.metricLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.metricRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 22px);
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+.metricFrom {
+  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  color: var(--text-muted);
+  letter-spacing: -0.02em;
+  position: relative;
+}
+/* strike the old number — telemetry "before" */
+.metricFrom::after {
+  content: '';
+  position: absolute;
+  left: -4%;
+  right: -4%;
+  top: 52%;
+  height: 3px;
+  background: var(--danger);
+  transform: rotate(-8deg);
+  opacity: 0.85;
+}
+.metricArrow {
+  color: var(--accent-data);
+  flex: none;
+}
+.metricTo {
+  font-size: var(--fs-stat);
+  color: var(--accent-gold);
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 28px rgba(245, 184, 46, 0.3);
+}
+.metricNote {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.55;
+  max-width: 30ch;
+}
+/* faint data-spark line in the corner */
+.metricSpark {
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 184, 46, 0.12), transparent 68%);
+  pointer-events: none;
+}
+
+/* --- Features: non-uniform 4-up — 1 lead tile spans, 3 rail tiles --- */
+.features {
+  margin-top: clamp(56px, 9vw, 120px);
+}
+.featuresLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-6);
+}
+.featuresRule {
+  width: 24px;
+  height: 2px;
+  background: var(--accent-gold);
+  flex: none;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: clamp(16px, 2vw, 28px);
+}
+/* Lead feature occupies the tall left column across both rows */
+.featureLead {
+  grid-row: 1 / span 2;
+}
+
+.feature {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+}
+.feature::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.feature:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.feature:hover::before {
+  width: 52px;
+}
+.featureLead {
+  justify-content: flex-end;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border-left: 2px solid var(--accent-data);
+  padding: clamp(28px, 3vw, 44px);
+}
+
+.featureIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  margin-bottom: var(--sp-4);
+  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.featureLead .featureIcon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: auto;
+}
+.feature:hover .featureIcon {
+  background: rgba(56, 189, 248, 0.16);
+  transform: translateY(-3px);
+}
+.featureNum {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+.featureTitle {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-2);
+}
+.featureLead .featureTitle {
+  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+  margin-top: var(--sp-5);
+}
+.featureBody {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 42ch;
+}
+
+/* --- Foot: stack chips + CTAs + community credit --- */
+.foot {
+  margin-top: clamp(48px, 7vw, 88px);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'stack ctas'
+    'credit credit';
+  gap: var(--sp-5) clamp(32px, 5vw, 72px);
+  align-items: center;
+}
+.stack {
+  grid-area: stack;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+}
+.stackLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.stackList {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+.stackChip {
+  padding: 6px 12px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+}
+
+.ctas {
+  grid-area: ctas;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.credit {
+  grid-area: credit;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.creditIcon {
+  color: var(--accent-gold);
+  flex: none;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 1040px) {
+  .signature {
+    grid-template-columns: 1fr;
+  }
+  .metric {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4) var(--sp-5);
+  }
+  .metricNote {
+    max-width: 40ch;
+  }
+}
+
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: var(--sp-6);
+  }
+  .heading {
+    max-width: none;
+  }
+  .featureGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .featureLead {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+  .foot {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'stack'
+      'ctas'
+      'credit';
+    align-items: start;
+  }
+  .ctas {
+    width: 100%;
+  }
+  .ctas :global(.btn) {
+    flex: 1 1 auto;
+  }
+  .metricRow {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+  .feature,
+  .featureIcon,
+  .feature::before {
+    transition: none;
+  }
+}

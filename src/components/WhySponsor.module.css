@@ -1,0 +1,286 @@
+/* =========================================================================
+   WhySponsor — 03 Why sponsor us + where the money goes.
+   Asymmetric: cost stat + copy (left), budget telemetry (right), then a
+   benefits band, in-kind chips, and the packet CTAs.
+   ========================================================================= */
+
+.root {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ghost numeral bleeds top-right behind the headline. */
+.root :global(.num-ghost) {
+  position: absolute;
+  top: clamp(-24px, -2vw, 0px);
+  right: var(--gutter);
+  z-index: 0;
+}
+
+/* ---- Top grid: lede heavy on the left ---- */
+.grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(40px, 6vw, 88px);
+  align-items: start;
+}
+
+.lede {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 14ch;
+  margin-top: var(--sp-2);
+}
+.cost {
+  color: var(--accent-data);
+  white-space: nowrap;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+.subcopy {
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+
+/* ---- Telemetry panel (sticky offset on desktop) ---- */
+.telemetry {
+  position: relative;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  padding: clamp(20px, 2.4vw, 32px);
+  box-shadow: var(--elev-2);
+}
+
+.telemetryHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.telemetryTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-h3);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.telemetryMeta {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  flex: none;
+}
+
+.bars {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 1.8vw, 22px);
+}
+.barRow {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.barLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.barName {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+.barPct {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  flex: none;
+}
+
+.barTrack {
+  position: relative;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: rgba(199, 210, 221, 0.07);
+  overflow: hidden;
+}
+.barFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-action), var(--accent-data));
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/* The single largest line gets the only glow + a brighter rail. */
+.barRowPeak .barPct {
+  color: var(--accent-data);
+}
+.barRowPeak .barFill {
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+
+/* ---- Benefits band ---- */
+.benefits {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(56px, 8vh, 104px);
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  gap: clamp(24px, 4vw, 64px);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+}
+.benefitsHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.benefitsTitle {
+  font-size: var(--fs-h3);
+}
+.benefitsNote {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 34ch;
+}
+.foreshadow {
+  color: var(--accent-gold);
+  font-weight: 500;
+}
+
+.benefitsList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3) var(--sp-5);
+  align-content: start;
+}
+.benefit {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.5;
+}
+.benefitCheck {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  border-radius: var(--r-pill);
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--border-accent);
+}
+
+/* ---- Footer: in-kind chips + CTAs ---- */
+.footer {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(40px, 6vh, 72px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(28px, 4vw, 56px);
+}
+.inkind {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 560px;
+}
+.inkindLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.inkindLabel svg {
+  color: var(--accent-gold);
+}
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 920px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: clamp(32px, 6vw, 48px);
+  }
+  .heading {
+    max-width: none;
+  }
+  .benefits {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+}
+
+@media (max-width: 560px) {
+  .benefitsList {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+  .telemetryHead {
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ctas {
+    flex-direction: column;
+  }
+  .ctas :global(.btn) {
+    width: 100%;
+  }
+}

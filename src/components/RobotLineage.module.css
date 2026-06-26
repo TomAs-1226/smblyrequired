@@ -1,0 +1,344 @@
+/* =========================================================================
+   RobotLineage — "02 / THE ROBOTS"
+   The site's single pinned, horizontally-scrubbed moment (desktop, motion OK).
+   Mobile + reduced-motion fall back to a vertical card stack via the same DOM.
+   ========================================================================= */
+
+.section {
+  /* full-bleed shell; intro re-introduces .container width */
+  overflow: hidden;
+}
+
+/* --- Intro ---------------------------------------------------------------- */
+.intro {
+  margin-bottom: clamp(36px, 6vh, 72px);
+}
+
+.introGrid {
+  margin-top: var(--sp-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: end;
+  gap: clamp(24px, 4vw, 64px);
+}
+
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 14ch;
+}
+
+.note {
+  margin-bottom: 6px;
+  max-width: 52ch;
+  color: var(--text-body);
+}
+
+@media (max-width: 860px) {
+  .introGrid {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: var(--sp-4);
+  }
+  .note {
+    margin-bottom: 0;
+  }
+}
+
+/* --- Pin wrap + track ----------------------------------------------------- */
+/* Desktop: a single tall pin region whose inner track scrolls on X.
+   The matchMedia tween only runs at >=768px + no-reduce, so we hard-code the
+   desktop track to a row and let the mobile media query revert to a column. */
+.pinWrap {
+  position: relative;
+}
+
+.track {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: max-content;
+  will-change: transform;
+}
+
+/* Each panel ~ a viewport-width slide on desktop */
+.panelOuter {
+  flex: 0 0 auto;
+  width: clamp(560px, 78vw, 980px);
+  padding-inline: var(--gutter);
+  display: flex;
+}
+
+.panel {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: clamp(440px, 64vh, 660px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* When a panel carries a real photo, the media fills the whole tile and the
+   body sits over a scrim at the bottom. */
+.panel.hasImage {
+  grid-template-rows: 1fr;
+}
+.panel.hasImage .body {
+  position: relative;
+  z-index: 2;
+  align-self: end;
+}
+
+/* --- Media (only Leviticus -> photos/robot.jpg) --------------------------- */
+.media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 32%;
+  filter: saturate(0.92) contrast(1.02);
+}
+.mediaScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 19, 37, 0.1) 0%, rgba(6, 19, 37, 0.05) 38%, rgba(6, 19, 37, 0.86) 88%),
+    linear-gradient(90deg, rgba(11, 31, 58, 0.5), transparent 55%);
+}
+
+/* --- Typographic glyph (panels without a photo — never fake imagery) ------ */
+.glyph {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: clamp(20px, 3vw, 40px);
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(22, 73, 136, 0.4), transparent 60%),
+    var(--surface-sunken);
+  overflow: hidden;
+}
+.glyphYear {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.glyphNum {
+  position: absolute;
+  right: clamp(-8px, 1vw, 16px);
+  bottom: clamp(-28px, -3vw, -8px);
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 0.8;
+  font-size: clamp(9rem, 24vw, 20rem);
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--border-strong);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Build panel pushes the ghost numeral to cyan dashed energy */
+.panel.isBuild .glyph {
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(56, 189, 248, 0.16), transparent 62%),
+    var(--surface-sunken);
+}
+.panel.isBuild .glyphNum {
+  -webkit-text-stroke: 1.5px var(--border-accent);
+}
+
+/* --- Body ---------------------------------------------------------------- */
+.body {
+  padding: clamp(22px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.plateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.bookLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.bookDot {
+  color: var(--accent-gold);
+}
+
+/* Current badge (Leviticus) */
+.current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--border-accent);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+}
+.currentDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* The scripture-style nameplate */
+.name {
+  font-size: var(--fs-h1);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
+}
+
+.result {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.15;
+  color: var(--text-body);
+}
+.resultIcon {
+  flex: none;
+  margin-top: 0.18em;
+}
+.result.resultGold {
+  color: var(--accent-gold);
+}
+.result.resultBuild {
+  color: var(--accent-data);
+  font-family: var(--font-display);
+  font-size: var(--fs-body-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px dashed var(--border-accent);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  align-self: flex-start;
+}
+
+.blurb {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  max-width: 48ch;
+}
+
+.index {
+  margin-top: auto;
+  padding-top: var(--sp-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Champion tiles earn a faint gold top edge; image champ keeps its scrim depth */
+.panel.isChampion {
+  border-color: rgba(245, 184, 46, 0.28);
+}
+.panel.isChampion::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-gold), transparent 70%);
+  z-index: 3;
+}
+
+/* =========================================================================
+   MOBILE + REDUCED-MOTION FALLBACK
+   The pin matchMedia never runs below 768px, so we revert the row to a clean
+   vertical card stack. Same DOM, no horizontal overflow.
+   ========================================================================= */
+@media (max-width: 767px) {
+  .pinWrap {
+    /* ensure no leftover transform leaks from a resize across the breakpoint */
+    transform: none !important;
+  }
+  .track {
+    flex-direction: column;
+    width: auto;
+    transform: none !important;
+    gap: var(--sp-4);
+  }
+  .panelOuter {
+    width: 100%;
+    padding-inline: var(--gutter);
+  }
+  .panel {
+    min-height: 0;
+  }
+  .panel.hasImage {
+    grid-template-rows: clamp(220px, 56vw, 320px) auto;
+  }
+  .panel.hasImage .media {
+    position: relative;
+  }
+  .panel.hasImage .body {
+    align-self: stretch;
+    background: var(--surface-1);
+  }
+  .name {
+    font-size: clamp(2.4rem, 13vw, 3.4rem);
+  }
+  .result {
+    font-size: var(--fs-h3);
+  }
+  .glyphNum {
+    font-size: clamp(8rem, 38vw, 13rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .currentDot {
+    animation: none;
+  }
+}

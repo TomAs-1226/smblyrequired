@@ -1,0 +1,629 @@
+/* =========================================================================
+   Impact — "05 — TRACK RECORD"
+   Editorial honors timeline (kind-colored ticks; gold = wins only), a
+   full-bleed real-win proof band with parallax, a 2026 season telemetry
+   rail, and a judge-facing program narrative. Left-anchored, asymmetric.
+   ========================================================================= */
+
+/* --- Header: 7 / 5 headline left, record note right --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+.headLede {
+  min-width: 0;
+}
+.heading {
+  /* Dramatic type-scale contrast — push well past the section H2 default */
+  font-size: clamp(2.6rem, 6.5vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 13ch;
+  margin-top: var(--sp-4);
+}
+.headNote {
+  max-width: 48ch;
+  padding-bottom: var(--sp-2);
+}
+
+/* --- Record stats rail (one gold max) + source tag --- */
+.statsBlock {
+  margin-top: clamp(44px, 7vw, 88px);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+}
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 64px);
+}
+.stat {
+  position: relative;
+  padding-left: var(--sp-4);
+  border-left: 1px solid var(--border-hairline);
+}
+.stat:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.stat :global(.stat-numeral__n) {
+  font-size: clamp(2.75rem, 6vw, 5rem);
+}
+.source {
+  margin-top: var(--sp-5);
+}
+
+/* =========================================================================
+   The honors — editorial timeline grouped by year DESC
+   ========================================================================= */
+.honorsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-7);
+}
+.honorsRule {
+  width: 24px;
+  height: 2px;
+  background: var(--accent-gold);
+  flex: none;
+}
+
+.timeline {
+  position: relative;
+}
+/* Vertical spine sits under the year-column ticks */
+.spine {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: 2px;
+  background: var(--border-hairline);
+  overflow: hidden;
+}
+.spineFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--accent-gold), var(--accent-data));
+  transform-origin: top center;
+}
+
+/* Each year is one group: big numeral column + its result rows */
+.yearGroup {
+  display: grid;
+  grid-template-columns: clamp(120px, 16vw, 220px) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 64px);
+  padding: clamp(28px, 4vw, 52px) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.yearGroup:first-of-type {
+  border-top: 0;
+}
+
+.yearCol {
+  position: relative;
+  padding-left: var(--sp-5);
+}
+/* Year-anchor dot on the spine */
+.yearCol::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-base);
+  border: 2px solid var(--text-muted);
+}
+.yearNum {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.yearTag {
+  display: inline-block;
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* A single result row */
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(16px, 2.5vw, 40px);
+  padding: clamp(14px, 2vw, 22px) clamp(16px, 2vw, 24px);
+  padding-left: clamp(28px, 3vw, 40px);
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.row:last-child {
+  border-bottom-color: transparent;
+}
+.row:hover {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+}
+
+/* Kind-colored tick to the left of each row */
+.tick {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+}
+.tickCyan {
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.tickGold {
+  background: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(245, 184, 46, 0.5);
+}
+
+/* Flagship rows: extra emphasis (hud-frame is added in JSX) */
+.rowFlagship {
+  padding: clamp(22px, 3vw, 34px) clamp(20px, 2.5vw, 32px);
+  padding-left: clamp(34px, 3.5vw, 48px);
+  background: linear-gradient(90deg, rgba(245, 184, 46, 0.06), transparent 65%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  margin: var(--sp-2) 0;
+}
+.rowFlagship:hover {
+  background: linear-gradient(90deg, rgba(245, 184, 46, 0.1), transparent 65%);
+  border-color: rgba(245, 184, 46, 0.3);
+}
+
+.rowMain {
+  min-width: 0;
+}
+.rowEvent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.rowFlagship .rowEvent {
+  font-size: clamp(1.6rem, 2.8vw, 2.5rem);
+}
+.flagMark {
+  display: inline-flex;
+  color: var(--accent-gold);
+  flex: none;
+}
+.rowAward {
+  margin-top: var(--sp-2);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+}
+.awardGold {
+  color: var(--accent-gold);
+}
+.awardCyan {
+  color: var(--accent-data);
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+.kindTag {
+  letter-spacing: 0.12em;
+}
+.robotTag {
+  color: var(--text-body);
+}
+
+/* Individual-credit tag (an award given to a person, not the robot) */
+.personTag {
+  gap: 8px;
+  color: var(--text-body);
+  border-color: var(--border-accent);
+}
+.personIcon {
+  flex: none;
+  color: var(--accent-data);
+}
+.personLabel {
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+}
+
+/* =========================================================================
+   Full-bleed proof band — the real Ventura 2025 win
+   ========================================================================= */
+.proof {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.proofImgWrap {
+  position: relative;
+  width: 100%;
+  height: clamp(420px, 78vh, 820px);
+  overflow: hidden;
+}
+.proofImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  filter: saturate(0.96) contrast(1.05);
+  will-change: transform;
+}
+.proofScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 19, 37, 0.55) 0%, rgba(6, 19, 37, 0) 30%),
+    linear-gradient(0deg, rgba(6, 19, 37, 0.94) 0%, rgba(6, 19, 37, 0.08) 52%),
+    linear-gradient(90deg, rgba(11, 31, 58, 0.6) 0%, rgba(11, 31, 58, 0) 58%);
+}
+.proofCaptionWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(28px, 6vh, 72px);
+}
+.proofKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: var(--sp-3);
+}
+.proofTrophy {
+  color: var(--accent-gold);
+}
+.proofTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 5vw, 4rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  max-width: 18ch;
+}
+.proofTag {
+  margin-top: var(--sp-4);
+  color: var(--text-body);
+}
+
+/* =========================================================================
+   2026 season rail + program-impact narrative
+   ========================================================================= */
+.seasonGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: start;
+  margin-top: var(--sp-5);
+}
+.seasonCol {
+  min-width: 0;
+}
+.seasonHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.seasonHead .honorsLabel {
+  margin-bottom: 0;
+}
+.seasonTag {
+  font-family: var(--font-mono);
+}
+
+/* Telemetry rail — mono month chip, event, dates, result */
+.rail {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+}
+.railRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px);
+  padding: var(--sp-4) var(--sp-2);
+  border-bottom: 1px solid var(--border-hairline);
+  transition: background 0.3s ease;
+}
+.railRow:hover {
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+}
+.railMonth {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--border-accent);
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+}
+.railMain {
+  min-width: 0;
+}
+.railEvent {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-body-lg);
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+.railDates {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.railResult {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: right;
+  white-space: nowrap;
+}
+.railResultLive {
+  color: var(--accent-gold);
+}
+.railResultPending {
+  color: var(--text-muted);
+}
+
+.watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--sp-5);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  border: 1px solid var(--border-accent);
+  padding: 11px 18px;
+  border-radius: var(--r-pill);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.watch:hover {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: var(--accent-data);
+}
+.watchPulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  flex: none;
+  animation: watchPulse 2s ease-in-out infinite;
+}
+@keyframes watchPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.7);
+  }
+}
+.watchIcon {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.watch:hover .watchIcon {
+  transform: translate(2px, -2px);
+}
+
+/* --- Program-impact narrative aside --- */
+.impactCol {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+  padding: clamp(28px, 3.5vw, 48px);
+}
+.impactKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: var(--sp-3);
+}
+.impactTitle {
+  font-size: var(--fs-h3);
+  line-height: 1.08;
+  margin-bottom: var(--sp-5);
+  max-width: 16ch;
+}
+.impactBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.impactPara {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.65;
+}
+.impactPara strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.impactProof {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.impactProofTick {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-gold);
+  flex: none;
+  transform: translateY(-1px);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    align-items: start;
+  }
+  .heading {
+    max-width: none;
+  }
+  .seasonGrid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-7);
+  }
+  .yearGroup {
+    grid-template-columns: clamp(96px, 22vw, 140px) minmax(0, 1fr);
+    gap: var(--sp-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+  }
+  .stat {
+    border-left: 0;
+    padding-left: 0;
+    padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--border-hairline);
+  }
+  .stat:last-child {
+    border-bottom: 0;
+  }
+  /* Year stacks above its rows */
+  .yearGroup {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    padding-left: var(--sp-5);
+  }
+  .yearCol {
+    padding-left: 0;
+  }
+  .yearCol::before {
+    left: calc(var(--sp-5) * -1 + 1px);
+  }
+  .row {
+    grid-template-columns: 1fr;
+    gap: var(--sp-2);
+    align-items: start;
+  }
+  .rowMeta {
+    flex-wrap: wrap;
+  }
+  .tick {
+    top: clamp(18px, 4vw, 26px);
+  }
+  .railRow {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-areas:
+      'month event'
+      'month result';
+    row-gap: var(--sp-1);
+  }
+  .railMonth {
+    grid-area: month;
+    align-self: start;
+  }
+  .railMain {
+    grid-area: event;
+  }
+  .railResult {
+    grid-area: result;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .railRow,
+  .watch,
+  .watchIcon {
+    transition: none;
+  }
+  .watchPulse {
+    animation: none;
+  }
+}
