@@ -1,8 +1,10 @@
 /* =========================================================================
    Gallery — "THE SEASON" (IN THE PIT AND ON THE FIELD)
-   Editorial dense-masonry photo grid. Per-item col/row spans, navy scrim,
-   hover/focus caption reveal with a mono data-tag, transform-only scale-in.
-   Dashed HUD placeholder slots the team can fill later. Left-anchored.
+   Editorial dense-masonry photo grid. Each photo is composed onto a cohesive
+   navy STAGE (radial spotlight + blueprint that fades at center, grounding
+   shadow, cool color grade, edge-blending scrim) so snapshots read as staged
+   product shots — not pasted rectangles. Tag chips filter the grid; tiles open
+   a full-screen lightbox with prev/next + keyboard/backdrop/Escape close.
    ========================================================================= */
 
 .root {
@@ -12,7 +14,7 @@
 /* --- Header: left-anchored eyebrow + headline + note --- */
 .head {
   max-width: 60ch;
-  margin-bottom: clamp(40px, 6vw, 72px);
+  margin-bottom: clamp(28px, 4vw, 44px);
 }
 .heading {
   font-size: var(--fs-h2);
@@ -22,6 +24,61 @@
 }
 .note {
   color: var(--text-body);
+}
+
+/* --- Tag filter chips ---------------------------------------------------- */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: clamp(28px, 4vw, 48px);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease,
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.chipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  opacity: 0.6;
+  transition: background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+.chip:hover {
+  color: var(--text-body);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.chip:hover .chipDot {
+  opacity: 1;
+}
+.chipActive {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.chipActive:hover {
+  color: var(--text-on-cyan);
+  border-color: var(--accent-data);
+}
+.chipActive .chipDot {
+  background: var(--bg-void);
+  opacity: 1;
 }
 
 /* --- Dense editorial grid --- */
@@ -43,6 +100,8 @@
   /* batch reveal sets autoAlpha/y; declare a sane no-JS resting state */
   will-change: transform, opacity;
   isolation: isolate;
+  box-shadow: var(--elev-1);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Size spans honored from data: 'wide' = 2 cols, 'tall' = 2 rows */
@@ -53,36 +112,93 @@
   grid-row: span 2;
 }
 
-/* --- Photo --- */
+/* The whole tile is a button so the photo opens the lightbox */
+.tileBtn {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  text-align: left;
+}
+
+/* --- The STAGE: spotlight + blueprint behind the subject --------------- */
+/* A soft radial spotlight (brighter behind the robot) on sunken navy, plus a
+   faint blueprint grid that fades out at the center. Sits under the photo so
+   any transparency/letterboxing still reads as a composed set, not flat fill. */
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 100% at 50% 32%, rgba(22, 73, 136, 0.55) 0%, rgba(8, 26, 48, 0) 62%),
+    linear-gradient(var(--border-hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-hairline) 1px, transparent 1px),
+    var(--surface-sunken);
+  background-size: 100% 100%, 32px 32px, 32px 32px, 100% 100%;
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 40%, transparent 0%, transparent 28%, #000 78%);
+  mask-image: radial-gradient(120% 100% at 50% 40%, transparent 0%, transparent 28%, #000 78%);
+  pointer-events: none;
+}
+
+/* --- Photo: cool navy grade so snapshots match the palette ------------- */
 .img {
   position: absolute;
   inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* cool navy grade to match the team band */
-  filter: saturate(0.94) contrast(1.03);
+  filter: saturate(0.95) contrast(1.04) brightness(0.98);
   transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
 }
 
-/* Navy scrim — always faintly grounds the image, deepens on hover so the
-   caption reads. */
+/* Navy scrim — blends the photo's hard edges into the panel and grounds the
+   subject. Top edge + bottom well so the image never reads as a bare rectangle;
+   deepens on hover so the caption reads cleanly. */
 .scrim {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   background:
-    linear-gradient(0deg, rgba(6, 19, 37, 0.78) 0%, rgba(6, 19, 37, 0.12) 46%, rgba(6, 19, 37, 0) 70%),
-    linear-gradient(180deg, rgba(6, 19, 37, 0.28) 0%, rgba(6, 19, 37, 0) 30%);
-  opacity: 0.7;
+    linear-gradient(0deg, rgba(6, 19, 37, 0.82) 0%, rgba(6, 19, 37, 0.16) 44%, rgba(6, 19, 37, 0) 68%),
+    linear-gradient(180deg, rgba(6, 19, 37, 0.32) 0%, rgba(6, 19, 37, 0) 26%),
+    radial-gradient(140% 120% at 50% 18%, rgba(6, 19, 37, 0) 40%, rgba(6, 19, 37, 0.4) 100%);
+  opacity: 0.72;
   transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+/* Small zoom cue in the corner so the click affordance is obvious */
+.zoomCue {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-primary);
+  background: rgba(6, 19, 37, 0.55);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transform: translateY(-4px) scale(0.92);
+  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* --- Caption: data-tag + text, slides up on hover/focus --- */
 .cap {
   position: absolute;
   inset: auto 0 0 0;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
@@ -106,20 +222,31 @@
   text-wrap: balance;
 }
 
-/* Hover / focus state — scale photo, deepen scrim, lift caption in */
+/* Hover / focus state — lift the tile, scale photo, deepen scrim, reveal cap */
+.tile:hover,
+.tile:focus-within {
+  transform: translateY(-4px);
+  border-color: var(--border-accent);
+  box-shadow: var(--elev-feature);
+}
 .tile:hover .img,
-.tile:focus-visible .img {
-  transform: scale(1.06);
-  filter: saturate(1) contrast(1.05);
+.tileBtn:focus-visible .img {
+  transform: scale(1.07);
+  filter: saturate(1.02) contrast(1.06) brightness(1);
 }
 .tile:hover .scrim,
-.tile:focus-visible .scrim {
-  opacity: 0.95;
+.tileBtn:focus-visible .scrim {
+  opacity: 0.94;
 }
 .tile:hover .cap,
-.tile:focus-visible .cap {
+.tileBtn:focus-visible .cap {
   transform: translateY(0);
   opacity: 1;
+}
+.tile:hover .zoomCue,
+.tileBtn:focus-visible .zoomCue {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 /* Cyan top-edge accent on hover — the telemetry tell */
@@ -128,21 +255,23 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 3;
+  z-index: 4;
   width: 0;
   height: 2px;
   background: var(--accent-data);
   box-shadow: var(--glow-data);
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 .tile:hover::after,
-.tile:focus-visible::after {
-  width: 64px;
+.tile:focus-within::after {
+  width: 72px;
 }
 
-.tile:focus-visible {
+.tileBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
+  outline-offset: -2px;
+  border-radius: var(--r-md);
 }
 
 /* --- Placeholder "add a photo" slots — dashed HUD on sunken navy --- */
@@ -156,6 +285,12 @@
   padding: var(--sp-4);
   background: var(--surface-sunken);
   border: 1px dashed var(--border-strong);
+  box-shadow: none;
+}
+.placeholder:hover {
+  transform: none;
+  border-color: var(--border-strong);
+  box-shadow: none;
 }
 .placeholder::after {
   content: none; /* no cyan accent bar on placeholders */
@@ -187,6 +322,167 @@
 }
 
 /* =========================================================================
+   LIGHTBOX — full-viewport fixed overlay, above everything
+   ========================================================================= */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 56px);
+}
+
+.lbBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 60% at 50% 42%, rgba(8, 26, 48, 0.7), transparent 75%),
+    rgba(4, 11, 22, 0.9);
+  backdrop-filter: blur(10px) saturate(0.9);
+  cursor: zoom-out;
+}
+
+/* The composed figure — stage well + caption rail */
+.lbDialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  width: min(1100px, 100%);
+  max-height: 100%;
+  margin: 0;
+}
+
+/* The image sits in a hairline-framed well on a sunken spotlight stage so it
+   matches the on-page treatment rather than floating as a raw rectangle. */
+.lbStage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: clamp(10px, 1.6vw, 20px);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-strong);
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(22, 73, 136, 0.4) 0%, rgba(8, 26, 48, 0) 64%),
+    var(--surface-sunken);
+  box-shadow: var(--elev-feature);
+  overflow: hidden;
+}
+
+.lbImg {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 230px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  filter: saturate(0.97) contrast(1.03);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+.lbCap {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding-inline: var(--sp-2);
+}
+.lbTag {
+  color: var(--accent-data);
+  font-size: 0.72rem;
+}
+.lbText {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  flex: 1 1 auto;
+}
+.lbCount {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* Controls */
+.lbClose {
+  position: absolute;
+  top: clamp(12px, 2.5vw, 28px);
+  right: clamp(12px, 2.5vw, 28px);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--text-primary);
+  background: rgba(8, 26, 48, 0.6);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lbClose:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: var(--accent-data);
+  transform: rotate(90deg);
+}
+
+.lbNav {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-top: -28px;
+  color: var(--text-primary);
+  background: rgba(8, 26, 48, 0.6);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+.lbNav:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: var(--accent-data);
+}
+.lbNav:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.lbPrev {
+  left: clamp(8px, 2.5vw, 32px);
+}
+.lbPrev svg {
+  transform: rotate(180deg);
+}
+.lbPrev:hover {
+  transform: translateX(-3px);
+}
+.lbNext {
+  right: clamp(8px, 2.5vw, 32px);
+}
+.lbNext:hover {
+  transform: translateX(3px);
+}
+
+/* =========================================================================
    Responsive — collapse cleanly to 2 then 1 column
    ========================================================================= */
 @media (max-width: 900px) {
@@ -197,6 +493,21 @@
   /* 'wide' would fill the whole 2-col row — keep it spanning both for impact */
   .wide {
     grid-column: span 2;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Nav buttons hug the screen edges so the image gets the room */
+  .lbNav {
+    width: 46px;
+    height: 46px;
+    margin-top: -23px;
+  }
+  .lbText {
+    font-size: var(--fs-body-lg);
+  }
+  .lbImg {
+    max-height: calc(100vh - 200px);
   }
 }
 
@@ -218,17 +529,33 @@
   .scrim {
     opacity: 0.9;
   }
+  .zoomCue {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tile,
+  .chip,
   .img,
   .scrim,
   .cap,
-  .tile::after {
+  .zoomCue,
+  .tile::after,
+  .lbClose,
+  .lbNav {
     transition: none;
   }
+  .tile:hover,
+  .tile:focus-within {
+    transform: none;
+  }
   .tile:hover .img,
-  .tile:focus-visible .img {
+  .tileBtn:focus-visible .img {
+    transform: none;
+  }
+  .lbClose:hover {
     transform: none;
   }
 }

@@ -1,5 +1,9 @@
 /* HERO — full-viewport first paint. Left-anchored copy, off-axis full-bleed
-   robot photo bleeding right, cool navy scrim keeps the type legible. */
+   robot photo bleeding right. The robot is composed into the scene rather than
+   pasted on a flat block: a cool-navy colour grade locked to the photo, a
+   multi-stop directional scrim that grades the text zone to deep void, a soft
+   spotlight behind the subject, a cinematic vignette + grounding floor, and a
+   whisper of film grain for atmosphere. */
 
 .hero {
   position: relative;
@@ -19,6 +23,13 @@
   z-index: -1;
 }
 
+/* Wrapper that owns the photo's transforms (parallax/scale) so the grade and
+   the photo move together as one composed plane. */
+.imageWrap {
+  position: absolute;
+  inset: 0;
+}
+
 .image {
   position: absolute;
   top: 0;
@@ -28,31 +39,88 @@
   height: 116%;
   object-fit: cover;
   object-position: 60% 28%;
-  will-change: transform;
+  /* Cool-navy cinematic grade: pull snapshots toward the palette */
+  filter: saturate(0.92) contrast(1.06) brightness(0.95);
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
-/* Cool navy scrim: opaque left (text zone) -> transparent right (image) */
+/* Colour grade locked to the photo. A cool navy multiply-style wash plus a
+   left-edge fade that dissolves the photo's hard inner edge into the void so
+   there's no visible rectangle seam where the image meets the text zone. */
+.grade {
+  position: absolute;
+  top: 0;
+  right: -6%;
+  width: 72%;
+  height: 116%;
+  pointer-events: none;
+  /* Tint toward navy, strongest in shadows */
+  background:
+    linear-gradient(90deg, var(--bg-void) 0%, rgba(6, 19, 37, 0) 34%),
+    linear-gradient(0deg, rgba(8, 26, 48, 0.55) 0%, rgba(8, 26, 48, 0) 46%),
+    radial-gradient(120% 100% at 70% 36%, rgba(22, 73, 136, 0.18), transparent 64%);
+  mix-blend-mode: normal;
+}
+
+/* Soft spotlight: a warm-cool glow brighter behind the robot, so it reads as
+   lit and emerging from the dark rather than evenly flat. */
+.spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      52% 58% at 68% 40%,
+      rgba(38, 92, 158, 0.4) 0%,
+      rgba(20, 58, 102, 0.16) 38%,
+      transparent 70%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+/* Directional scrim: opaque deep void at the text zone -> clear over the robot.
+   Multi-stop for a smooth, intentional fall-off (no banding, no hard line). */
 .scrim {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
     linear-gradient(
       100deg,
       var(--bg-void) 0%,
-      var(--bg-void) 28%,
-      rgba(6, 19, 37, 0.82) 46%,
-      rgba(6, 19, 37, 0.32) 66%,
-      rgba(11, 31, 58, 0.12) 100%
+      var(--bg-void) 26%,
+      rgba(6, 19, 37, 0.92) 40%,
+      rgba(6, 19, 37, 0.62) 54%,
+      rgba(7, 22, 42, 0.3) 70%,
+      rgba(9, 28, 52, 0.08) 86%,
+      transparent 100%
     );
 }
 
-/* Top + bottom feathering for nav legibility and a cinematic floor */
+/* Cinematic vignette + grounding floor. The radial darkens the frame corners;
+   the top gradient protects nav legibility; the bottom gradient anchors the
+   robot to a floor so it doesn't float, and blends into the page below. */
 .vignette {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
-    linear-gradient(to bottom, rgba(6, 19, 37, 0.7) 0%, transparent 22%),
-    linear-gradient(to top, var(--bg-void) 0%, transparent 30%);
+    radial-gradient(130% 120% at 62% 36%, transparent 52%, rgba(4, 12, 24, 0.55) 100%),
+    linear-gradient(to bottom, rgba(6, 19, 37, 0.72) 0%, transparent 20%),
+    linear-gradient(to top, var(--bg-void) 0%, rgba(6, 19, 37, 0.5) 12%, transparent 34%);
+}
+
+/* Whisper of film grain for atmosphere — keeps the photo from looking too clean
+   and helps the snapshot sit in the composed scene. Very low opacity. */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Floating game-piece accents (subtle, decorative) */
@@ -66,7 +134,8 @@
     #c98a10 100%
   );
   opacity: 0.5;
-  filter: blur(0.2px);
+  box-shadow: 0 0 18px rgba(245, 184, 46, 0.28);
+  will-change: transform;
   pointer-events: none;
 }
 .ball1 {
@@ -184,14 +253,22 @@
 .scrollCue:hover {
   color: var(--text-primary);
 }
+/* The chevron points down (arrowUp icon, rotated). Its bob is driven by GSAP
+   for smoother easing; the rotation lives here so the transform composes. */
 .scrollChevron {
   transform: rotate(180deg);
-  animation: hero-bob 2.4s ease-in-out infinite;
+  transform-origin: center;
 }
 .scrollCue:hover .scrollChevron {
   color: var(--accent-data);
 }
 
+/* Fallback bob for when JS/GSAP isn't running (still gated by reduced-motion). */
+@media (prefers-reduced-motion: no-preference) {
+  .scrollChevron {
+    animation: hero-bob 2.4s ease-in-out infinite;
+  }
+}
 @keyframes hero-bob {
   0%,
   100% {
@@ -204,9 +281,12 @@
 
 /* ---- Responsive --------------------------------------------------------- */
 @media (max-width: 900px) {
-  .image {
+  .image,
+  .grade {
     right: -18%;
     width: 96%;
+  }
+  .image {
     object-position: 64% 24%;
   }
   /* Stronger scrim so copy stays legible over more image */
@@ -214,9 +294,17 @@
     background: linear-gradient(
       100deg,
       var(--bg-void) 0%,
-      rgba(6, 19, 37, 0.92) 40%,
-      rgba(6, 19, 37, 0.62) 72%,
-      rgba(11, 31, 58, 0.32) 100%
+      rgba(6, 19, 37, 0.94) 38%,
+      rgba(6, 19, 37, 0.68) 62%,
+      rgba(8, 26, 48, 0.34) 84%,
+      transparent 100%
+    );
+  }
+  .spotlight {
+    background: radial-gradient(
+      62% 56% at 74% 40%,
+      rgba(38, 92, 158, 0.34) 0%,
+      transparent 72%
     );
   }
 }
@@ -226,20 +314,41 @@
     align-items: flex-end;
     min-height: 100svh;
   }
-  .image {
+  .image,
+  .grade {
     right: 0;
     width: 130%;
     height: 70%;
     top: 0;
+  }
+  .image {
     object-position: 60% 26%;
+  }
+  /* Vertical composition on mobile: robot up top, copy reads off a deep floor. */
+  .grade {
+    background:
+      linear-gradient(0deg, var(--bg-void) 0%, rgba(6, 19, 37, 0) 52%),
+      radial-gradient(120% 80% at 60% 28%, rgba(22, 73, 136, 0.16), transparent 66%);
   }
   .scrim {
     background: linear-gradient(
       to bottom,
-      rgba(6, 19, 37, 0.55) 0%,
-      rgba(6, 19, 37, 0.82) 46%,
+      rgba(6, 19, 37, 0.5) 0%,
+      rgba(6, 19, 37, 0.84) 48%,
       var(--bg-void) 78%
     );
+  }
+  .spotlight {
+    background: radial-gradient(
+      80% 42% at 58% 26%,
+      rgba(38, 92, 158, 0.32) 0%,
+      transparent 70%
+    );
+  }
+  .vignette {
+    background:
+      radial-gradient(120% 70% at 58% 24%, transparent 56%, rgba(4, 12, 24, 0.5) 100%),
+      linear-gradient(to bottom, rgba(6, 19, 37, 0.6) 0%, transparent 16%);
   }
   .inner {
     max-width: 100%;

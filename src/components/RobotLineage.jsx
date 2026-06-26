@@ -27,14 +27,49 @@ export default function RobotLineage() {
         const media = row.querySelector(`.${styles.mediaCol}`)
         const text = row.querySelector(`.${styles.textCol}`)
         const parts = [media, text].filter(Boolean)
+
+        // Columns lift + fade in, gently staggered.
         gsap.from(parts, {
           autoAlpha: 0,
           y: 44,
-          duration: 0.85,
-          ease: 'expo.out',
+          duration: 0.9,
+          ease: 'power4.out',
           stagger: 0.12,
           scrollTrigger: { trigger: row, start: 'top 82%', once: true },
         })
+
+        // The staged photo settles in: a subtle scale-in (1.045 → 1) on the
+        // image inside its lit well, so it reads as composed, not pasted.
+        const photo = row.querySelector(`.${styles.photo}`)
+        if (photo) {
+          gsap.from(photo, {
+            scale: 1.045,
+            autoAlpha: 0,
+            duration: 1.1,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: row, start: 'top 82%', once: true },
+          })
+        }
+
+        // Tasteful scrub parallax: the well drifts a hair as the row passes,
+        // giving the staged subject real depth against the blueprint.
+        const well = row.querySelector(`.${styles.stage}`)
+        if (well) {
+          gsap.fromTo(
+            well,
+            { y: 26 },
+            {
+              y: -26,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: row,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.6,
+              },
+            }
+          )
+        }
       })
     },
     { scope: root }
@@ -60,11 +95,14 @@ export default function RobotLineage() {
 }
 
 function Row({ robot, index, total }) {
-  const { name, book, season, year, game, status, result, blurb, image, current } = robot
+  const { name, book, season, year, game, status, result, blurb, image, current, subtitle, specs } =
+    robot
   const champion = status === 'champion'
   const build = status === 'build'
   // Even rows: image left / text right. Odd rows: text left / image right.
   const mirrored = index % 2 === 1
+  // Lead with the real mechanism specs — top 2–3 as compact mono chips.
+  const topSpecs = (specs || []).slice(0, 3)
 
   return (
     <article
@@ -79,19 +117,28 @@ function Row({ robot, index, total }) {
       <div className={styles.mediaCol}>
         {image ? (
           <figure className={`hud-frame ${styles.frame}`}>
-            <div className={styles.frameInner}>
-              <img
-                className={styles.photo}
-                src={image}
-                alt={`${name} — Team 5805's ${year} ${game} robot`}
-                loading="lazy"
-                decoding="async"
-              />
+            {/* Staged well: spotlight + blueprint backdrop, subject grounded
+                with a soft reflection so it sits in space, never pasted. */}
+            <div className={styles.stage}>
+              <span className={styles.spot} aria-hidden="true" />
+              <span className={styles.grid} aria-hidden="true" />
+              <div className={styles.subject}>
+                <img
+                  className={styles.photo}
+                  src={image}
+                  alt={`${name} — Team 5805's ${year} ${game} robot`}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className={styles.shadow} aria-hidden="true" />
+              </div>
             </div>
           </figure>
         ) : (
           <figure className={`hud-frame ${styles.frame} ${styles.plateFrame}`}>
-            <div className={`${styles.frameInner} ${styles.plate}`} aria-hidden="true">
+            <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
+              <span className={styles.spot} />
+              <span className={styles.grid} />
               <span className={`num-ghost ${styles.plateGhost}`}>{romanFor(index)}</span>
               <span className={styles.plateYear}>{year}</span>
               <span className={styles.plateBook}>{book}</span>
@@ -123,7 +170,20 @@ function Row({ robot, index, total }) {
           )}
         </div>
 
+        {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+
         <span className={`data-tag ${styles.game}`}>{game}</span>
+
+        {topSpecs.length > 0 && (
+          <dl className={styles.specChips}>
+            {topSpecs.map((s) => (
+              <div className={styles.specChip} key={s.label}>
+                <dt className={styles.specChipKey}>{s.label}</dt>
+                <dd className={styles.specChipVal}>{s.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
 
         <p
           className={[

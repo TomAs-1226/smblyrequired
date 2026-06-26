@@ -49,45 +49,127 @@
   display: block;
   padding: clamp(12px, 1.6vw, 22px);
   background:
-    radial-gradient(120% 120% at 50% 0%, rgba(22, 73, 136, 0.32), transparent 62%),
-    var(--surface-sunken);
+    linear-gradient(180deg, var(--surface-1), var(--surface-sunken));
   border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
   border-radius: var(--r-lg);
-  box-shadow: var(--elev-2);
+  box-shadow: var(--elev-feature);
 }
-/* Inner well: blueprint grid behind a centered, uncropped subject. */
-.frameInner {
+/* Champions: a quiet gold top edge on the frame. */
+.isChampion {
+  border-top: 2px solid var(--accent-gold);
+}
+
+/* =========================================================================
+   The STAGE — a lit well the robot is composed onto (not pasted into).
+   Deep sunken base · blueprint grid (fades at center) · soft spotlight behind
+   the subject · subject with grounding reflection · hairline edge blend.
+   ========================================================================= */
+.stage {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   min-height: clamp(300px, 46vh, 540px);
-  padding: clamp(16px, 2.4vw, 34px);
+  padding: clamp(22px, 3vw, 44px) clamp(16px, 2.4vw, 34px) clamp(16px, 2.2vw, 30px);
+  background:
+    radial-gradient(120% 80% at 50% 116%, rgba(8, 26, 48, 0.9), transparent 60%),
+    linear-gradient(180deg, var(--surface-1) 0%, var(--surface-sunken) 70%);
+  background-color: var(--surface-sunken);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  isolation: isolate;
+  will-change: transform;
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   background-image:
     linear-gradient(var(--border-hairline) 1px, transparent 1px),
     linear-gradient(90deg, var(--border-hairline) 1px, transparent 1px);
   background-size: 40px 40px;
   background-position: center;
-  border-radius: var(--r-md);
-  overflow: hidden;
+  -webkit-mask-image: radial-gradient(78% 78% at 50% 42%, transparent 8%, #000 76%);
+  mask-image: radial-gradient(78% 78% at 50% 42%, transparent 8%, #000 76%);
+  pointer-events: none;
 }
-.frameInner::before {
+.spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(56% 56% at 50% 40%, rgba(46, 125, 246, 0.24), transparent 70%),
+    radial-gradient(70% 64% at 50% 38%, rgba(199, 210, 221, 0.08), transparent 72%);
+  pointer-events: none;
+  transition: filter 0.4s ease;
+}
+.isChampion .spot {
+  background:
+    radial-gradient(56% 56% at 50% 40%, rgba(46, 125, 246, 0.2), transparent 70%),
+    radial-gradient(64% 58% at 50% 42%, rgba(245, 184, 46, 0.11), transparent 74%);
+}
+.stage::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(80% 80% at 50% 50%, var(--surface-sunken) 12%, transparent 72%);
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--border-hairline),
+    inset 0 44px 70px -38px rgba(6, 19, 37, 0.9),
+    inset 0 -34px 56px -32px rgba(6, 19, 37, 0.85);
   pointer-events: none;
 }
 
-/* The robot photo — NEVER cropped. */
+.subject {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* The robot photo — NEVER cropped. Cool-navy grade + grounding drop-shadow so
+   the snapshot reads as a staged product shot in the team palette. */
 .photo {
   position: relative;
   z-index: 1;
   width: 100%;
   height: auto;
-  max-height: clamp(340px, 56vh, 620px);
+  max-height: clamp(330px, 54vh, 600px);
   object-fit: contain;
-  filter: saturate(0.96) contrast(1.03);
+  filter: saturate(0.95) contrast(1.04) brightness(0.98)
+    drop-shadow(0 26px 30px rgba(6, 19, 37, 0.55));
+  transform-origin: center bottom;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+.frame:hover .photo {
+  transform: scale(1.03) translateY(-5px);
+  filter: saturate(0.97) contrast(1.05) brightness(1)
+    drop-shadow(0 32px 36px rgba(6, 19, 37, 0.6));
+}
+.frame:hover .spot {
+  filter: brightness(1.18);
+}
+
+/* Grounding reflection — soft elliptical contact shadow under the subject. */
+.shadow {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(-6px, -0.6vw, -2px);
+  transform: translateX(-50%);
+  width: 70%;
+  height: 28px;
+  z-index: 0;
+  background: radial-gradient(closest-side, rgba(6, 19, 37, 0.78), transparent 78%);
+  filter: blur(8px);
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+.frame:hover .shadow {
+  transform: translateX(-50%) scaleX(1.06);
+  opacity: 0.82;
 }
 
 /* Mono telemetry caption under the frame */
@@ -112,8 +194,10 @@
 }
 
 /* --- Typographic plate (no photo) --- */
-.plateFrame .frameInner {
+.plateFrame .stage {
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   min-height: clamp(340px, 50vh, 560px);
 }
@@ -163,6 +247,18 @@
 .name {
   font-size: var(--fs-h1);
   margin-top: var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+
+/* Subtitle — descriptor line under the robot name. */
+.subtitle {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-h3);
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+  color: var(--text-body);
+  max-width: 32ch;
   margin-bottom: var(--sp-4);
 }
 
@@ -281,8 +377,9 @@
 }
 .specVal {
   font-family: var(--font-mono);
-  font-size: var(--fs-small);
+  font-size: 0.92rem;
   line-height: 1.5;
+  letter-spacing: -0.005em;
   color: var(--text-primary);
 }
 
@@ -429,9 +526,9 @@
   .frame {
     padding: 10px;
   }
-  .frameInner {
+  .stage {
     min-height: 260px;
-    padding: var(--sp-3);
+    padding: var(--sp-4) var(--sp-3) var(--sp-3);
   }
 }
 
@@ -443,7 +540,10 @@
   .back span,
   .pagerLink,
   .pagerArrow,
-  .pagerArrowBack {
+  .pagerArrowBack,
+  .photo,
+  .shadow,
+  .spot {
     transition: none;
   }
 }

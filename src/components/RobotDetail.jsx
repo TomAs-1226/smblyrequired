@@ -20,19 +20,56 @@ const slugOf = (name) => name.toLowerCase()
 export default function RobotDetail({ slug }) {
   const index = robots.findIndex((r) => slugOf(r.name) === slug)
   const robot = index === -1 ? null : robots[index]
+  const mediaRef = useRef(null)
+
+  // Staged-photo reveal + gentle scrub parallax for the hero shot. Hooks must
+  // run unconditionally; the body is a no-op when there's no photo/motion.
+  useGSAP(
+    () => {
+      if (prefersReducedMotion() || !mediaRef.current) return
+      const stage = mediaRef.current.querySelector(`.${styles.stage}`)
+      const photo = mediaRef.current.querySelector(`.${styles.photo}`)
+      if (photo) {
+        gsap.from(photo, {
+          scale: 1.05,
+          autoAlpha: 0,
+          duration: 1.15,
+          ease: 'expo.out',
+        })
+      }
+      if (stage) {
+        gsap.fromTo(
+          stage,
+          { y: 22 },
+          {
+            y: -22,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: mediaRef.current,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.6,
+            },
+          }
+        )
+      }
+    },
+    { scope: mediaRef, dependencies: [slug] }
+  )
 
   if (!robot) return <NotFound slug={slug} />
 
-  const { name, book, season, year, game, status, result, blurb, image, current } = robot
+  const { name, book, season, year, game, status, result, blurb, image, current, subtitle } = robot
   const champion = status === 'champion'
   const build = status === 'build'
   const prev = index > 0 ? robots[index - 1] : null
   const next = index < robots.length - 1 ? robots[index + 1] : null
 
+  // Lead with the real mechanism specs from the data, then round out the grid
+  // with the season/result context. Keeps the page driven by what's on the bot.
   const specs = [
+    ...(robot.specs || []),
     { label: 'Season', value: season },
-    { label: 'Game', value: game },
-    { label: 'Year', value: String(year) },
     { label: 'Result', value: result },
   ]
 
@@ -44,16 +81,23 @@ export default function RobotDetail({ slug }) {
 
       <div className={styles.layout}>
         {/* --- Media: real photo (never cropped) or typographic plate --- */}
-        <div className={styles.mediaCol}>
+        <div className={styles.mediaCol} ref={mediaRef}>
           {image ? (
-            <figure className={`hud-frame ${styles.frame}`}>
-              <div className={styles.frameInner}>
-                <img
-                  className={styles.photo}
-                  src={image}
-                  alt={`${name} — Team 5805's ${year} ${game} robot`}
-                  decoding="async"
-                />
+            <figure className={`hud-frame ${styles.frame} ${champion ? styles.isChampion : ''}`}>
+              {/* Staged well: spotlight + blueprint backdrop, subject grounded
+                  with a soft reflection so it reads as a staged shot. */}
+              <div className={styles.stage}>
+                <span className={styles.spot} aria-hidden="true" />
+                <span className={styles.grid} aria-hidden="true" />
+                <div className={styles.subject}>
+                  <img
+                    className={styles.photo}
+                    src={image}
+                    alt={`${name} — Team 5805's ${year} ${game} robot`}
+                    decoding="async"
+                  />
+                  <span className={styles.shadow} aria-hidden="true" />
+                </div>
               </div>
               <figcaption className={styles.frameCap}>
                 <span className={styles.frameTick} aria-hidden="true" />
@@ -62,7 +106,9 @@ export default function RobotDetail({ slug }) {
             </figure>
           ) : (
             <figure className={`hud-frame ${styles.frame} ${styles.plateFrame}`}>
-              <div className={`${styles.frameInner} ${styles.plate}`} aria-hidden="true">
+              <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
+                <span className={styles.spot} />
+                <span className={styles.grid} />
                 <span className={`num-ghost ${styles.plateGhost}`}>
                   {ROMAN[index] || index + 1}
                 </span>
@@ -82,6 +128,12 @@ export default function RobotDetail({ slug }) {
           <SplitHeading as="h1" className={styles.name}>
             {name}
           </SplitHeading>
+
+          {subtitle && (
+            <Reveal y={16}>
+              <p className={styles.subtitle}>{subtitle}</p>
+            </Reveal>
+          )}
 
           <span className={`data-tag ${styles.game}`}>{game}</span>
 
