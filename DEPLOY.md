@@ -1,39 +1,52 @@
-# Deploying the Team 5805 site to smblyrequired.com
+# Deploying / updating the Team 5805 site
 
-This is a static site (`npm run build` → `dist/`, relative asset paths, hash routing),
-so it hosts anywhere with **no server config**. Recommended: **Cloudflare Pages** (free,
-fast, easy custom domain, auto-HTTPS, auto-deploy on every push).
+## ✅ Live now
 
-## Option A — Cloudflare Pages (recommended)
+- **Site:** https://tomas-1226.github.io/smblyrequired/
+- **Repo:** https://github.com/TomAs-1226/smblyrequired
+- **Host:** GitHub Pages, served from the `gh-pages` branch.
 
-1. Push this folder to a GitHub repo (e.g. `team5805/website`).
-2. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git** → pick the repo.
-3. Build settings:
-   - **Framework preset:** Vite (or None)
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-4. Deploy. You'll get a `*.pages.dev` URL to preview.
-5. **Custom domain:** Pages project → **Custom domains → Set up a domain →** `smblyrequired.com`
-   (and `www.smblyrequired.com`). Cloudflare adds the DNS records automatically if the domain's
-   nameservers are on Cloudflare; otherwise add the CNAME it shows you at your DNS provider.
+## Update the live site (one command)
 
-Every `git push` to the main branch now redeploys automatically.
+```bash
+npm run deploy
+```
 
-## Option B — Netlify
+That runs `vite build` and pushes `dist/` to the `gh-pages` branch — GitHub Pages
+redeploys in ~30–60s. (Source code lives on `main`; the built site lives on `gh-pages`.)
 
-1. Push to GitHub (or drag-and-drop the `dist/` folder at app.netlify.com/drop).
-2. New site from Git → build command `npm run build`, publish directory `dist`.
-3. Domain settings → add custom domain `smblyrequired.com` → follow the DNS instructions.
+To change content first, edit `src/data/*.js`, then `npm run deploy` (see `README.md`).
 
-## Option C — GitHub Pages
+## Putting it on the custom domain `smblyrequired.com`
 
-1. Push to GitHub. In repo Settings → Pages, deploy from a GitHub Action (Vite static).
-2. Add `smblyrequired.com` as the custom domain (creates a `CNAME` file).
-   Note: `vite.config.js` already uses `base: './'`, so it works from a project subpath too.
+The site is ready for the domain — this is the only step that needs your DNS provider
+(only the domain owner can change DNS). At your registrar / DNS host, add:
+
+| Type  | Name  | Value                 |
+|-------|-------|-----------------------|
+| A     | `@`   | `185.199.108.153`     |
+| A     | `@`   | `185.199.109.153`     |
+| A     | `@`   | `185.199.110.153`     |
+| A     | `@`   | `185.199.111.153`     |
+| CNAME | `www` | `tomas-1226.github.io`|
+
+(On Cloudflare use the same records with proxy **off / DNS only**.)
+
+Then enable the custom domain (either tell Claude to do it, or run):
+
+```bash
+# add the CNAME file so Pages serves the domain, and set it in repo settings
+echo "smblyrequired.com" > public/CNAME && npm run deploy
+gh api -X PUT repos/TomAs-1226/smblyrequired/pages -f cname=smblyrequired.com -F https_enforced=true
+```
+
+GitHub provisions HTTPS automatically once DNS resolves. After this, the `github.io`
+URL redirects to `smblyrequired.com`.
 
 ## Notes
 
-- `public/_redirects` provides an SPA fallback (used by Netlify/Cloudflare Pages). Harmless elsewhere.
-- No environment variables or secrets are required — the site is fully static.
-- The Blue Alliance data is baked in at build time (in `src/data/`), so no API key ships to the browser.
-- To update content, edit `src/data/*.js` and push — see `README.md`.
+- `vite.config.js` uses `base: './'` (relative), so the build works at the Pages
+  subpath **and** at the apex domain with no changes.
+- Hash routing means no server rewrites are needed. `public/_redirects` is a harmless
+  SPA fallback for Netlify/Cloudflare if you ever switch hosts.
+- The Blue Alliance data is baked in at build time — no API key ships to the browser.
