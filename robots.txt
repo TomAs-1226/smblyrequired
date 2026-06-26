@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://smblyrequired.com/sitemap.xml
+Sitemap: https://frc5805.com/sitemap.xml
