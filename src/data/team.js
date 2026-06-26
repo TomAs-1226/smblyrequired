@@ -10,7 +10,7 @@ export const team = {
   founded: 2016,
   foundedNote: 'Founded in the 2015–16 season',
   program: 'FIRST® Robotics Competition',
-  website: 'https://smblyrequired.com/',
+  website: 'https://frc5805.com/',
   currentGame: 'REBUILT',
   currentSeason: '2026',
   rookieYear: 2016,

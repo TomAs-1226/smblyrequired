@@ -17,7 +17,7 @@ redeploys in ~30–60s. (Source code lives on `main`; the built site lives on `g
 
 To change content first, edit `src/data/*.js`, then `npm run deploy` (see `README.md`).
 
-## Putting it on the custom domain `smblyrequired.com`
+## Putting it on the custom domain `frc5805.com`
 
 The site is ready for the domain — this is the only step that needs your DNS provider
 (only the domain owner can change DNS). At your registrar / DNS host, add:
@@ -36,12 +36,12 @@ Then enable the custom domain (either tell Claude to do it, or run):
 
 ```bash
 # add the CNAME file so Pages serves the domain, and set it in repo settings
-echo "smblyrequired.com" > public/CNAME && npm run deploy
-gh api -X PUT repos/TomAs-1226/smblyrequired/pages -f cname=smblyrequired.com -F https_enforced=true
+echo "frc5805.com" > public/CNAME && npm run deploy
+gh api -X PUT repos/TomAs-1226/smblyrequired/pages -f cname=frc5805.com -F https_enforced=true
 ```
 
 GitHub provisions HTTPS automatically once DNS resolves. After this, the `github.io`
-URL redirects to `smblyrequired.com`.
+URL redirects to `frc5805.com`.
 
 ## Notes
 
