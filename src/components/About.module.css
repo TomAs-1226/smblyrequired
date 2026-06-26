@@ -193,14 +193,15 @@
 .bandImgWrap {
   position: relative;
   width: 100%;
-  height: clamp(300px, 56vh, 620px);
+  height: clamp(440px, 78vh, 860px);
   overflow: hidden;
 }
 .bandImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 32%;
+  /* bias toward the top so heads (and the mentor) are never cropped */
+  object-position: center 18%;
   /* cool navy grade */
   filter: saturate(0.92) contrast(1.04);
   will-change: transform;

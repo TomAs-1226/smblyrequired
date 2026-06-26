@@ -121,6 +121,15 @@
   transform: scaleX(1);
 }
 
+/* Active route */
+.linkActive {
+  color: var(--text-primary);
+}
+.linkActive::after {
+  transform: scaleX(1);
+  background: var(--accent-gold);
+}
+
 /* Small gold CTA — single nav action */
 .cta {
   padding: 10px 18px;

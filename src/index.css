@@ -501,6 +501,28 @@ button {
   background-size: 48px 48px;
 }
 
+/* --- Multi-page routing --- */
+.page {
+  display: block;
+}
+/* Subpages start below the fixed nav (the Home hero clears it itself). */
+.page--sub {
+  padding-top: var(--nav-h);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page {
+    animation: pageIn 0.5s ease both;
+  }
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn,
   .card,

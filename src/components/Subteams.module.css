@@ -1,0 +1,172 @@
+/* =========================================================================
+   Subteams — "JOIN THE TEAM" (FIND YOUR LANE)
+   Asymmetric intro spine (left) + non-uniform tile grid (right). The first
+   tile reads as a tall lead column; the rest are hairline-ruled tiles with a
+   cyan top-wipe on hover (echoing About's pillars). Mono index tags = telemetry.
+   ========================================================================= */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: clamp(40px, 6vw, 104px);
+  align-items: start;
+}
+
+/* --- Left: intro spine (sticks while the grid scrolls past on desktop) --- */
+.intro {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sp-6));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 9ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.cta {
+  margin-top: var(--sp-6);
+}
+
+/* --- Right: subteam grid — first tile spans tall to break the rigid grid --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+/* Lead tile occupies the tall left column across two rows */
+.grid > *:first-child {
+  grid-row: 1 / span 2;
+  justify-content: flex-end;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border-top: 1px solid var(--border-strong);
+  border-left: 2px solid var(--accent-data);
+}
+.grid > *:first-child .tileIcon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: auto;
+}
+.grid > *:first-child .tileName {
+  margin-top: var(--sp-5);
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+}
+/* Cyan top-rule wipe — the house hover signature */
+.tile::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tile:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.tile:hover::before {
+  width: 52px;
+}
+
+.index {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.tileIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  margin-bottom: var(--sp-4);
+  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tile:hover .tileIcon {
+  background: rgba(56, 189, 248, 0.16);
+  transform: translateY(-3px);
+}
+
+.tileName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--sp-2);
+}
+.grid > *:first-child .tileName {
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+}
+.tileBody {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 38ch;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--sp-6);
+  }
+  .intro {
+    position: static;
+    max-width: 60ch;
+  }
+  .heading {
+    max-width: none;
+  }
+  .cta {
+    margin-top: var(--sp-5);
+  }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  /* On one column the lead tile no longer needs to span rows */
+  .grid > *:first-child {
+    grid-row: auto;
+  }
+  .grid > *:first-child .tileIcon {
+    margin-bottom: var(--sp-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .tileIcon,
+  .tile::before {
+    transition: none;
+  }
+}

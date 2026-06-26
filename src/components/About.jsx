@@ -33,10 +33,10 @@ export default function About() {
       // Subtle parallax + scale settle on the full-bleed team band.
       gsap.fromTo(
         img,
-        { scale: 1.18, yPercent: -6 },
+        { scale: 1.06, yPercent: -3 },
         {
-          scale: 1.04,
-          yPercent: 6,
+          scale: 1.0,
+          yPercent: 3,
           ease: 'none',
           scrollTrigger: {
             trigger: img.parentElement,

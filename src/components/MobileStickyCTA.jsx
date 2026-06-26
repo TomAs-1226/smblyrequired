@@ -1,36 +1,20 @@
-import { useEffect, useState } from 'react'
-import { scrollTo } from '../lib/smoothScroll'
 import Icon from './Icon'
+import { useRoute } from '../hooks/useRoute'
 import styles from './MobileStickyCTA.module.css'
 
-// Bottom-docked single primary action on mobile. Appears after the hero,
-// hides near the contact section so it never covers the form/footer.
+// Bottom-docked primary action on mobile (hidden on desktop via CSS). Persists
+// across pages, except on the Sponsor/Contact pages where it'd be redundant.
 export default function MobileStickyCTA() {
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      const contact = document.getElementById('contact')
-      const nearEnd = contact ? y + window.innerHeight > contact.offsetTop + 80 : false
-      setShow(y > window.innerHeight * 0.8 && !nearEnd)
-    }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const raw = useRoute()
+  const path = raw !== '/' ? raw.replace(/\/+$/, '') : '/'
+  const hide = path === '/sponsor' || path === '/contact'
 
   return (
-    <div className={`${styles.dock} ${show ? styles.show : ''}`} aria-hidden={!show}>
-      <button
-        type="button"
-        className="btn btn--gold"
-        tabIndex={show ? 0 : -1}
-        onClick={() => scrollTo('#sponsor')}
-      >
+    <div className={`${styles.dock} ${hide ? '' : styles.show}`} aria-hidden={hide}>
+      <a href="#/sponsor" className="btn btn--gold" tabIndex={hide ? -1 : 0}>
         Become a sponsor
         <Icon name="arrowRight" className="arrow" size={18} />
-      </button>
+      </a>
     </div>
   )
 }

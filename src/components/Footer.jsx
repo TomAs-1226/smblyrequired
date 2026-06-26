@@ -7,12 +7,13 @@ import styles from './Footer.module.css'
 
 // Section anchors mirrored from the page nav (a couple are still being built).
 const NAV = [
-  { href: '#robots', label: 'Robots' },
-  { href: '#sponsor', label: 'Sponsor' },
-  { href: '#partnership', label: 'Partnership' },
-  { href: '#impact', label: 'Impact' },
-  { href: '#team', label: 'Team' },
-  { href: '#contact', label: 'Contact' },
+  { href: '#/team', label: 'Team' },
+  { href: '#/robots', label: 'Robots' },
+  { href: '#/season', label: 'Season' },
+  { href: '#/sponsor', label: 'Sponsor' },
+  { href: '#/catalyst', label: 'Catalyst' },
+  { href: '#/gallery', label: 'Gallery' },
+  { href: '#/contact', label: 'Contact' },
 ]
 
 // School/program socials — generic hrefs for now, wired later.
@@ -38,7 +39,7 @@ export default function Footer() {
         <Reveal className={styles.grid} stagger={0.07} y={26}>
           {/* (1) Brand lockup — heavy left column */}
           <div className={styles.brandCol}>
-            <a href="#top" className={styles.brand} aria-label={`${team.name} — home`}>
+            <a href="#/" className={styles.brand} aria-label={`${team.name} — home`}>
               {/* Full color logo lives on a light plate — it's blue artwork */}
               <span className={styles.logoPlate}>
                 <img
@@ -97,7 +98,7 @@ export default function Footer() {
             <h2 className={styles.colTitle}>Connect</h2>
             <MagneticButton
               as="a"
-              href="#sponsor"
+              href="#/sponsor"
               className={`btn btn--gold ${styles.cta}`}
             >
               Sponsor Us

@@ -1,0 +1,196 @@
+/* =========================================================================
+   Resources — "OPEN SOURCE & RESOURCES" (WE SHARE WHAT WE LEARN)
+   Renders below the FRC Catalyst showcase on the Catalyst page. Clean grid of
+   link cards (Catalyst-icon → Oswald title → desc → cta), capped by a gold
+   Open Alliance note bar tied to the FIRST Impact knowledge-sharing criterion.
+   Left-anchored, real hover states, reduced-motion safe.
+   ========================================================================= */
+
+/* --- Header: editorial spine, narrative, lead --- */
+.head {
+  max-width: 60ch;
+}
+.heading {
+  font-size: var(--fs-h2);
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.leadWrap {
+  display: block;
+}
+
+/* --- Link-card grid --- */
+.grid {
+  margin-top: clamp(40px, 6vw, 72px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 2.6vw, 36px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text-body);
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
+    background 0.3s, box-shadow 0.3s;
+}
+/* Cyan top tick that grows on hover — the house micro-interaction */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  box-shadow: var(--elev-2);
+}
+.card:hover::before,
+.card:focus-visible::before {
+  width: 56px;
+}
+
+.cardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  margin-bottom: var(--sp-4);
+  flex: none;
+  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover .cardIcon,
+.card:focus-visible .cardIcon {
+  background: rgba(56, 189, 248, 0.16);
+  transform: translateY(-3px);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+}
+.cardDesc {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 44ch;
+}
+
+/* CTA link — pushed to the card foot, gold on hover */
+.cardCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: var(--sp-5);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  transition: color 0.3s ease;
+}
+.card:hover .cardCta,
+.card:focus-visible .cardCta {
+  color: var(--accent-gold-hi);
+}
+.cardCta :global(.arrow) {
+  flex: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover .cardCta :global(.arrow),
+.card:focus-visible .cardCta :global(.arrow) {
+  transform: translateX(4px);
+}
+
+/* --- Open Alliance note bar — gold accent, ties to FIRST Impact --- */
+.noteWrap {
+  margin-top: clamp(40px, 6vw, 72px);
+}
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 2vw, 24px);
+  padding: clamp(24px, 2.6vw, 36px);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.noteIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  flex: none;
+}
+.noteText {
+  font-size: var(--fs-body-lg);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 64ch;
+}
+.noteLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: var(--sp-1);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .note {
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardIcon,
+  .card::before,
+  .cardCta,
+  .cardCta :global(.arrow) {
+    transition: none;
+  }
+}

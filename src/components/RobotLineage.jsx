@@ -7,137 +7,110 @@ import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Icon from './Icon'
 import { robots, lineageNote } from '../data/robots'
+import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotLineage.module.css'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-// THE signature pinned moment: on desktop the four robot panels are pinned and
-// horizontally scrubbed; on mobile / reduced-motion they fall back to a plain
-// vertical card stack. Real text lives in the DOM either way (SEO + no-JS safe).
+// Clean, READABLE vertical lineage. Four robots as large editorial rows that
+// alternate sides (image left / text right, then mirrored). No pin, no scrub —
+// every row is real text in the DOM (SEO + no-JS safe) and just gently reveals
+// on scroll. The pinned horizontal version was too tall and unreadable.
 export default function RobotLineage() {
-  const pinWrap = useRef(null)
-  const track = useRef(null)
+  const root = useRef(null)
 
   useGSAP(
     () => {
-      const wrap = pinWrap.current
-      const inner = track.current
-      if (!wrap || !inner) return
-
-      const mm = gsap.matchMedia()
-
-      // Desktop, motion OK: pin + horizontal scrub of the track.
-      mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
-        const panels = inner.children.length
-        const distance = () => inner.scrollWidth - window.innerWidth
-
-        const tween = gsap.to(inner, {
-          x: () => -distance(),
-          ease: 'none',
-          scrollTrigger: {
-            trigger: wrap,
-            start: 'top top',
-            end: () => '+=' + distance(),
-            pin: true,
-            anticipatePin: 1,
-            scrub: 1,
-            invalidateOnRefresh: true,
-            snap: panels > 1 ? { snapTo: 1 / (panels - 1), duration: 0.35, ease: 'power1.inOut' } : false,
-          },
+      if (prefersReducedMotion()) return
+      const rows = gsap.utils.toArray(`.${styles.row}`)
+      rows.forEach((row) => {
+        const media = row.querySelector(`.${styles.mediaCol}`)
+        const text = row.querySelector(`.${styles.textCol}`)
+        const parts = [media, text].filter(Boolean)
+        gsap.from(parts, {
+          autoAlpha: 0,
+          y: 44,
+          duration: 0.85,
+          ease: 'expo.out',
+          stagger: 0.12,
+          scrollTrigger: { trigger: row, start: 'top 82%', once: true },
         })
-
-        return () => tween.kill()
       })
-
-      // Mobile / reduced-motion: stagger the stacked cards in on scroll.
-      // (Each panel as a card — the desktop pin branch above owns its motion,
-      //  so this branch only stacks + lifts.) Reduced-motion lands on final state.
-      mm.add('(max-width: 767px) and (prefers-reduced-motion: no-preference)', () => {
-        const panels = gsap.utils.toArray(inner.children)
-        const anims = panels.map((p) =>
-          gsap.from(p, {
-            autoAlpha: 0,
-            y: 48,
-            duration: 0.8,
-            ease: 'expo.out',
-            scrollTrigger: { trigger: p, start: 'top 88%', once: true },
-          })
-        )
-        return () => anims.forEach((a) => a.kill())
-      })
-
-      return () => mm.revert()
     },
-    { scope: pinWrap }
+    { scope: root }
   )
 
   return (
-    <Section id="robots" bleed className={styles.section}>
-      <div className={`container ${styles.intro}`}>
-        <Eyebrow num="02">The robots</Eyebrow>
-        <div className={styles.introGrid}>
-          <SplitHeading as="h2" className={styles.heading}>
-            Named for the Books.
-          </SplitHeading>
-          <p className={`lead ${styles.note}`}>{lineageNote}</p>
-        </div>
+    <Section id="robots" className={styles.section}>
+      <div className={styles.intro}>
+        <Eyebrow>The robots</Eyebrow>
+        <SplitHeading as="h2" className={styles.heading}>
+          Named for the Books.
+        </SplitHeading>
+        <p className={`lead ${styles.note}`}>{lineageNote}</p>
       </div>
 
-      {/* DESKTOP: pinned horizontal track. MOBILE/reduced: vertical stack
-          (CSS turns the track into a column; the pin matchMedia simply never
-          fires below 768px or when motion is reduced). */}
-      <div ref={pinWrap} className={styles.pinWrap}>
-        <div ref={track} className={styles.track}>
-          {robots.map((r, i) => (
-            <Panel key={r.name} robot={r} index={i} total={robots.length} />
-          ))}
-        </div>
+      <div className={styles.lineage} ref={root}>
+        {robots.map((r, i) => (
+          <Row key={r.name} robot={r} index={i} total={robots.length} />
+        ))}
       </div>
     </Section>
   )
 }
 
-function Panel({ robot, index, total }) {
-  const { name, book, season, year, status, result, blurb, image, current } = robot
+function Row({ robot, index, total }) {
+  const { name, book, season, year, game, status, result, blurb, image, current } = robot
   const champion = status === 'champion'
   const build = status === 'build'
+  // Even rows: image left / text right. Odd rows: text left / image right.
+  const mirrored = index % 2 === 1
 
-  // Each panel is a real <article> with an <h3> nameplate — visible in the DOM
-  // with no JS. Desktop motion is the pin scrub; mobile motion is the stagger in
-  // the parent's matchMedia. The outer div only carries slide/stack layout.
   return (
-    <div className={styles.panelOuter}>
     <article
       className={[
-        styles.panel,
+        styles.row,
+        mirrored && styles.rowMirror,
         champion && styles.isChampion,
-        build && styles.isBuild,
-        image && styles.hasImage,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {image ? (
-        <div className={styles.media} aria-hidden="true">
-          <img src={image} alt="" loading="lazy" />
-          <span className={styles.mediaScrim} />
-        </div>
-      ) : (
-        <div className={styles.glyph} aria-hidden="true">
-          <span className={styles.glyphYear}>{year}</span>
-          <span className={styles.glyphNum}>{romanFor(index)}</span>
-        </div>
-      )}
+      <div className={styles.mediaCol}>
+        {image ? (
+          <figure className={`hud-frame ${styles.frame}`}>
+            <div className={styles.frameInner}>
+              <img
+                className={styles.photo}
+                src={image}
+                alt={`${name} — Team 5805's ${year} ${game} robot`}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </figure>
+        ) : (
+          <figure className={`hud-frame ${styles.frame} ${styles.plateFrame}`}>
+            <div className={`${styles.frameInner} ${styles.plate}`} aria-hidden="true">
+              <span className={`num-ghost ${styles.plateGhost}`}>{romanFor(index)}</span>
+              <span className={styles.plateYear}>{year}</span>
+              <span className={styles.plateBook}>{book}</span>
+            </div>
+          </figure>
+        )}
+      </div>
 
-      <div className={styles.body}>
-        <div className={styles.plateRow}>
-          <span className={styles.bookLabel}>
-            {book}
-            <span className={styles.bookDot} aria-hidden="true">
-              ·
-            </span>
-            {season}
+      <div className={styles.textCol}>
+        <p className={styles.bookLine}>
+          <span className={styles.bookName}>{book}</span>
+          <span className={styles.bookDot} aria-hidden="true">
+            ·
           </span>
+          <span>{season}</span>
+        </p>
+
+        <div className={styles.nameRow}>
+          <h3 className={styles.name}>{name}</h3>
           {current && (
             <span className={styles.current}>
               <span className={styles.currentDot} aria-hidden="true" />
@@ -146,7 +119,7 @@ function Panel({ robot, index, total }) {
           )}
         </div>
 
-        <h3 className={styles.name}>{name}</h3>
+        <span className={`data-tag ${styles.game}`}>{game}</span>
 
         <p
           className={[
@@ -158,7 +131,7 @@ function Panel({ robot, index, total }) {
             .join(' ')}
         >
           {champion && <Icon name="trophy" size={20} className={styles.resultIcon} />}
-          {build && <Icon name="wrench" size={20} className={styles.resultIcon} />}
+          {build && <Icon name="wrench" size={18} className={styles.resultIcon} />}
           <span>{result}</span>
         </p>
 
@@ -169,7 +142,6 @@ function Panel({ robot, index, total }) {
         </span>
       </div>
     </article>
-    </div>
   )
 }
 

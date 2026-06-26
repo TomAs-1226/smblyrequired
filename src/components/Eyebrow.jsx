@@ -1,9 +1,9 @@
-// Editorial section spine: gold rule + "01 — THE TEAM" tracked caps.
-export default function Eyebrow({ num, children, className = '' }) {
+// Editorial section spine: a gold rule + tracked-caps label. (Numbers were
+// dropped when the site went multi-page — a global 01–06 sequence no longer
+// makes sense across separate pages. `num` is accepted but ignored.)
+export default function Eyebrow({ children, className = '' }) {
   return (
     <span className={`eyebrow ${className}`}>
-      {num != null && <span className="eyebrow__num">{num}</span>}
-      {num != null && <span aria-hidden="true">—</span>}
       <span>{children}</span>
     </span>
   )

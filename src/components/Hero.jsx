@@ -84,14 +84,14 @@ export default function Hero() {
           <p className={`lead ${styles.lead}`}>{team.lead}</p>
 
           <div className={styles.ctas}>
-            <MagneticButton as="a" href="#sponsor" className="btn btn--gold">
+            <MagneticButton as="a" href="#/sponsor" className="btn btn--gold">
               Sponsor the team
               <Icon name="arrowRight" className="arrow" size={18} />
             </MagneticButton>
-            <a href="#impact" className="btn btn--cyan">
-              Our impact
+            <a href="#/season" className="btn btn--cyan">
+              Our record
             </a>
-            <a href="#team" className="btn btn--ghost">
+            <a href="#/team" className="btn btn--ghost">
               Join the team
             </a>
           </div>
@@ -105,7 +105,7 @@ export default function Hero() {
         </Reveal>
       </div>
 
-      <a className={styles.scrollCue} href="#impact" aria-label="Scroll to content">
+      <a className={styles.scrollCue} href="#explore" aria-label="Scroll to content">
         <span>Scroll</span>
         <Icon name="arrowUp" size={18} className={styles.scrollChevron} />
       </a>

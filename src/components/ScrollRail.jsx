@@ -7,14 +7,14 @@ import styles from './ScrollRail.module.css'
 const SECTIONS = [
   { id: 'top', label: 'Top' },
   { id: 'team', label: 'Team' },
+  { id: 'subteams', label: 'Join' },
   { id: 'robots', label: 'Robots' },
+  { id: 'drive', label: 'Drive' },
   { id: 'sponsor', label: 'Sponsor' },
   { id: 'partnership', label: 'Tiers' },
   { id: 'impact', label: 'Record' },
   { id: 'catalyst', label: 'Catalyst' },
-  { id: 'news', label: 'Latest' },
   { id: 'gallery', label: 'Gallery' },
-  { id: 'faq', label: 'FAQ' },
   { id: 'contact', label: 'Contact' },
 ]
 

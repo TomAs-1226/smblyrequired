@@ -1,0 +1,392 @@
+/* =========================================================================
+   MeetTheTeam — "THE CREW" (WHO BUILDS IT)
+   Roster manifest. Asymmetric header + stat rail, featured captain card,
+   dense grade-grouped roster with initials avatars, compact mentor strip.
+   Left-anchored telemetry; gold reserved for the captain only.
+   ========================================================================= */
+
+/* --- Header: 7 / 5 narrative + roster-manifest rail --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+
+.headLede {
+  display: flex;
+  flex-direction: column;
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 13ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.headBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.manifest {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.manifestTick {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  flex: none;
+}
+
+/* --- Roster manifest stat rail (right) --- */
+.statRail {
+  padding: var(--sp-5);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--border-accent);
+  border-radius: var(--r-md);
+}
+.statCaption {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.statBig {
+  margin-top: var(--sp-4);
+}
+.statBig :global(.stat-numeral__n) {
+  font-size: clamp(2.75rem, 5vw, 4rem);
+}
+
+/* Grade breakdown — mono ledger rows */
+.breakdown {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3) var(--sp-4);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+}
+.breakdownItem {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.breakdownN {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-data);
+  letter-spacing: 0.02em;
+}
+.breakdownL {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* --- Featured captain card --- */
+.captainWrap {
+  margin-top: clamp(40px, 6vw, 72px);
+}
+.captainCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 44px);
+  padding: clamp(24px, 3vw, 36px) clamp(24px, 3.5vw, 44px);
+  background: linear-gradient(120deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-gold);
+  border-radius: var(--r-lg);
+}
+.captainAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(64px, 8vw, 84px);
+  height: clamp(64px, 8vw, 84px);
+  border-radius: 50%;
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  letter-spacing: 0.02em;
+  color: var(--accent-gold);
+  background: radial-gradient(circle at 30% 25%, rgba(245, 184, 46, 0.16), transparent 70%),
+    var(--surface-sunken);
+  border: 1px solid rgba(245, 184, 46, 0.4);
+  box-shadow: 0 0 24px rgba(245, 184, 46, 0.18);
+}
+.captainText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.captainLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.captainLabelIcon {
+  flex: none;
+}
+.captainName {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  line-height: 1.05;
+}
+.captainNote {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 34ch;
+  padding-left: clamp(0px, 2vw, 28px);
+  border-left: 1px solid var(--border-hairline);
+}
+
+/* --- Roster: grade groups, each a dense multi-column block --- */
+.roster {
+  margin-top: clamp(56px, 9vw, 110px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(36px, 5vw, 64px);
+}
+.group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+}
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.groupName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  flex: none;
+}
+.groupRule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border-hairline);
+}
+.groupCount {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  flex: none;
+}
+
+.groupGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3) clamp(16px, 2.5vw, 36px);
+}
+
+/* --- Person record --- */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+  min-width: 0;
+}
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+.person:hover .avatar {
+  color: var(--accent-data);
+  border-color: var(--border-accent);
+  background: rgba(56, 189, 248, 0.08);
+}
+.personText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+.personName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.personGrade {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+.personDim .personName {
+  color: var(--text-body);
+}
+
+/* --- Mentors strip (compact, secondary) --- */
+.mentors {
+  margin-top: clamp(48px, 7vw, 88px);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+}
+.mentorsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-5);
+}
+.mentorsRule {
+  width: 24px;
+  height: 2px;
+  background: var(--accent-gold);
+  flex: none;
+}
+.mentorsList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4) clamp(20px, 3vw, 48px);
+}
+.mentor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mentorIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+.mentorText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+.mentorName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+}
+.mentorRole {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 1040px) {
+  .groupGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: var(--sp-6);
+  }
+  .heading {
+    max-width: none;
+  }
+  .captainCard {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .captainNote {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    border-left: 0;
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--border-hairline);
+    max-width: none;
+  }
+  .groupGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mentorsList {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .groupGrid {
+    grid-template-columns: 1fr;
+  }
+  .breakdown {
+    grid-template-columns: 1fr 1fr;
+  }
+  .captainCard {
+    grid-template-columns: 1fr;
+    text-align: left;
+    justify-items: start;
+  }
+  .mentorsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar {
+    transition: none;
+  }
+}
