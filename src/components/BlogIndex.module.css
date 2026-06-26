@@ -1,0 +1,247 @@
+/* =========================================================================
+   BlogIndex — "THE BUILD BLOG" (/blog)
+   Editorial feed: oversized featured lede card + clean two-up post grid.
+   Whole-card links, mono date tags, tag chips, Oswald titles, Read → cue.
+   ========================================================================= */
+
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 80px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 16ch;
+}
+.note {
+  padding-bottom: 6px;
+}
+
+/* --- Shared tag chip --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  align-self: flex-start;
+}
+
+/* Shared "Read →" cue */
+.readArrow {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================================
+   Featured (newest) post — oversized lede card
+   ========================================================================= */
+.featuredWrap {
+  margin-top: clamp(40px, 6vw, 72px);
+}
+.feature {
+  position: relative;
+  display: block;
+  padding: clamp(28px, 3.5vw, 52px);
+  background: linear-gradient(
+    180deg,
+    var(--surface-1) 0%,
+    var(--surface-sunken) 140%
+  );
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
+    box-shadow 0.3s, background 0.3s;
+}
+.feature:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: var(--elev-2);
+}
+.featureMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.latestFlag {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.featureTitle {
+  font-size: clamp(1.7rem, 3.4vw, 2.85rem);
+  font-weight: 600;
+  line-height: 1.05;
+  max-width: 22ch;
+  margin-bottom: var(--sp-3);
+  transition: color 0.3s ease;
+}
+.feature:hover .featureTitle {
+  color: var(--text-primary);
+}
+.featureExcerpt {
+  font-size: var(--fs-body-lg);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 62ch;
+}
+.featureRead {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: var(--sp-5);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+.feature:hover .readArrow {
+  transform: translateX(5px);
+}
+
+/* =========================================================================
+   Post grid — clean two-up cards
+   ========================================================================= */
+.grid {
+  margin-top: clamp(32px, 4vw, 56px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 2.4vw, 32px);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 2.6vw, 36px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
+    background 0.3s;
+}
+/* Cyan top-edge sweep on hover — house telemetry motif */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.card:hover::before {
+  width: 56px;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.cardDate {
+  letter-spacing: 0.1em;
+}
+.cardTitle {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  line-height: 1.12;
+  max-width: 26ch;
+  margin-bottom: var(--sp-3);
+  transition: color 0.3s ease;
+}
+.card:hover .cardTitle {
+  color: var(--text-primary);
+}
+.cardExcerpt {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 56ch;
+}
+.cardRead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+.card:hover .readArrow {
+  transform: translateX(4px);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    align-items: start;
+  }
+  .heading {
+    max-width: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .featureMeta {
+    gap: var(--sp-2) var(--sp-3);
+  }
+  .latestFlag {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature,
+  .card,
+  .card::before,
+  .readArrow {
+    transition: none;
+  }
+}

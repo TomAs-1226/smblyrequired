@@ -1,0 +1,449 @@
+/* =========================================================================
+   RobotDetail — per-robot detail page
+   Two-column hero: the machine (never cropped) in a HUD frame over a blueprint
+   well, paired with its book/season identity, result, blurb and a mono spec
+   grid. Champions carry a quiet gold edge; the current robot keeps its cyan
+   pulse. Prev/next pager walks the lineage. Mobile stacks to one column.
+   ========================================================================= */
+
+/* --- Back link --- */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: clamp(28px, 5vw, 56px);
+  transition: color 0.3s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.back span {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.back:hover {
+  color: var(--accent-data);
+}
+.back:hover span {
+  transform: translateX(-4px);
+}
+
+/* --- Hero layout: media + identity --- */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+}
+
+/* =========================================================================
+   Media side
+   ========================================================================= */
+.mediaCol {
+  min-width: 0;
+}
+
+.frame {
+  display: block;
+  padding: clamp(12px, 1.6vw, 22px);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(22, 73, 136, 0.32), transparent 62%),
+    var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--elev-2);
+}
+/* Inner well: blueprint grid behind a centered, uncropped subject. */
+.frameInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(300px, 46vh, 540px);
+  padding: clamp(16px, 2.4vw, 34px);
+  background-image:
+    linear-gradient(var(--border-hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-hairline) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.frameInner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 80% at 50% 50%, var(--surface-sunken) 12%, transparent 72%);
+  pointer-events: none;
+}
+
+/* The robot photo — NEVER cropped. */
+.photo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  max-height: clamp(340px, 56vh, 620px);
+  object-fit: contain;
+  filter: saturate(0.96) contrast(1.03);
+}
+
+/* Mono telemetry caption under the frame */
+.frameCap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: var(--sp-3);
+  padding-left: clamp(2px, 0.6vw, 10px);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.frameTick {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  flex: none;
+}
+
+/* --- Typographic plate (no photo) --- */
+.plateFrame .frameInner {
+  flex-direction: column;
+  text-align: center;
+  min-height: clamp(340px, 50vh, 560px);
+}
+.plate {
+  isolation: isolate;
+}
+.plateGhost {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  z-index: 0;
+  font-size: clamp(9rem, 24vw, 18rem);
+  opacity: 0.9;
+}
+.plateYear {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3.25rem, 8vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.plateBook {
+  position: relative;
+  z-index: 1;
+  margin-top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+
+/* =========================================================================
+   Text side
+   ========================================================================= */
+.textCol {
+  min-width: 0;
+}
+.eyebrow {
+  color: var(--text-muted);
+}
+.name {
+  font-size: var(--fs-h1);
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.game {
+  margin-bottom: var(--sp-4);
+}
+
+/* Result + current badge */
+.statusRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.result {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--text-body);
+}
+.resultIcon {
+  flex: none;
+}
+.resultGold {
+  color: var(--accent-gold);
+}
+.resultGold .resultIcon {
+  color: var(--accent-gold);
+}
+.resultBuild {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  border: 1px dashed var(--border-accent);
+  border-radius: var(--r-pill);
+  padding: 9px 16px;
+}
+.resultBuild .resultIcon {
+  color: var(--accent-data);
+}
+
+/* Pulsing cyan "Current robot" badge */
+.current {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--border-accent);
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.currentDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  flex: none;
+  animation: detailPulse 1.8s ease-in-out infinite;
+}
+@keyframes detailPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.55;
+  }
+}
+
+.blurb {
+  margin-bottom: var(--sp-5);
+  max-width: 52ch;
+}
+
+/* --- Spec: clean key/value grid with mono values --- */
+.spec {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border-hairline);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.specRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--sp-4);
+  background: var(--surface-sunken);
+}
+.specKey {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.specVal {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/* =========================================================================
+   Prev / next pager
+   ========================================================================= */
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2.4vw, 28px);
+  margin-top: clamp(56px, 9vw, 112px);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--border-hairline);
+}
+.pagerSpacer {
+  display: block;
+}
+.pagerLink {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-body);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+}
+.pagerNext {
+  text-align: right;
+  align-items: flex-end;
+}
+.pagerLink:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-accent);
+  background: var(--surface-2);
+}
+.pagerDir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.pagerArrow,
+.pagerArrowBack {
+  flex: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pagerArrowBack {
+  transform: scaleX(-1);
+}
+.pagerNext:hover .pagerArrow {
+  transform: translateX(4px);
+}
+.pagerPrev:hover .pagerArrowBack {
+  transform: scaleX(-1) translateX(4px);
+}
+.pagerName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-h3);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.pagerLink:hover .pagerName {
+  color: var(--accent-data);
+}
+.pagerMeta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* =========================================================================
+   Not found
+   ========================================================================= */
+.missing {
+  position: relative;
+  max-width: 60ch;
+  padding-block: clamp(24px, 6vw, 64px);
+}
+.missingGhost {
+  display: block;
+  font-size: clamp(7rem, 22vw, 16rem);
+  margin-bottom: calc(-1 * clamp(1.5rem, 5vw, 4rem));
+  margin-left: -0.04em;
+}
+.missingEyebrow {
+  color: var(--text-muted);
+}
+.missingTitle {
+  font-size: var(--fs-h1);
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+.missingBody {
+  margin-bottom: var(--sp-6);
+}
+.missingSlug {
+  font-family: var(--font-mono);
+  color: var(--accent-data);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--sp-6);
+    align-items: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .spec {
+    grid-template-columns: 1fr;
+  }
+  .pager {
+    grid-template-columns: 1fr;
+  }
+  /* When only one of prev/next exists, the spacer collapses cleanly. */
+  .pagerSpacer {
+    display: none;
+  }
+  .pagerNext {
+    text-align: left;
+    align-items: flex-start;
+  }
+  .pagerNext .pagerDir {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (max-width: 540px) {
+  .frame {
+    padding: 10px;
+  }
+  .frameInner {
+    min-height: 260px;
+    padding: var(--sp-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .currentDot {
+    animation: none;
+  }
+  .back,
+  .back span,
+  .pagerLink,
+  .pagerArrow,
+  .pagerArrowBack {
+    transition: none;
+  }
+}

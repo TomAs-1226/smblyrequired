@@ -1,0 +1,535 @@
+/* =========================================================================
+   Donate — "WAYS TO GIVE" (INDIVIDUALS & FAMILIES)
+   The quick-give counterpart to the corporate Sponsor page. Asymmetric header
+   with a season-cost data plate, an editorial NON-uniform "ways to give" board
+   (oversized gold gift card spanning the lead column + check / in-kind /
+   corporate tiles), a gold-accented tax bar, and the shared 3-step flow.
+   Gold is reserved for the ONE primary give CTA + the tax note accent.
+   ========================================================================= */
+
+.section {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Faint blueprint field, masked to fade at edges so it reads as backdrop */
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(var(--border-hairline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-hairline) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(120% 85% at 78% 12%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(120% 85% at 78% 12%, #000 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* --- Header: ask (left) + season-cost data plate (right) ----------------- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+.headLede {
+  display: flex;
+  flex-direction: column;
+}
+.heading {
+  font-size: var(--fs-h2);
+  max-width: 16ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.lead {
+  max-width: 56ch;
+}
+
+/* Season-cost plate — sits at the headline baseline like a telemetry readout */
+.costPlate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: clamp(24px, 3vw, 36px);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.costLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.costNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--accent-gold);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 28px rgba(245, 184, 46, 0.22);
+}
+.costDash {
+  color: var(--text-muted);
+  margin-inline: 2px;
+}
+.costSub {
+  margin-top: var(--sp-1);
+}
+.costNote {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 34ch;
+}
+
+/* =========================================================================
+   The board — non-uniform 3-col grid; gift card spans the tall left column.
+   ========================================================================= */
+.board {
+  margin-top: clamp(48px, 7vw, 96px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: clamp(16px, 2vw, 26px);
+}
+
+/* --- Base card --- */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 2.6vw, 36px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+}
+/* Cyan progress rule on hover — the house tell */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.card:hover::before {
+  width: 52px;
+}
+
+.cardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  margin-bottom: var(--sp-4);
+  flex: none;
+  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover .cardIcon {
+  background: rgba(56, 189, 248, 0.15);
+  transform: translateY(-3px);
+}
+
+.cardTitle {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  margin-bottom: var(--sp-3);
+}
+.cardBody {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 42ch;
+}
+
+/* Inline text link (in-kind footer) */
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--sp-4);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-small);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+.cardLink .arrow {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cardLink:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* --- (1) PRIMARY gift card — tall left column, gold-led --- */
+.cardGive {
+  grid-row: 1 / span 2;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border-top: 1px solid var(--border-strong);
+  border-left: 2px solid var(--accent-gold);
+}
+/* keep the gold accent dominant — suppress the cyan hover rule here */
+.cardGive::before {
+  display: none;
+}
+.cardGive:hover {
+  border-color: var(--border-strong);
+  border-left-color: var(--accent-gold-hi);
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.cardIconGold {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 0;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.1);
+  border-color: rgba(245, 184, 46, 0.4);
+}
+.cardGive:hover .cardIconGold {
+  background: rgba(245, 184, 46, 0.16);
+}
+.cardTag {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.cardGive .cardTitle {
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+}
+
+/* Suggested-amount chips */
+.giveChips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  margin-bottom: var(--sp-5);
+}
+.giveChips li {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.02em;
+  color: var(--text-body);
+  padding: 7px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+}
+.giveChips li:last-child {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.4);
+}
+
+.giveBtn {
+  align-self: flex-start;
+  margin-top: auto;
+}
+.cardNote {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.55;
+  max-width: 38ch;
+}
+
+/* --- (2) By check — definition rows --- */
+.checkRows {
+  margin-top: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+}
+.checkRow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.checkRow:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.checkRow dt {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.checkRow dd {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.5;
+}
+.checkMemo {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.02em;
+  color: var(--accent-data);
+}
+
+/* --- (3) In-kind — chip list --- */
+.inKind {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.inKindChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  padding: 7px 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+.inKindChip:hover {
+  border-color: var(--border-accent);
+  color: var(--text-primary);
+}
+.inKindCheck {
+  flex: none;
+  color: var(--accent-data);
+}
+
+/* --- (4) Corporate hand-off --- */
+.cardCorporate .cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+.cardCta {
+  font-size: 0.82rem;
+  padding: 12px 18px;
+}
+
+/* =========================================================================
+   Gold tax / receipt note bar
+   ========================================================================= */
+.tax {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin-top: clamp(40px, 6vw, 72px);
+  padding: clamp(22px, 2.6vw, 32px) clamp(24px, 3vw, 40px);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 46, 0.08), transparent 60%),
+    var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-left: 2px solid var(--accent-gold);
+  border-radius: var(--r-md);
+}
+.taxIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.1);
+  border: 1px solid rgba(245, 184, 46, 0.32);
+  flex: none;
+}
+.taxBody {
+  min-width: 0;
+}
+.taxLine {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 78ch;
+}
+.taxMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.taxPill {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+}
+
+/* =========================================================================
+   How it works — shared 3-step flow
+   ========================================================================= */
+.steps {
+  margin-top: clamp(48px, 7vw, 88px);
+}
+.stepsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-6);
+}
+.stepsRule {
+  width: 24px;
+  height: 2px;
+  background: var(--accent-gold);
+  flex: none;
+}
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2.4vw, 32px);
+}
+.step {
+  position: relative;
+  padding: var(--sp-5) var(--sp-4);
+  border-top: 1px solid var(--border-strong);
+  transition: border-color 0.3s ease;
+}
+.step::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-data);
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.step:hover::before {
+  width: 48px;
+}
+.stepNum {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+  opacity: 0.85;
+  margin-bottom: var(--sp-3);
+}
+.stepName {
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  margin-bottom: var(--sp-2);
+}
+.stepBody {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  max-width: 38ch;
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 1040px) {
+  .board {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+  /* Gift card leads, full-width across both columns */
+  .cardGive {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+  .cardGive .cardBody {
+    max-width: 60ch;
+  }
+  .cardCorporate {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: var(--sp-6);
+  }
+  .heading {
+    max-width: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .stepGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+  .cardCorporate .cardActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cardCta {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .cardIcon,
+  .card::before,
+  .step::before,
+  .cardLink .arrow,
+  .inKindChip {
+    transition: none;
+  }
+}

@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && npx gh-pages -d dist -m \"Deploy site\""
+    "fetch:tba": "node scripts/fetch-tba.mjs",
+    "deploy": "node scripts/fetch-tba.mjs && vite build && npx gh-pages -d dist -m \"Deploy site\""
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

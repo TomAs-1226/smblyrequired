@@ -1,0 +1,92 @@
+{
+  "updated": "2026-06-26T14:53:14.367Z",
+  "season": 2026,
+  "events": [
+    {
+      "key": "2026capoh",
+      "name": "CA District Hueneme Port Event",
+      "dates": "2026-03-06",
+      "rank": 28,
+      "total": 42,
+      "record": "4-7-0",
+      "result": "Team 5805 was Rank 28/42 with a record of 4-7-0 in quals, competed in the playoffs as the 2nd Pick of Alliance 3, and was eliminated in the Finals with a playoff record of 3-3-0."
+    },
+    {
+      "key": "2026caoec",
+      "name": "CA District Orange County Event",
+      "dates": "2026-04-02",
+      "rank": 23,
+      "total": 37,
+      "record": "5-7-0",
+      "result": "Team 5805 was Rank 23/37 with a record of 5-7-0 in quals, competed in the playoffs as the 2nd Pick of Alliance 3, and was eliminated in the Double Elimination Bracket (Round 5) with a playoff record of 3-2-0."
+    },
+    {
+      "key": "2026cascmp",
+      "name": "FIRST California Southern State Championship presented by Qualcomm",
+      "dates": "2026-04-09",
+      "rank": 45,
+      "total": 60,
+      "record": "5-7-0",
+      "result": "Team 5805 was Rank 45/60 with a record of 5-7-0 in quals."
+    }
+  ],
+  "lastEvent": {
+    "key": "2026cascmp",
+    "name": "FIRST California Southern State Championship presented by Qualcomm",
+    "dates": "2026-04-09",
+    "rank": 45,
+    "total": 60,
+    "result": "Team 5805 was Rank 45/60 with a record of 5-7-0 in quals."
+  },
+  "recentMatches": [
+    {
+      "label": "Qual 46",
+      "usScore": 340,
+      "themScore": 471,
+      "outcome": "L"
+    },
+    {
+      "label": "Qual 53",
+      "usScore": 327,
+      "themScore": 316,
+      "outcome": "W"
+    },
+    {
+      "label": "Qual 61",
+      "usScore": 247,
+      "themScore": 373,
+      "outcome": "L"
+    },
+    {
+      "label": "Qual 78",
+      "usScore": 427,
+      "themScore": 349,
+      "outcome": "W"
+    },
+    {
+      "label": "Qual 90",
+      "usScore": 176,
+      "themScore": 53,
+      "outcome": "W"
+    },
+    {
+      "label": "Qual 100",
+      "usScore": 273,
+      "themScore": 328,
+      "outcome": "L"
+    },
+    {
+      "label": "Qual 107",
+      "usScore": 357,
+      "themScore": 323,
+      "outcome": "W"
+    },
+    {
+      "label": "Qual 120",
+      "usScore": 93,
+      "themScore": 396,
+      "outcome": "L"
+    }
+  ],
+  "source": "https://www.thebluealliance.com/team/5805/2026"
+}

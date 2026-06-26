@@ -21,6 +21,10 @@ import CatalystPage from './pages/CatalystPage'
 import GalleryPage from './pages/GalleryPage'
 import ContactPage from './pages/ContactPage'
 import NotFound from './pages/NotFound'
+import RobotDetail from './components/RobotDetail'
+import BlogIndex from './components/BlogIndex'
+import BlogPost from './components/BlogPost'
+import Donate from './components/Donate'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -33,13 +37,23 @@ const ROUTES = {
   '/catalyst': CatalystPage,
   '/gallery': GalleryPage,
   '/contact': ContactPage,
+  '/blog': BlogIndex,
+  '/donate': Donate,
+}
+
+// Resolve a path to a component + props (handles dynamic /robots/:slug, /blog/:slug).
+function resolve(path) {
+  if (ROUTES[path]) return [ROUTES[path], {}]
+  if (path.startsWith('/robots/')) return [RobotDetail, { slug: path.slice(8) }]
+  if (path.startsWith('/blog/')) return [BlogPost, { slug: path.slice(6) }]
+  return [NotFound, {}]
 }
 
 export default function App() {
   const root = useRef(null)
   const raw = useRoute()
   const path = raw !== '/' ? raw.replace(/\/+$/, '') : '/'
-  const Page = ROUTES[path] || NotFound
+  const [Page, pageProps] = resolve(path)
   const isHome = path === '/'
 
   // One Lenis instance for the whole app; it persists across route changes.
@@ -89,7 +103,7 @@ export default function App() {
       <Grain />
       <Nav />
       <main key={path} className={`page ${isHome ? '' : 'page--sub'}`}>
-        <Page />
+        <Page {...pageProps} />
       </main>
       <Footer />
       <MobileStickyCTA />

@@ -110,7 +110,11 @@ function Row({ robot, index, total }) {
         </p>
 
         <div className={styles.nameRow}>
-          <h3 className={styles.name}>{name}</h3>
+          <h3 className={styles.name}>
+            <a className={styles.nameLink} href={`#/robots/${name.toLowerCase()}`}>
+              {name}
+            </a>
+          </h3>
           {current && (
             <span className={styles.current}>
               <span className={styles.currentDot} aria-hidden="true" />
@@ -136,6 +140,11 @@ function Row({ robot, index, total }) {
         </p>
 
         <p className={styles.blurb}>{blurb}</p>
+
+        <a className={styles.detailLink} href={`#/robots/${name.toLowerCase()}`}>
+          Full details
+          <Icon name="arrowRight" size={18} className="arrow" />
+        </a>
 
         <span className={styles.index} aria-hidden="true">
           {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
