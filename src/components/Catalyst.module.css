@@ -336,25 +336,32 @@
   border: 1px solid var(--border-hairline);
   border-top: 1px solid var(--border-strong);
   border-radius: var(--r-md);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
+/* Cyan wipe: scaled, not width-animated — width on an absolutely-positioned
+   bar still costs layout on every frame. Same motif as Nav's underline. */
 .feature::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
-  width: 0;
+  width: 52px;
   height: 2px;
   background: var(--accent-data);
-  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.feature:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-}
-.feature:hover::before {
-  width: 52px;
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  .feature:hover::before {
+    transform: scaleX(1);
+  }
 }
 .featureLead {
   justify-content: flex-end;
@@ -374,16 +381,18 @@
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
-  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 .featureLead .featureIcon {
   width: 58px;
   height: 58px;
   margin-bottom: auto;
 }
-.feature:hover .featureIcon {
-  background: rgba(56, 189, 248, 0.16);
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover .featureIcon {
+    background: rgba(56, 189, 248, 0.16);
+    transform: translateY(-3px);
+  }
 }
 .featureNum {
   position: absolute;

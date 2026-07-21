@@ -20,6 +20,12 @@ export default function MagneticButton({ as: Tag = 'a', strength = 0.4, classNam
   }
   const onLeave = () => {
     if (!ref.current) return
+    // Same guard as onMove: with motion reduced the element never left origin,
+    // so animating it back is motion the user opted out of.
+    if (prefersReducedMotion() || !fine()) {
+      gsap.set(ref.current, { x: 0, y: 0 })
+      return
+    }
     gsap.to(ref.current, { x: 0, y: 0, duration: 0.5, ease: 'power3.out' })
   }
 

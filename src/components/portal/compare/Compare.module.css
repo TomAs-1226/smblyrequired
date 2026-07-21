@@ -1,0 +1,919 @@
+/* =========================================================================
+   Compare — side-by-side team comparison.
+
+   Same tokens as the rest of the portal, one extra constraint that shapes the
+   whole file: this is read on a phone, in a pit, minutes before alliance
+   selection, by someone who will act on it. So the visual hierarchy is not
+   "which number is biggest" — it is "how much should you trust this number".
+   Sample size is typographically loud, thin columns are held at arm's length,
+   and the winner treatment is reserved for rows the maths actually decided.
+
+   Every duration and curve is a token. No raw hex, no raw ms.
+   ========================================================================= */
+
+/* --- Event select + picker ---------------------------------------------- */
+
+.select,
+.searchInput {
+  width: 100%;
+  font: inherit;
+  /* 16px floor. Anything smaller and iOS zooms the page on focus, which on this
+     screen means landing in a horizontally scrolled viewport with the table
+     half off the edge. */
+  font-size: 1rem;
+  min-height: 48px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 11px 12px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.select {
+  max-width: 480px;
+}
+.select:focus,
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+@media (hover: hover) and (pointer: fine) {
+  .select:hover,
+  .searchInput:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.pickerBar {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search .searchInput {
+  padding-left: 38px;
+}
+
+.note {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 62ch;
+}
+
+.pickList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.pickBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  /* Above the 44px floor — this is tapped while looking at a field, not at a
+     phone, and the portal's scouting screens already use 48. */
+  min-height: 48px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.pickBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pickBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.pickBtn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+}
+.pickBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pickOn {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.pickNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  flex: none;
+  min-width: 3.4ch;
+}
+.pickName {
+  font-size: var(--fs-small);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pickN {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex: none;
+}
+.pickNThin {
+  color: var(--accent-gold);
+}
+.pickIcon {
+  color: var(--text-muted);
+  flex: none;
+}
+.pickOn .pickIcon {
+  color: var(--accent-data);
+}
+
+/* --- Verdict ------------------------------------------------------------- */
+
+.verdict {
+  border: 1px solid var(--border-hairline);
+  border-left: 3px solid var(--text-muted);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  padding: var(--sp-4);
+}
+.verdictWin {
+  border-left-color: var(--accent-data);
+}
+/* Gold, not red. A provisional lead is not a fault — it is a real lead on a
+   sample too thin to bet an alliance on, and colouring it as an error would
+   train people to dismiss the distinction entirely. */
+.verdictWarn {
+  border-left-color: var(--accent-gold);
+}
+.verdictNeutral {
+  border-left-color: var(--text-muted);
+}
+
+.verdictHead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+.verdictWin .verdictHead {
+  color: var(--accent-data);
+}
+.verdictWarn .verdictHead {
+  color: var(--accent-gold);
+}
+.verdictTitle {
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.verdictReason {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  max-width: 72ch;
+}
+
+.tally {
+  list-style: none;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: var(--sp-3);
+}
+.tallyItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 5px 9px;
+}
+.tallyTeam {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+.tallyCount {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.verdictFlag {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  font-size: var(--fs-small);
+  color: var(--danger);
+  max-width: 72ch;
+}
+
+/* --- Table --------------------------------------------------------------- */
+
+.swipeHint {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+
+/* The ONLY thing on this page allowed to scroll sideways. The panel it lives
+   in already carries `min-width: 0`, so the grid cannot be widened from here
+   and the document itself never gains a horizontal scrollbar.
+
+   Deliberately no vertical stickiness on <thead>: `overflow-x: auto` makes
+   this element a scroll container on BOTH axes (per spec, a non-visible
+   overflow on one axis forces the other to auto), so a `top: 0` sticky header
+   would anchor to this box rather than to the page and simply never move. The
+   sticky FIRST COLUMN is the one that matters anyway — you can lose sight of
+   the team numbers and recover, but a column of bare numbers with no visible
+   metric labels is unreadable. */
+.scroller {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  /* Stops a horizontal swipe on the table triggering the browser's back
+     gesture once it reaches the end. */
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+/* The region is focusable so a keyboard can scroll it; it gets the same
+   affordance the pointer does, not only the global outline. */
+.scroller:focus-visible {
+  border-color: var(--accent-data);
+}
+
+.table {
+  width: 100%;
+  /* `separate` is required: with `collapse`, borders on sticky cells detach
+     from the cell and stay behind while it moves. */
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell {
+  padding: var(--sp-3);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* Tracking one metric across five columns on a phone is a real strain, so the
+   row you are pointing at lifts out of the page. A tint, not a transform: the
+   sticky first column is positioned, and moving the row would slide it out of
+   register with the values it labels. */
+.row > .cell {
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .row:hover > .cell {
+    background-color: var(--surface-1);
+  }
+  .row:hover > .won {
+    background-color: rgba(56, 189, 248, 0.14);
+  }
+}
+/* Keyboard parity: tabbing to a row's flip button highlights the same row a
+   mouse would. */
+.row:focus-within > .cell {
+  background-color: var(--surface-1);
+}
+.row:focus-within > .won {
+  background-color: rgba(56, 189, 248, 0.14);
+}
+
+/* --- sticky metric column ------------------------------------------------ */
+
+.corner,
+.rowHead {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 246px;
+  min-width: 246px;
+  /* Opaque, or the value columns show through as they slide underneath.
+     background-COLOR specifically, all through this file: the thin-column
+     striping is a background-image, and using the shorthand anywhere would let
+     a hover tint wipe the de-emphasis off exactly the columns that need it. */
+  background-color: var(--bg-base);
+  border-right: 1px solid var(--border-strong);
+}
+.corner {
+  z-index: 3;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background-color: var(--surface-sunken);
+  vertical-align: bottom;
+}
+
+.rowLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.rowSub {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.rowHelp,
+.rowCaveat {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 6px;
+  max-width: 34ch;
+}
+.rowCaveat {
+  color: var(--accent-gold);
+}
+
+.dir {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+
+/* The direction of "better" for a form field is a GUESS — the schema records a
+   field's type but never its polarity. This is the control that lets the reader
+   correct it, so it has to look pressable rather than decorative. */
+.flip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 4px 9px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.flip:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) and (pointer: fine) {
+  .flip:hover {
+    background: rgba(245, 184, 46, 0.16);
+    border-color: var(--accent-gold);
+  }
+}
+.flip:focus-visible {
+  background: rgba(245, 184, 46, 0.16);
+  border-color: var(--accent-gold);
+}
+
+.orphan {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+
+/* --- group headings ------------------------------------------------------ */
+
+.groupRow {
+  background: var(--surface-sunken);
+}
+/* The heading itself spans the whole table, so `position: sticky` on the cell
+   would have nowhere to travel — the sticky offset is clamped to the containing
+   block, and here they are the same width. The INNER span is what sticks, so
+   the group label stays readable while the columns scroll past it. */
+.groupHead {
+  padding: 9px var(--sp-3);
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.groupInner {
+  position: sticky;
+  left: 0;
+  display: inline-block;
+}
+.groupNote {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* --- column heads -------------------------------------------------------- */
+
+.colHead {
+  min-width: 148px;
+  background-color: var(--surface-sunken);
+  border-bottom: 1px solid var(--border-strong);
+}
+.colNum {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.colName {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+/* Sample size, loud. This is the number that decides how much of the rest of
+   the column is worth anything, so it is set at body size in a pill rather
+   than as a footnote nobody reads. */
+.colN {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-pill);
+  padding: 4px 9px;
+}
+.colN strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+.colNLight {
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border-color: rgba(245, 184, 46, 0.35);
+}
+.colNThin {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.08);
+  border-color: rgba(240, 99, 99, 0.4);
+}
+
+.colWarn,
+.colFlag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.colFlag {
+  color: var(--danger);
+}
+
+/* A thin column is not greyed into illegibility — it is still real data, and a
+   0.4 opacity wash would make it unreadable rather than untrusted. It is set in
+   muted body colour behind a faint gold hatch, so it reads as "provisional"
+   next to a full column rather than as "broken". */
+.headThin,
+.headLight {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 6px,
+    rgba(245, 184, 46, 0.06) 6px,
+    rgba(245, 184, 46, 0.06) 12px
+  );
+}
+.headThin .colNum {
+  color: var(--text-body);
+}
+
+/* --- value cells --------------------------------------------------------- */
+
+.value {
+  position: relative;
+  min-width: 148px;
+}
+.thin .valueNum {
+  color: var(--text-muted);
+}
+.thin {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 6px,
+    rgba(245, 184, 46, 0.04) 6px,
+    rgba(245, 184, 46, 0.04) 12px
+  );
+}
+
+.valueRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.valueNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.valueDetail {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* Winner. Only ever applied to a row the maths actually decided — a cell that
+   is merely in front gets `.aheadTag` instead, which says so in words. */
+.won {
+  background-color: rgba(56, 189, 248, 0.08);
+}
+.won .valueNum {
+  color: var(--accent-data);
+}
+/* The house cyan wipe: scaleX from the left, transform only. */
+.won::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  transform-origin: left;
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .won::before {
+    animation: wipe var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes wipe {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.crown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  flex: none;
+}
+
+.aheadTag {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+
+/* --- bars ---------------------------------------------------------------- */
+/* Drawn in CSS on purpose. A charting library for five bars would cost more
+   than the entire portal chunk saves by being lazy-loaded. */
+
+.bar {
+  display: block;
+  height: 3px;
+  margin-top: 9px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--text-muted);
+  transform-origin: left;
+  transform: scaleX(var(--v, 0));
+}
+.won .barFill {
+  background: var(--accent-data);
+}
+.thin .barFill {
+  background: var(--border-strong);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .barFill {
+    animation: barIn var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes barIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(var(--v, 0));
+  }
+}
+
+/* --- row verdict chips --------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  border-radius: var(--r-sm);
+  padding: 4px 7px;
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.chipWin {
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: var(--border-accent);
+}
+/* The most important chip on the page. "Too close to call" has to look like a
+   real answer rather than a missing one, so it is styled as a statement, not as
+   an absence. */
+.chipClose {
+  color: var(--text-body);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.chipThin {
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border-color: rgba(245, 184, 46, 0.3);
+}
+.chipWhy {
+  opacity: 0.8;
+}
+
+/* --- remove button ------------------------------------------------------- */
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.remove:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) and (pointer: fine) {
+  .remove:hover {
+    color: var(--danger);
+    border-color: rgba(240, 99, 99, 0.4);
+    background: rgba(240, 99, 99, 0.08);
+  }
+}
+.remove:focus-visible {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.4);
+}
+
+/* --- AI ------------------------------------------------------------------ */
+
+.aiBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.aiBar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.aiBtn {
+  min-height: 48px;
+}
+
+.aiCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+.aiHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+.aiTeam {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+}
+.aiName {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.aiN {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-data);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+}
+
+/* Rendered verbatim, so the model's own line breaks are preserved rather than
+   collapsed — its paragraphing is part of what the prompt asked for. */
+.aiText {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 74ch;
+}
+.aiFoot {
+  margin-top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* Muted, not red. The comparison above is complete without any of this. */
+.aiOff {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.aiWhy {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 2px 7px;
+  overflow-wrap: anywhere;
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .swipeHint {
+    display: flex;
+  }
+  /* The sticky column narrows but never disappears — a screen of numbers with
+     no visible metric labels is not a degraded table, it is an unusable one. */
+  .corner,
+  .rowHead {
+    width: 168px;
+    min-width: 168px;
+  }
+  .colHead,
+  .value {
+    min-width: 132px;
+  }
+  .cell {
+    padding: var(--sp-2);
+  }
+  .rowHelp,
+  .rowCaveat {
+    max-width: 100%;
+  }
+  .valueNum {
+    font-size: 1.2rem;
+  }
+  .colNum {
+    font-size: 1.25rem;
+  }
+  .pickList {
+    grid-template-columns: 1fr;
+    max-height: 232px;
+  }
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+/* Movement goes; state feedback stays. Colour still tells you which cell won
+   and which control is focused — removing that would remove information, not
+   decoration. */
+
+@media (prefers-reduced-motion: reduce) {
+  .pickBtn,
+  .remove,
+  .flip,
+  .select,
+  .searchInput,
+  .scroller {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .pickBtn:active,
+  .remove:active,
+  .flip:active {
+    transform: none;
+  }
+  .barFill,
+  .won::before {
+    animation: none;
+  }
+}

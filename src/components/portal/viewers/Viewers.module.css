@@ -1,0 +1,901 @@
+/* =========================================================================
+   In-browser file viewers.
+
+   Same instrument-panel language as Portal.module.css: mono for anything
+   machine-generated, hairlines instead of cards, gold reserved for the single
+   primary action. Every duration and curve is a token — no raw ms, no raw
+   cubic-bezier, no raw hex. (Accent *tints* are written as rgba() of a token
+   colour, matching the established pattern in Portal.module.css.)
+
+   Motion note: the shell opens with --dur-ui / --dur-fast rather than the
+   --dur-overlay token nominally reserved for modals. This overlay is opened and
+   dismissed constantly while reading through a season archive, and at 320ms the
+   dismiss reads as lag on the fifth file. A modal you live in wants weight; a
+   modal you flick through wants to get out of the way.
+   ========================================================================= */
+
+/* --- Shell --------------------------------------------------------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(8px, 2.5vw, 40px);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 60% at 50% 40%, rgba(8, 26, 48, 0.72), transparent 75%),
+    rgba(4, 11, 22, 0.9);
+  backdrop-filter: blur(10px) saturate(0.9);
+  cursor: zoom-out;
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, 100%);
+  height: 100%;
+  min-height: 0;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-base);
+  box-shadow: var(--elev-feature);
+  overflow: hidden;
+  /* Modals scale from their own centre — anything else makes the open read as
+     a slide from an arbitrary corner. */
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .backdrop {
+    animation: vFade var(--dur-fast) var(--ease-out) both;
+  }
+  .dialog {
+    animation: vPop var(--dur-ui) var(--ease-out) both;
+  }
+}
+
+@keyframes vFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vPop {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* --- Title bar ----------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--surface-1);
+}
+
+.barMain {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.barTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.barActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* Icon button — the shared pressable in the bar and in every viewer toolbar. */
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  background: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover:not(:disabled) {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+    background: rgba(56, 189, 248, 0.08);
+  }
+}
+.iconBtn:focus-visible {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+}
+.iconBtn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.iconBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The close glyph spins on the button's behalf so :active keeps the transform
+   slot for its own press scale — same reasoning as the gallery lightbox. */
+.closeBtn svg {
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .closeBtn:hover svg {
+    transform: rotate(90deg);
+  }
+}
+.closeBtn:focus-visible svg {
+  transform: rotate(90deg);
+}
+
+/* Text button — Copy / Edit / Save / Cancel. */
+.textBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  background: none;
+  cursor: pointer;
+  padding: 7px 13px;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .textBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.textBtn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.textBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.textBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.textBtnOn {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+}
+/* The one gold action per surface: committing a new version. */
+.textBtnPrimary {
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+@media (hover: hover) and (pointer: fine) {
+  .textBtnPrimary:hover:not(:disabled) {
+    color: var(--text-on-gold);
+    background: var(--accent-gold-hi);
+    border-color: var(--accent-gold-hi);
+  }
+}
+.textBtnPrimary:focus-visible {
+  background: var(--accent-gold-hi);
+  border-color: var(--accent-gold-hi);
+}
+
+/* --- Stage --------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg-base);
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  flex-wrap: wrap;
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+}
+
+.toolSpacer {
+  flex: 1;
+  min-width: var(--sp-2);
+}
+
+.toolNote {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Centred message states (loading, unsupported, errors). */
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-height: 0;
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+}
+.centerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+}
+.centerIconBad {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.08);
+  border-color: rgba(240, 99, 99, 0.3);
+}
+.centerTitle {
+  font-size: var(--fs-h3);
+}
+.centerText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+/* Deliberately quick — a faster spinner makes the same wait feel shorter. */
+.spinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent-data);
+  animation: vSpin 620ms linear infinite;
+}
+.spinnerSm {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent-data);
+  animation: vSpin 620ms linear infinite;
+}
+@keyframes vSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* An inline advisory — truncation, sandboxing, size caps. Amber because none of
+   these are failures; they are the viewer telling you what it chose to do. */
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  flex: none;
+  font-size: var(--fs-small);
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.07);
+  border-bottom: 1px solid rgba(245, 184, 46, 0.25);
+  padding: 10px var(--sp-4);
+}
+.noticeBad {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.07);
+  border-bottom-color: rgba(240, 99, 99, 0.3);
+}
+.noticeIcon {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* --- Code ---------------------------------------------------------------- */
+
+.codeScroll {
+  flex: 1;
+  min-height: 0;
+  /* Long lines scroll inside the block instead of widening the dialog. */
+  overflow: auto;
+  background: var(--surface-sunken);
+}
+
+.codeInner {
+  display: flex;
+  align-items: flex-start;
+  /* Makes the row as wide as the longest line so horizontal scroll has
+     something to travel over, instead of the code wrapping. */
+  min-width: max-content;
+}
+
+/* Pinned so the numbers stay readable while the source scrolls sideways. */
+.gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3) 10px var(--sp-3) var(--sp-4);
+  border-right: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  user-select: none;
+}
+
+.lineNo {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}
+
+.code {
+  flex: 1;
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: var(--text-body);
+  white-space: pre;
+  tab-size: 4;
+}
+
+.line {
+  display: block;
+  min-height: 1.65em;
+}
+
+/* Token colours. Reuses the existing semantic ramp rather than introducing a
+   syntax palette: gold = literal, cyan = keyword, muted = comment. */
+.tk {
+  color: var(--accent-data);
+}
+.ts {
+  color: var(--accent-gold);
+}
+.tc {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.tn {
+  color: var(--tier-bronze);
+}
+.ta {
+  color: var(--accent-action);
+}
+
+/* --- Editor -------------------------------------------------------------- */
+
+.editArea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.65;
+  tab-size: 4;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: none;
+  border-radius: 0;
+  padding: var(--sp-3) var(--sp-4);
+  resize: none;
+  white-space: pre;
+  overflow: auto;
+}
+.editArea:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* --- Markdown preview ---------------------------------------------------- */
+
+.proseScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-5) var(--sp-4);
+}
+.prose {
+  color: var(--text-body);
+  max-width: 74ch;
+  margin-inline: auto;
+}
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5 {
+  margin-top: var(--sp-5);
+  margin-bottom: var(--sp-2);
+}
+.prose h2 { font-size: 1.5rem; }
+.prose h3 { font-size: 1.22rem; }
+.prose h4 { font-size: 1.05rem; }
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre {
+  margin-bottom: var(--sp-3);
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.35em;
+}
+.prose li {
+  margin-bottom: 5px;
+}
+.prose a {
+  color: var(--accent-data);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.87em;
+  color: var(--accent-gold);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+.prose pre {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  overflow-x: auto;
+}
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-body);
+}
+.prose blockquote {
+  border-left: 2px solid var(--accent-data);
+  padding-left: var(--sp-3);
+  color: var(--text-muted);
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border-hairline);
+  margin: var(--sp-5) 0;
+}
+
+/* --- Archive ------------------------------------------------------------- */
+
+.entries {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  list-style: none;
+  padding: 0 var(--sp-4) var(--sp-4);
+  margin: 0;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.entryBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  padding: 10px 0;
+  min-width: 0;
+  transition: color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.entryBtn:disabled {
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .entryBtn:hover:not(:disabled) .entryName {
+    color: var(--accent-data);
+  }
+  .entryBtn:hover:not(:disabled) .entryChevron {
+    color: var(--accent-data);
+    transform: translateX(4px);
+  }
+}
+.entryBtn:focus-visible .entryName {
+  color: var(--accent-data);
+}
+.entryBtn:focus-visible .entryChevron {
+  color: var(--accent-data);
+  transform: translateX(4px);
+}
+.entryBtn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.entryIcon {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.entryName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.entryDir {
+  color: var(--text-muted);
+}
+
+.entrySize {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.entryChevron {
+  flex: none;
+  color: var(--text-muted);
+  opacity: 0.6;
+  transition: transform var(--dur-ui) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+/* --- Image --------------------------------------------------------------- */
+
+.imgStage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 90% at 50% 30%, rgba(22, 73, 136, 0.35) 0%, rgba(8, 26, 48, 0) 64%),
+    var(--surface-sunken);
+}
+
+.imgFitBox {
+  cursor: zoom-in;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.imgZoomBox {
+  cursor: grab;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.imgZoomBoxDragging {
+  cursor: grabbing;
+}
+
+.imgFit {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+
+/* Zoomed: natural size, moved by transform only — never by width/height. */
+.imgNatural {
+  max-width: none;
+  max-height: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* --- PDF / sandboxed markup ---------------------------------------------- */
+
+.frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: none;
+  background: var(--surface-sunken);
+}
+
+/* The SVG/HTML sandbox gets a light backdrop: these documents are almost always
+   authored for a white page, and rendering them on the portal's navy makes a
+   correct file look broken. */
+.frameLight {
+  background: var(--tier-platinum);
+}
+
+/* --- JSON tree ----------------------------------------------------------- */
+
+.tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+.jsonRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  white-space: pre;
+}
+
+.twisty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .twisty:hover {
+    color: var(--accent-data);
+    background: rgba(56, 189, 248, 0.1);
+  }
+}
+.twisty:focus-visible {
+  color: var(--accent-data);
+}
+.twisty:active {
+  transform: scale(0.92);
+}
+.twistyGlyph {
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.twistyOpen .twistyGlyph {
+  transform: rotate(90deg);
+}
+
+.twistySpacer {
+  width: 18px;
+  flex: none;
+}
+
+.jsonKey {
+  color: var(--accent-data);
+}
+.jsonPunct {
+  color: var(--text-muted);
+}
+.jsonStr {
+  color: var(--accent-gold);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.jsonNum {
+  color: var(--tier-bronze);
+}
+.jsonBool {
+  color: var(--accent-action);
+}
+.jsonNull {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.jsonSummary {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+.jsonHit {
+  background: rgba(245, 184, 46, 0.18);
+  border-radius: var(--r-sm);
+}
+
+.moreBtn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-data);
+  background: none;
+  border: 1px dashed var(--border-accent);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  padding: 2px 8px;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .moreBtn:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-data);
+  }
+}
+.moreBtn:focus-visible {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: var(--accent-data);
+}
+.moreBtn:active {
+  transform: scale(0.96);
+}
+
+/* Search box in the JSON toolbar. */
+.filterInput {
+  flex: 1;
+  min-width: 140px;
+  max-width: 320px;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 7px 11px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.filterInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 0;
+  }
+  .dialog {
+    border-radius: 0;
+    border: none;
+    width: 100%;
+  }
+  .bar {
+    padding: var(--sp-2) var(--sp-3);
+  }
+  .toolRow,
+  .notice {
+    padding-inline: var(--sp-3);
+  }
+  .gutter {
+    padding-left: var(--sp-3);
+  }
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+/* Movement goes; state feedback stays. Colour and opacity still communicate,
+   so a keyboard user can still see what has focus. */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .dialog {
+    animation: none;
+  }
+  /* The spinner keeps turning — it is the only signal that the app is still
+     working — but slowly enough not to read as motion. */
+  .spinner,
+  .spinnerSm {
+    animation-duration: 1.6s;
+  }
+  .iconBtn,
+  .textBtn,
+  .entryBtn,
+  .entryChevron,
+  .twisty,
+  .twistyGlyph,
+  .moreBtn,
+  .closeBtn svg {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .iconBtn:active,
+  .textBtn:active,
+  .entryBtn:active,
+  .twisty:active,
+  .moreBtn:active {
+    transform: none;
+  }
+  .closeBtn:hover svg,
+  .closeBtn:focus-visible svg,
+  .entryBtn:hover:not(:disabled) .entryChevron,
+  .entryBtn:focus-visible .entryChevron {
+    transform: none;
+  }
+  .twistyOpen .twistyGlyph {
+    /* The rotation is state, not decoration — it is the only thing telling you
+       the node is open, so it survives; only its animation is removed. */
+    transform: rotate(90deg);
+  }
+}

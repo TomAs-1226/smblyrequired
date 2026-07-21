@@ -35,6 +35,9 @@ export default function RobotDetail({ slug }) {
           autoAlpha: 0,
           duration: 1.15,
           ease: 'expo.out',
+          // See Reveal.jsx — the leftover inline transform would kill
+          // `.frame:hover .photo`'s zoom.
+          clearProps: 'transform',
         })
       }
       if (stage) {
@@ -215,6 +218,9 @@ function NotFound({ slug }) {
         duration: 0.7,
         ease: 'expo.out',
         stagger: 0.1,
+        // See Reveal.jsx — these children include the "back home" .btn, whose
+        // `:active` press is a transform the leftover inline style would kill.
+        clearProps: 'transform',
       })
     },
     { scope: root }

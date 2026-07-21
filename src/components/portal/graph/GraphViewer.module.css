@@ -1,0 +1,298 @@
+/* =========================================================================
+   Graph viewer — canvas surface, toolbar, and node inspector.
+   ========================================================================= */
+
+.viewer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 420px;
+  background: var(--bg-void);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--surface-1);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 9px 12px 9px 34px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
+.counts {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.settling {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 8px 14px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-body);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.toolBtn:active {
+  transform: scale(0.96);
+}
+.toolBtn:focus-visible {
+  border-color: var(--accent-data);
+  color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .toolBtn:hover {
+    border-color: var(--accent-data);
+    color: var(--text-primary);
+  }
+}
+
+.canvasWrap {
+  position: relative;
+  flex: 1;
+  min-height: 340px;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The canvas handles its own panning, so the browser must not also try to
+     scroll or zoom the page from the same gesture. */
+  touch-action: none;
+  cursor: grab;
+}
+.canvas:active {
+  cursor: grabbing;
+}
+
+.hoverChip {
+  position: absolute;
+  left: var(--sp-3);
+  bottom: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  pointer-events: none;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Inspector ----------------------------------------------------------- */
+
+.inspector {
+  position: absolute;
+  top: 70px;
+  right: var(--sp-3);
+  width: min(300px, calc(100% - var(--sp-5)));
+  max-height: calc(100% - 90px);
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-md);
+  box-shadow: var(--elev-2);
+  padding: var(--sp-3);
+  /* Anchored to the node list it describes, so it enters from the side it
+     lives on rather than materialising in the middle of the canvas. */
+  animation: inspectorIn var(--dur-panel) var(--ease-out) both;
+}
+@keyframes inspectorIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.inspectorHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.inspectorTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.godIcon {
+  color: var(--accent-gold);
+  flex: none;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--sp-3);
+}
+.meta > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+}
+.meta dt {
+  color: var(--text-muted);
+}
+.meta dd {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.metaLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.neighbours {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.neighbourBtn {
+  width: 100%;
+  text-align: left;
+  font-size: var(--fs-small);
+  color: var(--accent-data);
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.neighbourBtn:active {
+  transform: scale(0.98);
+}
+.neighbourBtn:focus-visible {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .neighbourBtn:hover {
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+}
+
+/* --- Empty --------------------------------------------------------------- */
+
+.emptyGraph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  text-align: center;
+  min-height: 320px;
+  padding: var(--sp-6);
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--r-md);
+}
+.emptyHint {
+  font-size: var(--fs-small);
+  max-width: 44ch;
+}
+
+@media (max-width: 640px) {
+  .inspector {
+    position: static;
+    width: auto;
+    max-height: 42vh;
+    margin: var(--sp-3);
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector {
+    animation: none;
+  }
+  .toolBtn,
+  .neighbourBtn {
+    transition-property: color, background-color, border-color;
+  }
+  .toolBtn:active,
+  .neighbourBtn:active {
+    transform: none;
+  }
+}

@@ -39,30 +39,48 @@
   color: var(--text-body);
   text-decoration: none;
   overflow: hidden;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
-    background 0.3s, box-shadow 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
-/* Cyan top tick that grows on hover — the house micro-interaction */
+/* Cyan top tick that grows on hover — the house micro-interaction.
+   scaleX off a left origin rather than width: it composites instead of
+   relayouting (matches the nav underline-wipe). */
 .card::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
-  width: 0;
+  width: 56px;
   height: 2px;
   background: var(--accent-data);
-  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.card:hover,
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+    box-shadow: var(--elev-2);
+  }
+  .card:hover::before {
+    transform: scaleX(1);
+  }
+}
 .card:focus-visible {
   transform: translateY(-4px);
   border-color: var(--border-strong);
   background: var(--surface-2);
   box-shadow: var(--elev-2);
 }
-.card:hover::before,
 .card:focus-visible::before {
-  width: 56px;
+  transform: scaleX(1);
+}
+.card:active {
+  transform: scale(0.98);
+  transition-duration: var(--dur-press);
 }
 
 .cardIcon {
@@ -77,9 +95,14 @@
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
   flex: none;
-  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.card:hover .cardIcon,
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardIcon {
+    background: rgba(56, 189, 248, 0.16);
+    transform: translateY(-3px);
+  }
+}
 .card:focus-visible .cardIcon {
   background: rgba(56, 189, 248, 0.16);
   transform: translateY(-3px);
@@ -111,17 +134,23 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent-data);
-  transition: color 0.3s ease;
-}
-.card:hover .cardCta,
-.card:focus-visible .cardCta {
-  color: var(--accent-gold-hi);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .cardCta :global(.arrow) {
   flex: none;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.card:hover .cardCta :global(.arrow),
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardCta {
+    color: var(--accent-gold-hi);
+  }
+  .card:hover .cardCta :global(.arrow) {
+    transform: translateX(4px);
+  }
+}
+.card:focus-visible .cardCta {
+  color: var(--accent-gold-hi);
+}
 .card:focus-visible .cardCta :global(.arrow) {
   transform: translateX(4px);
 }

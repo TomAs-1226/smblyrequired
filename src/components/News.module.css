@@ -131,10 +131,12 @@
   line-height: 1.12;
   margin-top: 2px;
   max-width: 28ch;
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.item:hover .itemTitle {
-  color: var(--text-primary);
+@media (hover: hover) and (pointer: fine) {
+  .item:hover .itemTitle {
+    color: var(--text-primary);
+  }
 }
 .itemBlurb {
   font-size: var(--fs-body);
@@ -170,5 +172,11 @@
   }
   .node {
     top: clamp(24px, 5vw, 30px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itemTitle {
+    transition: none;
   }
 }

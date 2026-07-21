@@ -1,0 +1,16 @@
+[Unit]
+Description=Run the FRC 5805 backup nightly
+Documentation=https://github.com/TomAs-1226/smblyrequired/blob/main/docs/BACKUP.md
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+# Spreads the start so a scheduled reboot at exactly 03:15 does not collide, and
+# so the job is not competing with everything else that fires on the quarter hour.
+RandomizedDelaySec=20m
+# If the machine was asleep or off at 03:15, run on the next boot rather than
+# silently skipping the night. This is the setting that makes the difference
+# between a backup schedule and a backup habit.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

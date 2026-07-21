@@ -47,6 +47,9 @@ export default function RobotLineage() {
             autoAlpha: 0,
             duration: 1.1,
             ease: 'expo.out',
+            // See Reveal.jsx — the leftover inline transform would kill
+            // `.frame:hover .photo`'s zoom.
+            clearProps: 'transform',
             scrollTrigger: { trigger: row, start: 'top 82%', once: true },
           })
         }

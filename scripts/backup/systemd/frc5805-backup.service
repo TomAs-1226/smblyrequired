@@ -1,0 +1,47 @@
+[Unit]
+Description=FRC 5805 nightly backup (Supabase -> server -> OptiPlex)
+Documentation=https://github.com/TomAs-1226/smblyrequired/blob/main/docs/BACKUP.md
+# The tailnet has to be up before leg 2 can reach the OptiPlex.
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=backup
+Group=backup
+
+# Secrets live here, mode 0600, owned by the backup user. They are deliberately
+# NOT in the repo and NOT in this unit file — `systemctl show` prints Environment=
+# values to any user that can read the unit.
+EnvironmentFile=/etc/frc5805-backup.env
+ExecStart=/opt/frc5805/scripts/backup/nightly.sh
+
+TimeoutStartSec=4h
+Nice=10
+IOSchedulingClass=idle
+
+# The job needs to read the whole system not at all: it writes to one directory
+# and talks to the network. Everything else is closed off.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+
+# ProtectHome hides /home, /root and /run/user from the service. Leg 2 needs an
+# SSH key, so the backup user's home must live OUTSIDE /home — create it with
+# `useradd --home-dir /var/lib/frc5805`. Leaving the home at /home/backup makes
+# leg 2 fail with "Permission denied (publickey)" while the key is plainly
+# present when you look, which is a genuinely horrible thing to debug.
+ProtectHome=true
+ReadWritePaths=/srv/backup/frc5805
+# Writable so ssh can maintain known_hosts. Must match BACKUP_ROOT if that is
+# changed from the default — this path is not derived from the env file.
+ReadWritePaths=/var/lib/frc5805
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

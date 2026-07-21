@@ -1,0 +1,1188 @@
+/* =========================================================================
+   Team Portal — the internal side of "Field Telemetry".
+
+   Same tokens as the public site, different job. The marketing pages persuade;
+   this reads like an instrument panel. That means: mono for anything machine-
+   generated (paths, hashes, byte counts), hairlines instead of cards where a
+   list is really a list, and gold reserved — here it marks *your* identity and
+   the single primary action, nothing else.
+
+   Every duration and curve below is a token. No raw cubic-bezier, no raw ms.
+   ========================================================================= */
+
+.wrap {
+  padding-block: var(--sp-7) var(--sp-8);
+  min-height: 70vh;
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  margin-bottom: var(--sp-2);
+}
+
+.title {
+  font-size: var(--fs-h2);
+  line-height: 1;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.whoName {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+
+.roleTag {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+/* The role ramp reuses the sponsor-tier ramp rather than introducing a second
+   scale — one idea of "rank" across the whole site. */
+.role_viewer { color: var(--tier-silver); border-color: var(--border-strong); }
+.role_member { color: var(--accent-data); border-color: var(--border-accent); }
+.role_lead,
+.role_mentor { color: var(--accent-gold); border-color: rgba(245, 184, 46, 0.35); }
+.role_admin {
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+.role_pending { color: var(--text-muted); }
+
+.signOut {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .signOut:hover {
+    color: var(--text-primary);
+    background: var(--surface-1);
+  }
+}
+.signOut:focus-visible {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+.signOut:active {
+  transform: scale(0.97);
+}
+
+/* --- Layout ------------------------------------------------------------- */
+
+.body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--sp-6);
+  margin-top: var(--sp-5);
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: start;
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sp-4));
+}
+
+.railLink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  border-left: 2px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .railLink:hover {
+    color: var(--text-primary);
+    background: var(--surface-1);
+  }
+}
+.railLink:focus-visible {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+.railLink:active {
+  transform: scale(0.98);
+}
+.railLinkActive {
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border-left-color: var(--accent-data);
+}
+
+.panelToggle {
+  display: none;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 11px 14px;
+  width: 100%;
+  margin-top: var(--sp-4);
+  transition: transform var(--dur-press) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.panelToggle:active {
+  transform: scale(0.98);
+}
+
+.panel {
+  min-width: 0; /* lets long paths/hashes shrink instead of blowing out the grid */
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
+
+.countBadge {
+  font-size: 0.7rem;
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+}
+
+/* --- Stat tiles --------------------------------------------------------- */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-3);
+}
+
+.stat {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+.statLabel {
+  display: block;
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  /* Stops the tile resizing as a counting number changes width. */
+  font-variant-numeric: tabular-nums;
+}
+
+.statUnit {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* --- Rows --------------------------------------------------------------- */
+
+.rows,
+.miniList,
+.legList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+/* Rows cascade in on mount. --i is capped by the caller at 8, so a long list
+   never becomes a slow one. */
+@media (prefers-reduced-motion: no-preference) {
+  .row,
+  .miniRow {
+    animation: rowIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0));
+  }
+}
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rowTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.rowDesc {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.bucketTag,
+.hash {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+.hash {
+  color: var(--text-muted);
+  border-color: var(--border-hairline);
+  background: var(--surface-sunken);
+}
+
+.rowAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rowAction:hover:not(:disabled) {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+    background: rgba(56, 189, 248, 0.08);
+  }
+}
+.rowAction:focus-visible {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+}
+.rowAction:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.rowAction:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.rowLink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  text-align: left;
+  padding: 2px 0;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+.rowLink:active {
+  transform: scale(0.99);
+}
+.rowChevron {
+  color: var(--text-muted);
+  flex: none;
+  transition: transform var(--dur-ui) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .rowLink:hover .rowChevron {
+    color: var(--accent-data);
+    transform: translateX(4px);
+  }
+}
+.rowLink:focus-visible .rowChevron {
+  color: var(--accent-data);
+  transform: translateX(4px);
+}
+
+.pinIcon {
+  color: var(--accent-gold);
+  flex: none;
+}
+
+.selfTag {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+}
+
+/* --- Mini list (dashboard) ---------------------------------------------- */
+
+.miniRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.miniTitle {
+  color: var(--text-body);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.miniMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex: none;
+}
+
+/* --- Backup legs -------------------------------------------------------- */
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  margin-bottom: var(--sp-2);
+}
+.legBad {
+  border-color: rgba(240, 99, 99, 0.35);
+}
+
+.legDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-muted);
+}
+.legOk .legDot {
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(63, 207, 142, 0.5);
+}
+.legBad .legDot {
+  background: var(--danger);
+}
+
+.legMain {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.legName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.legWhen {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.legError {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.legFlags {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  flex: none;
+}
+.legState {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.legStateOk {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.35);
+}
+.legStateBad {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.35);
+}
+/* Amber, not red: an unverified backup is not a failure, it is an unproven
+   claim. Colouring it as an error would train people to ignore it. */
+.legStateWarn {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.35);
+}
+
+/* --- Graph hubs --------------------------------------------------------- */
+
+.godNodes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.godLabel {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.godNode {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.25);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+.godMore {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* --- Toolbar, search, chips --------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 11px 12px 11px 36px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chip {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  padding: 7px 13px;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.chip:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.chipOn {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+
+.addBtn {
+  flex: none;
+}
+
+/* --- Forms -------------------------------------------------------------- */
+
+.form,
+.uploader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.uploader {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+
+.uploaderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-3);
+}
+
+.uploaderActions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.input,
+.textarea,
+.fileInput {
+  width: 100%;
+  font: inherit;
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 11px 12px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.textarea {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  resize: vertical;
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+.fileInput {
+  padding: 9px 12px;
+  color: var(--text-body);
+}
+
+.uploadNote {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* Height is reserved whether or not an error exists, so an arriving message
+   never pushes the submit button out from under the cursor. */
+.errorSlot {
+  min-height: 22px;
+}
+.error {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-small);
+  color: var(--danger);
+}
+
+.submit {
+  align-self: flex-start;
+}
+
+/* --- Auth card ---------------------------------------------------------- */
+
+.authCard {
+  max-width: 440px;
+  margin: var(--sp-6) auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  padding: var(--sp-6);
+  box-shadow: var(--elev-2);
+}
+
+.authTitle {
+  font-size: var(--fs-h3);
+  margin-bottom: var(--sp-2);
+}
+
+.authLead {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-bottom: var(--sp-5);
+}
+
+.switchMode {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--accent-data);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .switchMode:hover {
+    color: var(--accent-gold);
+  }
+}
+.switchMode:focus-visible {
+  color: var(--accent-gold);
+}
+
+.authFoot {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* --- Centered states ---------------------------------------------------- */
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+  max-width: 520px;
+  margin-inline: auto;
+}
+.centerPill {
+  margin-bottom: var(--sp-2);
+}
+.centerText {
+  color: var(--text-body);
+}
+
+/* --- Empty / error ------------------------------------------------------ */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-7) var(--sp-4);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--r-md);
+}
+.emptyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+}
+.emptyIconBad {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.08);
+  border-color: rgba(240, 99, 99, 0.3);
+}
+.emptyTitle {
+  font-size: var(--fs-h3);
+}
+.emptyText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 42ch;
+}
+
+/* --- Skeletons ---------------------------------------------------------- */
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+}
+.skeletonRow {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.skeletonBar {
+  height: 13px;
+  width: 62%;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface-1) 0%,
+    var(--surface-2) 50%,
+    var(--surface-1) 100%
+  );
+  background-size: 200% 100%;
+  /* Animating background-position, not transform, so the shimmer cannot cause
+     layout and the bar keeps its exact final geometry. */
+  animation: shimmer 1.4s linear infinite;
+  animation-delay: calc(var(--stagger-step) * var(--i, 0));
+}
+.skeletonBarShort {
+  width: 34%;
+  height: 10px;
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* --- Spinners ----------------------------------------------------------- */
+
+.spinner,
+.spinnerSm {
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent-data);
+  /* Deliberately quick. A faster spinner makes the same wait feel shorter. */
+  animation: spin 620ms linear infinite;
+}
+.spinner {
+  width: 30px;
+  height: 30px;
+}
+.spinnerSm {
+  width: 15px;
+  height: 15px;
+  border-width: 2px;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Docs / prose ------------------------------------------------------- */
+
+.docHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .backBtn:hover {
+    color: var(--accent-data);
+  }
+}
+.backBtn:focus-visible {
+  color: var(--accent-data);
+}
+.backBtn:active {
+  transform: scale(0.97);
+}
+
+.previewToggle {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  padding: 7px 13px;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.previewToggle[aria-pressed='true'] {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+}
+.previewToggle:active {
+  transform: scale(0.96);
+}
+
+.docTitle {
+  font-size: var(--fs-h3);
+}
+
+.prose {
+  color: var(--text-body);
+  max-width: 74ch;
+}
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5 {
+  margin-top: var(--sp-5);
+  margin-bottom: var(--sp-2);
+}
+.prose h2 { font-size: 1.5rem; }
+.prose h3 { font-size: 1.22rem; }
+.prose h4 { font-size: 1.05rem; }
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre {
+  margin-bottom: var(--sp-3);
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.35em;
+}
+.prose li {
+  margin-bottom: 5px;
+}
+.prose a {
+  color: var(--accent-data);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.87em;
+  color: var(--accent-gold);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+.prose pre {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  /* Long lines scroll inside the block instead of widening the page. */
+  overflow-x: auto;
+}
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-body);
+}
+.prose blockquote {
+  border-left: 2px solid var(--accent-data);
+  padding-left: var(--sp-3);
+  color: var(--text-muted);
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border-hairline);
+  margin: var(--sp-5) 0;
+}
+
+.roleSelect {
+  flex: none;
+  min-width: 130px;
+}
+
+/* --- Sync badge --------------------------------------------------------- */
+/* Always visible on scouting screens. "Nothing queued" and "not rendered"
+   must not look the same, or people stop trusting the indicator entirely. */
+
+.syncBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 7px 13px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.syncBadge:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .syncBadge:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+}
+.syncBadge:focus-visible {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.syncDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+
+.sync_ok {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.3);
+}
+.sync_warn {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.35);
+}
+.sync_bad {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.4);
+}
+/* Offline is a state, not a fault — the scout did nothing wrong and their data
+   is safe. Colouring it red would train people to panic at a working system. */
+.sync_off {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+
+.syncCompact .syncLabel {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .syncLabel {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .syncBadge {
+    transition-property: color, background-color, border-color;
+  }
+  .syncBadge:active {
+    transform: none;
+  }
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .body {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+    margin-top: var(--sp-2);
+  }
+  .panelToggle {
+    display: flex;
+  }
+  .rail {
+    position: static;
+    display: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--r-md);
+    padding: 6px;
+  }
+  .railOpen {
+    display: flex;
+  }
+  .head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* --- Reduced motion ----------------------------------------------------- */
+/* Motion is removed; state feedback is not. Colour and opacity transitions
+   still communicate, so they stay — only movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .miniRow {
+    animation: none;
+  }
+  .skeletonBar {
+    animation: none;
+  }
+  .spinner,
+  .spinnerSm {
+    animation-duration: 1.6s;
+  }
+  .railLink,
+  .rowAction,
+  .rowLink,
+  .rowChevron,
+  .chip,
+  .signOut,
+  .backBtn,
+  .previewToggle,
+  .panelToggle,
+  .switchMode {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .railLink:active,
+  .rowAction:active,
+  .rowLink:active,
+  .chip:active,
+  .signOut:active,
+  .backBtn:active,
+  .previewToggle:active,
+  .panelToggle:active {
+    transform: none;
+  }
+}

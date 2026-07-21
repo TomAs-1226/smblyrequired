@@ -115,26 +115,32 @@
   border: 1px solid var(--border-hairline);
   border-top: 1px solid var(--border-strong);
   border-radius: var(--r-md);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-/* Cyan progress rule on hover — the house tell */
+/* Cyan progress rule on hover — the house tell. Wiped in with scaleX rather
+   than an animated width so it stays on the compositor (see Footer .navLink). */
 .card::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
-  width: 0;
+  width: 52px;
   height: 2px;
   background: var(--accent-data);
-  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.card:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-}
-.card:hover::before {
-  width: 52px;
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  .card:hover::before {
+    transform: scaleX(1);
+  }
 }
 
 .cardIcon {
@@ -149,11 +155,13 @@
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
   flex: none;
-  transition: background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.card:hover .cardIcon {
-  background: rgba(56, 189, 248, 0.15);
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardIcon {
+    background: rgba(56, 189, 248, 0.15);
+    transform: translateY(-3px);
+  }
 }
 
 .cardTitle {
@@ -180,12 +188,21 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--accent-data);
+  transition: transform var(--dur-press) var(--ease-out);
 }
 .cardLink .arrow {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.cardLink:hover .arrow {
+@media (hover: hover) and (pointer: fine) {
+  .cardLink:hover .arrow {
+    transform: translateX(4px);
+  }
+}
+.cardLink:focus-visible .arrow {
   transform: translateX(4px);
+}
+.cardLink:active {
+  transform: scale(0.97);
 }
 
 /* --- (1) PRIMARY gift card — tall left column, gold-led --- */
@@ -199,9 +216,11 @@
 .cardGive::before {
   display: none;
 }
-.cardGive:hover {
-  border-color: var(--border-strong);
-  border-left-color: var(--accent-gold-hi);
+@media (hover: hover) and (pointer: fine) {
+  .cardGive:hover {
+    border-color: var(--border-strong);
+    border-left-color: var(--accent-gold-hi);
+  }
 }
 .cardTop {
   display: flex;
@@ -218,8 +237,10 @@
   background: rgba(245, 184, 46, 0.1);
   border-color: rgba(245, 184, 46, 0.4);
 }
-.cardGive:hover .cardIconGold {
-  background: rgba(245, 184, 46, 0.16);
+@media (hover: hover) and (pointer: fine) {
+  .cardGive:hover .cardIconGold {
+    background: rgba(245, 184, 46, 0.16);
+  }
 }
 .cardTag {
   font-family: var(--font-display);
@@ -324,11 +345,22 @@
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-sm);
-  transition: border-color 0.3s ease, color 0.3s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
-.inKindChip:hover {
+@media (hover: hover) and (pointer: fine) {
+  .inKindChip:hover {
+    border-color: var(--border-accent);
+    color: var(--text-primary);
+  }
+}
+/* Inert while the chip is a plain <li>; ready the moment it becomes focusable. */
+.inKindChip:focus-visible {
   border-color: var(--border-accent);
   color: var(--text-primary);
+}
+.inKindChip:active {
+  transform: scale(0.97);
 }
 .inKindCheck {
   flex: none;
@@ -436,20 +468,24 @@
   position: relative;
   padding: var(--sp-5) var(--sp-4);
   border-top: 1px solid var(--border-strong);
-  transition: border-color 0.3s ease;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 .step::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
-  width: 0;
+  width: 48px;
   height: 2px;
   background: var(--accent-data);
-  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.step:hover::before {
-  width: 48px;
+@media (hover: hover) and (pointer: fine) {
+  .step:hover::before {
+    transform: scaleX(1);
+  }
 }
 .stepNum {
   display: block;
@@ -527,7 +563,9 @@
   .card,
   .cardIcon,
   .card::before,
+  .step,
   .step::before,
+  .cardLink,
   .cardLink .arrow,
   .inKindChip {
     transition: none;

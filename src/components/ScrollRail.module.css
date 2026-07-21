@@ -25,13 +25,24 @@
   align-items: center;
   gap: 12px;
   padding: 2px 0;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+/* A 22px tick is a small target — 0.97 would be sub-pixel here. */
+.rail button:active {
+  transform: scale(0.92);
 }
 
+/* The tick reserves its widest footprint (38px) and is scaled down at rest, so
+   growing it composites instead of reflowing the flex row and shoving the
+   label sideways on every hover. calc() keeps the 22/30/38 ramp legible. */
 .tick {
-  width: 22px;
+  width: 38px;
   height: 2px;
   background: var(--border-strong);
-  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.35s;
+  transform: scaleX(calc(22 / 38));
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
 
 .label {
@@ -42,25 +53,51 @@
   color: var(--text-muted);
   opacity: 0;
   transform: translateX(-6px);
-  transition: opacity 0.35s, transform 0.35s, color 0.35s;
+  transition: opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
-.rail button:hover .label {
+@media (hover: hover) and (pointer: fine) {
+  .rail button:hover .label {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .rail button:hover .tick {
+    transform: scaleX(calc(30 / 38));
+    background: var(--text-muted);
+  }
+}
+
+/* The label is this button's ONLY visible name. Without a focus reveal a
+   keyboard user lands on a bare tick with no idea where it goes, so this
+   mirrors the hover state and must stay outside the hover media query. */
+.rail button:focus-visible .label {
   opacity: 1;
   transform: translateX(0);
 }
 
-.rail button:hover .tick {
-  width: 30px;
+.rail button:focus-visible .tick {
+  transform: scaleX(calc(30 / 38));
   background: var(--text-muted);
 }
 
-.active .tick {
-  width: 38px;
+/* Qualified with `button` so the current section keeps its gold tick when
+   hovered or focused — the shorter .active selectors used to lose to :hover. */
+.rail button.active .tick {
+  transform: scaleX(1);
   background: var(--accent-gold);
 }
-.active .label {
+.rail button.active .label {
   opacity: 1;
   transform: translateX(0);
   color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail button,
+  .tick,
+  .label {
+    transition: none;
+  }
 }

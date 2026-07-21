@@ -56,6 +56,9 @@ export default function Donate() {
         duration: 0.7,
         ease: 'expo.out',
         stagger: 0.08,
+        // See Reveal.jsx — without this the tween leaves an inline transform
+        // that outranks the stylesheet and kills `.card:hover`'s lift.
+        clearProps: 'transform',
         scrollTrigger: { trigger: `.${styles.board}`, start: 'top 82%', once: true },
       })
     },

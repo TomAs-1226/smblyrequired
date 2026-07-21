@@ -78,12 +78,17 @@
   padding: var(--sp-4) var(--sp-4) var(--sp-5);
   /* graduated lift ascending bronze -> title */
   margin-top: calc((4 - var(--step)) * 14px);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
-    box-shadow 0.3s, background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
-.card:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-strong);
+/* Gated: below 760px these cards sit in a scroll-snap rail, where a synthesised
+   :hover latches onto every card you swipe past and leaves it lifted. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+  }
 }
 .cardRaised {
   background: var(--surface-2);
@@ -94,8 +99,10 @@
   border-color: var(--border-accent);
   box-shadow: var(--elev-feature), 0 0 26px rgba(56, 189, 248, 0.18);
 }
-.cardFeatured:hover {
-  border-color: var(--accent-data);
+@media (hover: hover) and (pointer: fine) {
+  .cardFeatured:hover {
+    border-color: var(--accent-data);
+  }
 }
 
 /* tier-colored top rule */
@@ -216,11 +223,13 @@
   border-top: 2px solid var(--accent-gold);
   box-shadow: var(--elev-feature);
 }
-.plateTitle:hover {
-  background:
-    linear-gradient(120deg, rgba(245, 184, 46, 0.16), rgba(245, 184, 46, 0) 58%),
-    var(--surface-2);
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .plateTitle:hover {
+    background:
+      linear-gradient(120deg, rgba(245, 184, 46, 0.16), rgba(245, 184, 46, 0) 58%),
+      var(--surface-2);
+    border-color: var(--border-strong);
+  }
 }
 .plateTitle .plateName {
   font-size: clamp(1.7rem, 3vw, 2.5rem);
@@ -256,13 +265,15 @@
   background: var(--surface-1);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
-  transition: border-color 0.3s, background 0.3s, transform 0.4s
-    cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.plate:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .plate:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+    transform: translateY(-3px);
+  }
 }
 .plateName {
   font-family: var(--font-display);

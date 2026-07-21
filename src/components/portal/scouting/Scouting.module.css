@@ -1,0 +1,482 @@
+/* =========================================================================
+   Scouting — the field-facing side of the portal.
+
+   Same tokens as everything else, different priorities. This is used one-handed
+   on a phone, in a loud arena, by someone who must keep their eyes on the
+   field. So: 48px minimum tap targets (above the 44px floor, because thumbs
+   miss when you are not looking), high contrast, and no motion on anything
+   pressed repeatedly.
+   ========================================================================= */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.section {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--sp-4);
+}
+.section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.sectionHead {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  margin-bottom: var(--sp-3);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--sp-4);
+}
+
+/* Counters get a full row of their own — they are the highest-traffic control
+   and must never sit shoulder-to-shoulder with something mis-tappable. */
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fieldHeading {
+  grid-column: 1 / -1;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-top: var(--sp-2);
+}
+
+.fieldLabel {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.req {
+  color: var(--accent-gold);
+}
+
+.fieldHelp {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-top: -2px;
+}
+
+/* --- Counter ------------------------------------------------------------- */
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.counterBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 64px;
+  padding-inline: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  /* Only the press scale transitions. This control is tapped dozens of times a
+     match — anything slower reads as the interface failing to keep up. */
+  transition: transform var(--dur-press) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  /* Stops iOS turning a fast double-tap into a page zoom mid-match. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.counterBtn:active:not(:disabled) {
+  transform: scale(0.94);
+  background: var(--surface-2);
+}
+.counterBtn:disabled {
+  opacity: 0.35;
+}
+.counterBtn:focus-visible {
+  border-color: var(--accent-data);
+}
+@media (hover: hover) and (pointer: fine) {
+  .counterBtn:hover:not(:disabled) {
+    border-color: var(--accent-data);
+  }
+}
+
+.counterPlus {
+  flex: 1;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--border-accent);
+  color: var(--accent-data);
+}
+.counterPlus:active:not(:disabled) {
+  background: rgba(56, 189, 248, 0.22);
+}
+
+.counterValue {
+  min-width: 68px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  /* Tabular so the row does not shift width as the count crosses 9 -> 10. */
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.timerOn {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.5);
+}
+
+/* --- Toggle / chips / rating --------------------------------------------- */
+
+.toggle,
+.chipRow,
+.rating {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggleBtn,
+.optChip,
+.ratingBtn {
+  min-height: 48px;
+  padding: 12px 18px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.toggleBtn:active,
+.optChip:active,
+.ratingBtn:active {
+  transform: scale(0.96);
+}
+.toggleBtn:focus-visible,
+.optChip:focus-visible,
+.ratingBtn:focus-visible {
+  border-color: var(--accent-data);
+}
+@media (hover: hover) and (pointer: fine) {
+  .toggleBtn:hover,
+  .optChip:hover,
+  .ratingBtn:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+}
+
+.toggleBtn {
+  flex: 1;
+  min-width: 96px;
+}
+
+.toggleOn,
+.optOn {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+
+.ratingBtn {
+  min-width: 52px;
+  justify-content: center;
+}
+.ratingOn {
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+/* --- Text inputs ---------------------------------------------------------- */
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: 48px;
+  font: inherit;
+  font-size: 1rem; /* 16px minimum — anything smaller makes iOS zoom on focus */
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
+/* --- Panel chrome --------------------------------------------------------- */
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.savedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--success);
+  border: 1px solid rgba(63, 207, 142, 0.35);
+  border-radius: var(--r-pill);
+  padding: 7px 13px;
+  animation: savedIn var(--dur-panel) var(--ease-out) both;
+}
+@keyframes savedIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modeRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--sp-2);
+}
+
+.modeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 76px;
+  padding: var(--sp-3);
+  text-align: left;
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.modeBtn:active {
+  transform: scale(0.98);
+}
+.modeBtn:focus-visible {
+  border-color: var(--accent-data);
+}
+@media (hover: hover) and (pointer: fine) {
+  .modeBtn:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+  }
+}
+.modeOn {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.modeLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+.modeBlurb {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.identityRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+/* Team and match numbers are typed under time pressure and mis-typing one
+   silently attributes a match to the wrong robot. Oversized on purpose. */
+.bigInput {
+  width: 100%;
+  min-height: 60px;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.bigInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
+.allianceRow {
+  display: flex;
+  gap: 8px;
+}
+.allianceBtn {
+  flex: 1;
+  min-height: 60px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.allianceBtn:active {
+  transform: scale(0.97);
+}
+/* Alliance colour is the one place raw red/blue is correct: these are the
+   field's own colours, not brand tokens, and a scout matches them by eye. */
+.allianceOn.alliance_red {
+  color: #fff;
+  background: #c0392b;
+  border-color: #e05548;
+}
+.allianceOn.alliance_blue {
+  color: #fff;
+  background: #1f5fb8;
+  border-color: #3a82e0;
+}
+
+.textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
+.saveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  margin-top: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border: none;
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.saveBtn:active {
+  transform: scale(0.98);
+  background: var(--accent-gold-hi);
+}
+.saveBtn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.photoRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.photoBtn {
+  min-height: 52px;
+}
+
+/* --- Reduced motion -------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .counterBtn,
+  .toggleBtn,
+  .optChip,
+  .ratingBtn,
+  .modeBtn,
+  .allianceBtn,
+  .saveBtn {
+    transition-property: color, background-color, border-color;
+  }
+  .counterBtn:active,
+  .toggleBtn:active,
+  .optChip:active,
+  .ratingBtn:active,
+  .modeBtn:active,
+  .allianceBtn:active,
+  .saveBtn:active {
+    transform: none;
+  }
+  .savedChip {
+    animation: none;
+  }
+}

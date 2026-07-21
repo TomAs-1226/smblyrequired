@@ -18,16 +18,28 @@
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: clamp(28px, 5vw, 56px);
-  transition: color 0.3s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 .back span {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.back:hover {
+@media (hover: hover) and (pointer: fine) {
+  .back:hover {
+    color: var(--accent-data);
+  }
+  .back:hover span {
+    transform: translateX(-4px);
+  }
+}
+.back:focus-visible {
   color: var(--accent-data);
 }
-.back:hover span {
+.back:focus-visible span {
   transform: translateX(-4px);
+}
+.back:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 
 /* --- Hero layout: media + identity --- */
@@ -102,7 +114,7 @@
     radial-gradient(56% 56% at 50% 40%, rgba(46, 125, 246, 0.24), transparent 70%),
     radial-gradient(70% 64% at 50% 38%, rgba(199, 210, 221, 0.08), transparent 72%);
   pointer-events: none;
-  transition: filter 0.4s ease;
+  transition: filter var(--dur-fast) var(--ease-out);
 }
 .isChampion .spot {
   background:
@@ -142,15 +154,17 @@
   filter: saturate(0.95) contrast(1.04) brightness(0.98)
     drop-shadow(0 26px 30px rgba(6, 19, 37, 0.55));
   transform-origin: center bottom;
-  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+  transition: transform var(--dur-ui) var(--ease-out), filter var(--dur-fast) var(--ease-out);
 }
-.frame:hover .photo {
-  transform: scale(1.03) translateY(-5px);
-  filter: saturate(0.97) contrast(1.05) brightness(1)
-    drop-shadow(0 32px 36px rgba(6, 19, 37, 0.6));
-}
-.frame:hover .spot {
-  filter: brightness(1.18);
+@media (hover: hover) and (pointer: fine) {
+  .frame:hover .photo {
+    transform: scale(1.03) translateY(-5px);
+    filter: saturate(0.97) contrast(1.05) brightness(1)
+      drop-shadow(0 32px 36px rgba(6, 19, 37, 0.6));
+  }
+  .frame:hover .spot {
+    filter: brightness(1.18);
+  }
 }
 
 /* Grounding reflection — soft elliptical contact shadow under the subject. */
@@ -165,11 +179,13 @@
   background: radial-gradient(closest-side, rgba(6, 19, 37, 0.78), transparent 78%);
   filter: blur(8px);
   pointer-events: none;
-  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  transition: transform var(--dur-ui) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
-.frame:hover .shadow {
-  transform: translateX(-50%) scaleX(1.06);
-  opacity: 0.82;
+@media (hover: hover) and (pointer: fine) {
+  .frame:hover .shadow {
+    transform: translateX(-50%) scaleX(1.06);
+    opacity: 0.82;
+  }
 }
 
 /* Mono telemetry caption under the frame */
@@ -406,16 +422,30 @@
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   color: var(--text-body);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .pagerNext {
   text-align: right;
   align-items: flex-end;
 }
-.pagerLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .pagerLink:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-accent);
+    background: var(--surface-2);
+  }
+}
+.pagerLink:focus-visible {
   transform: translateY(-4px);
   border-color: var(--border-accent);
   background: var(--surface-2);
+}
+/* Large card — a shallower press than a button, and it drops the hover lift
+   so the card reads as pushed back into the page. */
+.pagerLink:active {
+  transform: scale(0.98);
+  transition-duration: var(--dur-press);
 }
 .pagerDir {
   display: inline-flex;
@@ -431,15 +461,23 @@
 .pagerArrow,
 .pagerArrowBack {
   flex: none;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
 .pagerArrowBack {
   transform: scaleX(-1);
 }
-.pagerNext:hover .pagerArrow {
+@media (hover: hover) and (pointer: fine) {
+  .pagerNext:hover .pagerArrow {
+    transform: translateX(4px);
+  }
+  .pagerPrev:hover .pagerArrowBack {
+    transform: scaleX(-1) translateX(4px);
+  }
+}
+.pagerNext:focus-visible .pagerArrow {
   transform: translateX(4px);
 }
-.pagerPrev:hover .pagerArrowBack {
+.pagerPrev:focus-visible .pagerArrowBack {
   transform: scaleX(-1) translateX(4px);
 }
 .pagerName {
@@ -450,7 +488,12 @@
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
-.pagerLink:hover .pagerName {
+@media (hover: hover) and (pointer: fine) {
+  .pagerLink:hover .pagerName {
+    color: var(--accent-data);
+  }
+}
+.pagerLink:focus-visible .pagerName {
   color: var(--accent-data);
 }
 .pagerMeta {

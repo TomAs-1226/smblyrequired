@@ -7,4 +7,15 @@ dist-ssr
 _design
 nul.css
 nul.*
+
+# Every .env variant, not just the bare one — Vite also reads .env.production,
+# .env.development, and friends, and any of them can hold a live key.
 .env
+.env.*
+!.env.example
+
+# Backup snapshots, if anyone ever runs the mirror from inside a checkout.
+/backup/
+SHA256SUMS.local
+
+dist-probe

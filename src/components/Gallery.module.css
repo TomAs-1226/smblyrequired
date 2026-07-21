@@ -47,8 +47,9 @@
   padding: 8px 14px;
   border-radius: var(--r-pill);
   cursor: pointer;
-  transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease,
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out);
 }
 .chipDot {
   width: 6px;
@@ -56,15 +57,32 @@
   border-radius: 50%;
   background: var(--text-muted);
   opacity: 0.6;
-  transition: background 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
-.chip:hover {
+/* Touch synthesises :hover on tap and latches it — a tapped filter chip would
+   sit there looking half-selected. Gate it on a real pointer. */
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    color: var(--text-body);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .chip:hover .chipDot {
+    opacity: 1;
+  }
+}
+.chip:focus-visible {
   color: var(--text-body);
   border-color: var(--border-strong);
   transform: translateY(-1px);
 }
-.chip:hover .chipDot {
+.chip:focus-visible .chipDot {
   opacity: 1;
+}
+.chip:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 .chipActive {
   color: var(--text-on-cyan);
@@ -72,7 +90,15 @@
   border-color: var(--accent-data);
   box-shadow: var(--glow-data);
 }
-.chipActive:hover {
+/* Keeps the selected chip from being washed out by the generic hover/focus
+   treatment above — must stay after it. */
+@media (hover: hover) and (pointer: fine) {
+  .chipActive:hover {
+    color: var(--text-on-cyan);
+    border-color: var(--accent-data);
+  }
+}
+.chipActive:focus-visible {
   color: var(--text-on-cyan);
   border-color: var(--accent-data);
 }
@@ -101,7 +127,8 @@
   will-change: transform, opacity;
   isolation: isolate;
   box-shadow: var(--elev-1);
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 
 /* Size spans honored from data: 'wide' = 2 cols, 'tall' = 2 rows */
@@ -124,6 +151,7 @@
   background: none;
   cursor: zoom-in;
   text-align: left;
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* --- The STAGE: spotlight + blueprint behind the subject --------------- */
@@ -154,7 +182,7 @@
   height: 100%;
   object-fit: cover;
   filter: saturate(0.95) contrast(1.04) brightness(0.98);
-  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
+  transition: transform var(--dur-ui) var(--ease-out), filter var(--dur-fast) var(--ease-out);
 }
 
 /* Navy scrim — blends the photo's hard edges into the panel and grounds the
@@ -169,7 +197,7 @@
     linear-gradient(180deg, rgba(6, 19, 37, 0.32) 0%, rgba(6, 19, 37, 0) 26%),
     radial-gradient(140% 120% at 50% 18%, rgba(6, 19, 37, 0) 40%, rgba(6, 19, 37, 0.4) 100%);
   opacity: 0.72;
-  transition: opacity 0.45s ease;
+  transition: opacity var(--dur-fast) var(--ease-out);
   pointer-events: none;
 }
 
@@ -191,7 +219,7 @@
   backdrop-filter: blur(4px);
   opacity: 0;
   transform: translateY(-4px) scale(0.92);
-  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 
 /* --- Caption: data-tag + text, slides up on hover/focus --- */
@@ -205,7 +233,7 @@
   padding: clamp(14px, 1.4vw, 20px);
   transform: translateY(14px);
   opacity: 0;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  transition: transform var(--dur-ui) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 .capTag {
   /* mono data-tag — render on the dark scrim, gold dot stays as-is */
@@ -222,56 +250,92 @@
   text-wrap: balance;
 }
 
-/* Hover / focus state — lift the tile, scale photo, deepen scrim, reveal cap */
-.tile:hover,
-.tile:focus-within {
+/* Hover state — lift the tile, scale photo, deepen scrim, reveal cap.
+   Pointer-gated: on touch this whole block used to latch on after a tap opened
+   the lightbox, leaving the tile stuck lifted with its caption showing. */
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-accent);
+    box-shadow: var(--elev-feature);
+  }
+  .tile:hover .img {
+    transform: scale(1.07);
+    filter: saturate(1.02) contrast(1.06) brightness(1);
+  }
+  .tile:hover .scrim {
+    opacity: 0.94;
+  }
+  .tile:hover .cap {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .tile:hover .zoomCue {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Keyboard twins — same information, never inside the hover query.
+   Keyed off :focus-visible rather than :focus-within so the tile does NOT
+   re-light when the lightbox closes and returns focus here after a tap. */
+.tile:has(.tileBtn:focus-visible) {
   transform: translateY(-4px);
   border-color: var(--border-accent);
   box-shadow: var(--elev-feature);
 }
-.tile:hover .img,
 .tileBtn:focus-visible .img {
   transform: scale(1.07);
   filter: saturate(1.02) contrast(1.06) brightness(1);
 }
-.tile:hover .scrim,
 .tileBtn:focus-visible .scrim {
   opacity: 0.94;
 }
-.tile:hover .cap,
 .tileBtn:focus-visible .cap {
   transform: translateY(0);
   opacity: 1;
 }
-.tile:hover .zoomCue,
 .tileBtn:focus-visible .zoomCue {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
 
-/* Cyan top-edge accent on hover — the telemetry tell */
+/* Cyan top-edge accent on hover — the telemetry tell.
+   scaleX off a left origin rather than animating width: it runs on the
+   compositor instead of relayouting, and matches the nav underline-wipe. */
 .tile::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   z-index: 4;
-  width: 0;
+  width: 72px;
   height: 2px;
   background: var(--accent-data);
   box-shadow: var(--glow-data);
-  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
   pointer-events: none;
 }
-.tile:hover::after,
-.tile:focus-within::after {
-  width: 72px;
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover::after {
+    transform: scaleX(1);
+  }
+}
+.tile:has(.tileBtn:focus-visible)::after {
+  transform: scaleX(1);
 }
 
 .tileBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
   border-radius: var(--r-md);
+}
+/* The lift lives on .tile, so the press has to live on the button — that way
+   the two transforms compose instead of overwriting each other. */
+.tileBtn:active {
+  transform: scale(0.98);
 }
 
 /* --- Placeholder "add a photo" slots — dashed HUD on sunken navy --- */
@@ -287,10 +351,13 @@
   border: 1px dashed var(--border-strong);
   box-shadow: none;
 }
-.placeholder:hover {
-  transform: none;
-  border-color: var(--border-strong);
-  box-shadow: none;
+/* Neutralises the .tile hover treatment — must stay after it in source order */
+@media (hover: hover) and (pointer: fine) {
+  .placeholder:hover {
+    transform: none;
+    border-color: var(--border-strong);
+    box-shadow: none;
+  }
 }
 .placeholder::after {
   content: none; /* no cyan accent bar on placeholders */
@@ -432,12 +499,33 @@
   border: 1px solid var(--border-strong);
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
-.lbClose:hover {
+/* The spin moved onto the glyph so the button's own transform stays free for
+   the press scale — otherwise :active would cancel the rotation mid-gesture.
+   The X is 90°-symmetric, so the resting result is identical either way. */
+.lbClose svg {
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lbClose:hover {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: var(--accent-data);
+  }
+  .lbClose:hover svg {
+    transform: rotate(90deg);
+  }
+}
+.lbClose:focus-visible {
   background: rgba(56, 189, 248, 0.16);
   border-color: var(--accent-data);
+}
+.lbClose:focus-visible svg {
   transform: rotate(90deg);
+}
+.lbClose:active {
+  transform: scale(0.92);
 }
 
 .lbNav {
@@ -455,10 +543,17 @@
   border: 1px solid var(--border-strong);
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
 }
-.lbNav:hover {
+@media (hover: hover) and (pointer: fine) {
+  .lbNav:hover {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: var(--accent-data);
+  }
+}
+.lbNav:focus-visible {
   background: rgba(56, 189, 248, 0.16);
   border-color: var(--accent-data);
 }
@@ -472,14 +567,30 @@
 .lbPrev svg {
   transform: rotate(180deg);
 }
-.lbPrev:hover {
+@media (hover: hover) and (pointer: fine) {
+  .lbPrev:hover {
+    transform: translateX(-3px);
+  }
+}
+.lbPrev:focus-visible {
   transform: translateX(-3px);
 }
 .lbNext {
   right: clamp(8px, 2.5vw, 32px);
 }
-.lbNext:hover {
+@media (hover: hover) and (pointer: fine) {
+  .lbNext:hover {
+    transform: translateX(3px);
+  }
+}
+.lbNext:focus-visible {
   transform: translateX(3px);
+}
+/* Last, so the press wins over the directional nudge above. Losing the 3px
+   slide for the duration of the press is imperceptible next to the scale. */
+.lbNav:active {
+  transform: scale(0.92);
+  transition-duration: var(--dur-press);
 }
 
 /* =========================================================================
@@ -537,25 +648,29 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tile,
+  .tileBtn,
   .chip,
+  .chipDot,
   .img,
   .scrim,
   .cap,
   .zoomCue,
   .tile::after,
   .lbClose,
+  .lbClose svg,
   .lbNav {
     transition: none;
   }
   .tile:hover,
-  .tile:focus-within {
+  .tile:has(.tileBtn:focus-visible) {
     transform: none;
   }
   .tile:hover .img,
   .tileBtn:focus-visible .img {
     transform: none;
   }
-  .lbClose:hover {
+  .lbClose:hover svg,
+  .lbClose:focus-visible svg {
     transform: none;
   }
 }

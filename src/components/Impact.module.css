@@ -165,13 +165,16 @@
   border: 1px solid transparent;
   border-bottom: 1px solid var(--border-hairline);
   border-radius: var(--r-sm);
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 .row:last-child {
   border-bottom-color: transparent;
 }
-.row:hover {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+@media (hover: hover) and (pointer: fine) {
+  .row:hover {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+  }
 }
 
 /* Kind-colored tick to the left of each row */
@@ -202,9 +205,11 @@
   border-radius: var(--r-md);
   margin: var(--sp-2) 0;
 }
-.rowFlagship:hover {
-  background: linear-gradient(90deg, rgba(245, 184, 46, 0.1), transparent 65%);
-  border-color: rgba(245, 184, 46, 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .rowFlagship:hover {
+    background: linear-gradient(90deg, rgba(245, 184, 46, 0.1), transparent 65%);
+    border-color: rgba(245, 184, 46, 0.3);
+  }
 }
 
 .rowMain {
@@ -377,10 +382,12 @@
   gap: clamp(14px, 2vw, 24px);
   padding: var(--sp-4) var(--sp-2);
   border-bottom: 1px solid var(--border-hairline);
-  transition: background 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out);
 }
-.railRow:hover {
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+@media (hover: hover) and (pointer: fine) {
+  .railRow:hover {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.05), transparent 70%);
+  }
 }
 .railMonth {
   display: inline-flex;
@@ -443,11 +450,21 @@
   border: 1px solid var(--border-accent);
   padding: 11px 18px;
   border-radius: var(--r-pill);
-  transition: background 0.3s ease, border-color 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
-.watch:hover {
+@media (hover: hover) and (pointer: fine) {
+  .watch:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-data);
+  }
+}
+.watch:focus-visible {
   background: rgba(56, 189, 248, 0.1);
   border-color: var(--accent-data);
+}
+.watch:active {
+  transform: scale(0.97);
 }
 .watchPulse {
   width: 8px;
@@ -470,9 +487,14 @@
   }
 }
 .watchIcon {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.watch:hover .watchIcon {
+@media (hover: hover) and (pointer: fine) {
+  .watch:hover .watchIcon {
+    transform: translate(2px, -2px);
+  }
+}
+.watch:focus-visible .watchIcon {
   transform: translate(2px, -2px);
 }
 

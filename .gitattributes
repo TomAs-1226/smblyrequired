@@ -1,0 +1,16 @@
+# Checksum manifests must stay LF. Windows autocrlf rewrites them to CRLF on
+# checkout, and `sha256sum -c` then fails to find every single file listed —
+# which looks exactly like total backup corruption.
+SHA256SUMS text eol=lf
+MANIFEST.sha256 text eol=lf
+
+# Shell scripts run on the Linux backup host; CRLF breaks the shebang line with
+# a "bad interpreter" error that names a path that plainly exists.
+*.sh text eol=lf
+*.mjs text eol=lf
+
+# systemd refuses to parse unit files with CRLF line endings.
+*.service text eol=lf
+*.timer text eol=lf
+
+*.sql text eol=lf

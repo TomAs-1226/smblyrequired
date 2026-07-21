@@ -101,10 +101,18 @@
   color: var(--text-primary);
   font-weight: 500;
   word-break: break-word;
-  transition: color 0.25s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
-.dLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .dLink:hover {
+    color: var(--accent-data);
+  }
+}
+.dLink:focus-visible {
   color: var(--accent-data);
+}
+.dLink:active {
+  transform: scale(0.97);
 }
 .dSub,
 .dText {
@@ -207,7 +215,8 @@
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-sm);
   padding: 12px 14px;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .field textarea {
   resize: vertical;
@@ -219,10 +228,12 @@
   color: var(--text-muted);
   opacity: 0.7;
 }
-.field input:hover,
-.field textarea:hover,
-.selectWrap select:hover {
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .field input:hover,
+  .field textarea:hover,
+  .selectWrap select:hover {
+    border-color: var(--border-strong);
+  }
 }
 .field input:focus,
 .field textarea:focus,
@@ -268,12 +279,16 @@
 }
 
 /* ---- Success end-state ------------------------------------------------ */
+/* The panel replaces the form in a single DOM swap. Without an entry it just
+   pops into existence; a short rise makes it read as an arrival. Same shape as
+   the house `pageIn` — it comes from somewhere, never from nothing. */
 .success {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   padding: var(--sp-5) var(--sp-2) var(--sp-3);
+  animation: successIn var(--dur-panel) var(--ease-out) both;
 }
 .checkMark {
   width: 80px;
@@ -355,6 +370,17 @@
   }
 }
 
+@keyframes successIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ---- Responsive ------------------------------------------------------- */
 @media (max-width: 880px) {
   .grid {
@@ -383,7 +409,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live {
+  .live,
+  .success {
     animation: none;
+  }
+  .dLink,
+  .field input,
+  .field textarea,
+  .selectWrap select {
+    transition: none;
   }
 }

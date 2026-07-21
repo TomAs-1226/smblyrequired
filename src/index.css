@@ -12,6 +12,11 @@
   --surface-2: #143a66;
   --surface-sunken: #081a30;
   --brand-royal: #164988; /* official SM crest blue (sampled from team logo) */
+  /* Translucent bar behind the fixed nav once it raises its surface. Paired
+     with a blur; where backdrop-filter is unsupported the nav falls back to
+     opaque --surface-1, because a translucent bar with nothing blurred behind
+     it leaves the nav text unreadable over page content. */
+  --surface-nav: rgba(14, 42, 77, 0.82);
 
   /* --- Borders & dividers --- */
   --border-hairline: rgba(199, 210, 221, 0.1);
@@ -29,6 +34,7 @@
   --accent-action: #2e7df6; /* electric blue — secondary buttons, links */
   --accent-data: #38bdf8; /* cyan — data lines, active states, focus */
   --accent-data-glow: rgba(56, 189, 248, 0.45);
+  --accent-data-wash: rgba(56, 189, 248, 0.1); /* faint cyan fill — hover/focus beds */
   --accent-gold: #f5b82e; /* PRESTIGE — scarce; awards, top tiers, 1 CTA */
   --accent-gold-hi: #ffd45e;
 
@@ -88,6 +94,26 @@
   --elev-2: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--border-hairline);
   --elev-feature: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border-accent);
   --glow-data: 0 0 14px var(--accent-data-glow);
+
+  /* --- Motion ---------------------------------------------------------
+     Same rule as color: reference these, never a raw curve or duration.
+     The house curve is expo-out — it starts fast, so the interface answers
+     the instant you touch it. Never `ease-in` on UI; it delays the exact
+     moment the user is watching. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* enter, lift, release */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* moves A -> B, rests both ends */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* sheets, mobile menu */
+
+  /* Interactive motion stays under 300ms. Anything slower reads as lag,
+     not as elegance. Only ambient/scroll motion is allowed to be slow. */
+  --dur-press: 120ms; /* :active — must feel instantaneous */
+  --dur-fast: 160ms; /* color, border, opacity on hover */
+  --dur-ui: 200ms; /* default for an interactive state change */
+  --dur-panel: 260ms; /* accordion, lightbox, dropdown */
+  --dur-overlay: 320ms; /* full-screen menu, modal */
+  --dur-ambient: 800ms; /* scroll reveals + marketing only — NOT interactive */
+
+  --stagger-step: 45ms; /* between list items; short enough to not feel slow */
 }
 
 /* --- Reset --- */
@@ -170,10 +196,12 @@ h4 {
   color: var(--text-on-cyan);
 }
 
+/* Outlines already follow the element's own border-radius. Setting a radius
+   here would override it and snap pills/circles into 2px rectangles while
+   focused — index.css is injected after the CSS modules, so it would win. */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
-  border-radius: 2px;
 }
 
 button {
@@ -274,41 +302,64 @@ button {
   cursor: pointer;
   text-decoration: none;
   line-height: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, color 0.3s,
-    border-color 0.3s, box-shadow 0.3s;
+  transition: transform var(--dur-press) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .btn .arrow {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.btn:hover .arrow {
-  transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover .arrow {
+    transform: translateX(4px);
+  }
 }
+/* Press feedback has to beat the hover transition, or the button feels mushy
+   under the finger. scale() takes the label and icon with it. */
 .btn:active {
-  transform: translateY(1px) scale(0.99);
+  transform: scale(0.97);
 }
 .btn--gold {
   background: var(--accent-gold);
   color: var(--text-on-gold);
-}
-.btn--gold:hover {
-  background: var(--accent-gold-hi);
-  box-shadow: 0 8px 28px rgba(245, 184, 46, 0.25);
 }
 .btn--cyan {
   background: transparent;
   color: var(--accent-data);
   border-color: var(--border-accent);
 }
-.btn--cyan:hover {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: var(--accent-data);
-}
 .btn--ghost {
   background: transparent;
   color: var(--text-body);
   border-color: var(--border-strong);
 }
-.btn--ghost:hover {
+
+/* Hover is gated on a real pointer. Touch devices synthesise :hover on tap
+   and then latch it, leaving buttons stuck in their hover state after use. */
+@media (hover: hover) and (pointer: fine) {
+  .btn--gold:hover {
+    background: var(--accent-gold-hi);
+    box-shadow: 0 8px 28px rgba(245, 184, 46, 0.25);
+  }
+  .btn--cyan:hover {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: var(--accent-data);
+  }
+  .btn--ghost:hover {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+}
+
+/* Keyboard users get the same affordance the mouse gets, not just a ring. */
+.btn--gold:focus-visible {
+  background: var(--accent-gold-hi);
+}
+.btn--cyan:focus-visible {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: var(--accent-data);
+}
+.btn--ghost:focus-visible {
   color: var(--text-primary);
   border-color: var(--text-muted);
 }
@@ -348,7 +399,8 @@ button {
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   padding: var(--sp-4);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 /* Grain overlay */
@@ -509,17 +561,22 @@ button {
 .page--sub {
   padding-top: var(--nav-h);
 }
+/* Route change is navigation, not decoration — the user is waiting on it.
+   200ms with a short rise: fast enough to feel instant, but the page still
+   arrives from somewhere rather than materialising out of nothing. */
 @media (prefers-reduced-motion: no-preference) {
   .page {
-    animation: pageIn 0.5s ease both;
+    animation: pageIn var(--dur-ui) var(--ease-out) both;
   }
 }
 @keyframes pageIn {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 

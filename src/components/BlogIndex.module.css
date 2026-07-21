@@ -39,7 +39,7 @@
 
 /* Shared "Read →" cue */
 .readArrow {
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
 
 /* =========================================================================
@@ -62,13 +62,25 @@
   border-radius: var(--r-md);
   color: inherit;
   text-decoration: none;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
-    box-shadow 0.3s, background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
-.feature:hover {
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    box-shadow: var(--elev-2);
+  }
+}
+.feature:focus-visible {
   transform: translateY(-4px);
   border-color: var(--border-strong);
   box-shadow: var(--elev-2);
+}
+.feature:active {
+  transform: scale(0.98);
+  transition-duration: var(--dur-press);
 }
 .featureMeta {
   display: flex;
@@ -91,9 +103,14 @@
   line-height: 1.05;
   max-width: 22ch;
   margin-bottom: var(--sp-3);
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.feature:hover .featureTitle {
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover .featureTitle {
+    color: var(--text-primary);
+  }
+}
+.feature:focus-visible .featureTitle {
   color: var(--text-primary);
 }
 .featureExcerpt {
@@ -114,7 +131,12 @@
   text-transform: uppercase;
   color: var(--accent-data);
 }
-.feature:hover .readArrow {
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover .readArrow {
+    transform: translateX(5px);
+  }
+}
+.feature:focus-visible .readArrow {
   transform: translateX(5px);
 }
 
@@ -140,27 +162,45 @@
   color: inherit;
   text-decoration: none;
   overflow: hidden;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s,
-    background 0.3s;
+  transition: transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-/* Cyan top-edge sweep on hover — house telemetry motif */
+/* Cyan top-edge sweep on hover — house telemetry motif.
+   scaleX off a left origin rather than width: it composites instead of
+   relayouting (matches the nav underline-wipe). */
 .card::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
-  width: 0;
+  width: 56px;
   height: 2px;
   background: var(--accent-data);
-  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.card:hover {
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  .card:hover::before {
+    transform: scaleX(1);
+  }
+}
+.card:focus-visible {
   transform: translateY(-4px);
   border-color: var(--border-strong);
   background: var(--surface-2);
 }
-.card:hover::before {
-  width: 56px;
+.card:focus-visible::before {
+  transform: scaleX(1);
+}
+.card:active {
+  transform: scale(0.98);
+  transition-duration: var(--dur-press);
 }
 
 .cardMeta {
@@ -179,9 +219,14 @@
   line-height: 1.12;
   max-width: 26ch;
   margin-bottom: var(--sp-3);
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.card:hover .cardTitle {
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardTitle {
+    color: var(--text-primary);
+  }
+}
+.card:focus-visible .cardTitle {
   color: var(--text-primary);
 }
 .cardExcerpt {
@@ -204,7 +249,12 @@
   text-transform: uppercase;
   color: var(--accent-data);
 }
-.card:hover .readArrow {
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .readArrow {
+    transform: translateX(4px);
+  }
+}
+.card:focus-visible .readArrow {
   transform: translateX(4px);
 }
 
@@ -239,8 +289,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .feature,
+  .featureTitle,
   .card,
   .card::before,
+  .cardTitle,
   .readArrow {
     transition: none;
   }
