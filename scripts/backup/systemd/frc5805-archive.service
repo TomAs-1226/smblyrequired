@@ -1,0 +1,39 @@
+[Unit]
+Description=FRC 5805 repo archiver (GitHub -> Supabase code bucket)
+Documentation=https://github.com/TomAs-1226/smblyrequired/blob/main/docs/BACKUP.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=backup
+Group=backup
+
+# Same secrets file as the backup job — it already holds SUPABASE_URL and the
+# service-role key, and a second copy is a second thing to rotate.
+EnvironmentFile=/etc/frc5805-backup.env
+ExecStart=/usr/bin/node /opt/frc5805/scripts/backup/repo-archive.mjs
+
+# Repos are downloaded one at a time and streamed to disk, so this is bounded by
+# bandwidth rather than by repo size. Generous because a slow home uplink and a
+# large CAD repo is a realistic combination.
+TimeoutStartSec=3h
+Nice=15
+IOSchedulingClass=idle
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# The scratch directory the archiver streams tarballs through. Without this the
+# job fails on its very first write, since ProtectSystem=strict makes the whole
+# filesystem read-only apart from what is listed here.
+ReadWritePaths=/var/tmp/frc5805
+Environment=ARCHIVE_TMP=/var/tmp/frc5805
+ProtectKernelTunables=true
+ProtectKernelModules=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

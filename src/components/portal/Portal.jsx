@@ -7,6 +7,7 @@ import Dashboard from './panels/Dashboard'
 import Scouting from './panels/Scouting'
 import Checklist from './panels/Checklist'
 import Compare from './compare/Compare'
+import PickList from './picklist/PickList'
 import Forms from './forms/Forms'
 import Files from './panels/Files'
 import Graphs from './panels/Graphs'
@@ -28,6 +29,10 @@ const PANELS = [
   // question asked between matches, by the same person, on the same phone.
   { id: 'checklist', label: 'Coverage', icon: 'check', min: 'member', Component: Checklist },
   { id: 'compare', label: 'Compare', icon: 'bars', min: 'member', Component: Compare },
+  // Members can read the board — everyone benefits from knowing the ranking.
+  // Editing is lead+, enforced in RLS: one careless drag during selection is
+  // expensive and hard to notice.
+  { id: 'picks', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
   // Authoring the season's questions is a mentor/lead job, not a scout's.
   { id: 'forms', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
   { id: 'files', label: 'Files', icon: 'folder', min: 'viewer', Component: Files },

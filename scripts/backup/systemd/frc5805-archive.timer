@@ -1,0 +1,14 @@
+[Unit]
+Description=Archive configured repos nightly
+Documentation=https://github.com/TomAs-1226/smblyrequired/blob/main/docs/BACKUP.md
+
+[Timer]
+# 01:30, deliberately BEFORE the 03:15 backup. The archiver writes new objects
+# into the code bucket; running it first means the same night's backup picks
+# them up, rather than every archive waiting a full day to be backed up.
+OnCalendar=*-*-* 01:30:00
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
