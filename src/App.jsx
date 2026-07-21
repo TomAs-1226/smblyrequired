@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -25,6 +25,10 @@ import RobotDetail from './components/RobotDetail'
 import BlogIndex from './components/BlogIndex'
 import BlogPost from './components/BlogPost'
 import Donate from './components/Donate'
+// Split out of the main bundle: the portal pulls in the Supabase client, and
+// the overwhelming majority of visitors are sponsors and prospective students
+// who will never sign in. They should not pay to download it.
+const Portal = lazy(() => import('./components/portal/Portal'))
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -46,6 +50,11 @@ function resolve(path) {
   if (ROUTES[path]) return [ROUTES[path], {}]
   if (path.startsWith('/robots/')) return [RobotDetail, { slug: path.slice(8) }]
   if (path.startsWith('/blog/')) return [BlogPost, { slug: path.slice(6) }]
+  // `/portal` and `/portal/<panel>` both resolve here; the panel decides its own
+  // gate. Nothing about the portal is reachable without a session — but the
+  // route existing is not itself a leak, since every read is behind RLS.
+  if (path === '/portal') return [Portal, { sub: '' }]
+  if (path.startsWith('/portal/')) return [Portal, { sub: path.slice(8) }]
   return [NotFound, {}]
 }
 
@@ -98,15 +107,26 @@ export default function App() {
     return () => cancelAnimationFrame(id)
   }, [path])
 
+  const isPortal = path.startsWith('/portal')
+
   return (
     <div ref={root}>
       <Grain />
       <Nav />
       <main key={path} className={`page ${isHome ? '' : 'page--sub'}`}>
-        <Page {...pageProps} />
+        {/* No spinner in the fallback: the portal chunk resolves in a few
+            hundred ms on any real connection, and a spinner that flashes for
+            200ms reads as jank rather than as progress. Reserving the height
+            keeps the footer from jumping up and back. */}
+        <Suspense fallback={<div style={{ minHeight: '70vh' }} />}>
+          <Page {...pageProps} />
+        </Suspense>
       </main>
       <Footer />
-      <MobileStickyCTA />
+      {/* The sticky "Sponsor Us" CTA is aimed at prospective sponsors reading
+          the public site. Inside the portal the audience is already on the
+          team, so it is just a bar covering the UI. */}
+      {!isPortal && <MobileStickyCTA />}
     </div>
   )
 }

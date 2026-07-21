@@ -56,17 +56,28 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  transition: color 0.25s ease;
-}
-.sourceLink:hover {
-  color: var(--accent-data);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .sourceIcon {
   flex: none;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.sourceLink:hover .sourceIcon {
+@media (hover: hover) and (pointer: fine) {
+  .sourceLink:hover {
+    color: var(--accent-data);
+  }
+  .sourceLink:hover .sourceIcon {
+    transform: translate(2px, -2px);
+  }
+}
+.sourceLink:focus-visible {
+  color: var(--accent-data);
+}
+.sourceLink:focus-visible .sourceIcon {
   transform: translate(2px, -2px);
+}
+.sourceLink:active {
+  transform: scale(0.97);
 }
 
 /* =========================================================================
@@ -112,10 +123,12 @@
   padding: var(--sp-4);
   border-bottom: 1px solid var(--border-hairline);
   position: relative;
-  transition: background 0.3s ease;
+  transition: background var(--dur-fast) var(--ease-out);
 }
-.event:hover {
-  background: rgba(20, 58, 102, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .event:hover {
+    background: rgba(20, 58, 102, 0.28);
+  }
 }
 
 .eventMain {
@@ -257,11 +270,13 @@
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-pill);
-  transition: border-color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.match:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .match:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+  }
 }
 .matchLabel {
   font-family: var(--font-display);
@@ -399,6 +414,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .match,
+  .sourceLink,
   .sourceIcon,
   .event {
     transition: none;

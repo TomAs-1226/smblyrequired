@@ -1,0 +1,1052 @@
+/* =========================================================================
+   Scouting form builder.
+
+   Same tokens as the rest of the portal — no raw colour, no raw duration.
+   Two rules shape most of what follows:
+
+   * Every control here is at least 44px in its smallest dimension and every
+     input is at least 16px of type. The builder is used on a laptop most of
+     the time, but "most of the time" is not a reason to ship a screen that
+     zooms on every focus the one time somebody opens it on an iPad.
+   * The block list transitions transform ONLY while a drag is in progress.
+     Leaving the transition on permanently means the drop animates the shifted
+     rows a second time, from the position they already visually occupy.
+   ========================================================================= */
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* --- top bar ------------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .back:hover {
+    color: var(--text-primary);
+    background: var(--surface-1);
+  }
+}
+.back:focus-visible {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+.back:active {
+  transform: scale(0.97);
+}
+
+.barActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-small);
+  color: var(--accent-gold);
+}
+.dirtyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  flex: none;
+}
+
+.liveTag {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-radius: var(--r-pill);
+  padding: 4px 10px;
+}
+
+/* --- notes --------------------------------------------------------------- */
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.note strong {
+  color: var(--text-body);
+  font-weight: 600;
+}
+.note svg {
+  flex: none;
+  margin-top: 3px;
+}
+.noteWarn {
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.07);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.noteLock {
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+/* Text and its action stacked, so the action keeps a full 44px target instead
+   of shrinking to fit inside a sentence. */
+.noteStack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+/* --- fields -------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* var(--fs-body) is 17px. Anything under 16px makes iOS zoom the viewport on
+   focus and then leaves it zoomed, which on a form this long is miserable. */
+.input {
+  width: 100%;
+  min-height: 44px;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+.input:read-only {
+  color: var(--text-muted);
+  background: var(--bg-void);
+}
+.input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--accent-gold);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-3);
+}
+
+/* --- the protected-keys banner ------------------------------------------ */
+/* The loudest thing in the builder, deliberately. The failure it prevents is
+   invisible: valid rows that no aggregate can read. */
+
+.banner {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+}
+.bannerBad {
+  background: rgba(240, 99, 99, 0.07);
+  border-color: rgba(240, 99, 99, 0.4);
+}
+
+.bannerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.1);
+  border: 1px solid rgba(240, 99, 99, 0.3);
+}
+
+.bannerMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.bannerTitle {
+  font-size: 1.15rem;
+  color: var(--text-primary);
+}
+.bannerText {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.6;
+}
+.bannerText strong {
+  color: var(--danger);
+}
+
+.bannerList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.bannerList li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  padding-left: var(--sp-3);
+  border-left: 2px solid rgba(240, 99, 99, 0.35);
+}
+.bannerList code {
+  align-self: flex-start;
+}
+
+/* --- two-column layout --------------------------------------------------- */
+
+.cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.editorCol,
+.previewCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.previewCol {
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sp-4));
+}
+
+/* Framed and narrowed so it reads as the scout's screen rather than as more
+   of this page. */
+.device {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3);
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.deviceEmpty {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  text-align: center;
+  padding: var(--sp-5) var(--sp-3);
+}
+
+/* --- block list ---------------------------------------------------------- */
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* Text selection during a drag turns the whole list blue under the finger. */
+.listDragging {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.item {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.itemHeading {
+  background: var(--surface-sunken);
+  border-style: dashed;
+}
+
+/* Only while a drag is running — see the note at the top of this file. */
+.listDragging .item {
+  transition: transform var(--dur-ui) var(--ease-out);
+  will-change: transform;
+}
+.listDragging .itemDragging {
+  transition: none;
+  position: relative;
+  z-index: 2;
+  border-color: var(--accent-data);
+  box-shadow: var(--elev-2);
+}
+
+.sectionBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding: 7px var(--sp-3);
+  background: rgba(56, 189, 248, 0.08);
+  border-bottom: 1px solid var(--border-accent);
+  color: var(--accent-data);
+}
+.sectionName {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sectionCount {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.itemBody {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  padding: 6px;
+}
+
+.handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: grab;
+  /* Without this the browser claims the gesture for scrolling and the drag
+     never starts on a touchscreen — which is the device this exists for. */
+  touch-action: none;
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .handle:hover:not(:disabled) {
+    color: var(--accent-data);
+    background: var(--surface-2);
+  }
+}
+.handle:focus-visible {
+  color: var(--accent-data);
+  background: var(--surface-2);
+}
+.handle:active:not(:disabled) {
+  cursor: grabbing;
+  transform: scale(0.92);
+}
+.handle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: center;
+  text-align: left;
+  padding: 6px var(--sp-2);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .summary:hover {
+    background: var(--surface-2);
+  }
+}
+.summary:focus-visible {
+  background: var(--surface-2);
+}
+.summary:active {
+  transform: scale(0.99);
+}
+
+.summaryTop {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.typeTag {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 2px 7px;
+  flex: none;
+}
+
+.blockLabel {
+  color: var(--text-primary);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.blockLabel em {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.reqTag {
+  font-family: var(--font-display);
+  font-size: 0.63rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  flex: none;
+}
+
+.protTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.1);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  flex: none;
+}
+
+.summaryKey {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.keyText {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .iconBtnDanger:hover:not(:disabled) {
+    color: var(--danger);
+    border-color: rgba(240, 99, 99, 0.4);
+    background: rgba(240, 99, 99, 0.08);
+  }
+}
+.iconBtnDanger:focus-visible {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.4);
+}
+.iconBtn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.iconBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- per-block editor ---------------------------------------------------- */
+
+.editor {
+  padding: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+}
+
+.editorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-3);
+}
+
+.lockTag {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 184, 46, 0.35);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+}
+
+.keyRow {
+  display: flex;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.keyInput {
+  font-family: var(--font-mono);
+  flex: 1;
+  min-width: 0;
+}
+
+.unlockBtn {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px solid rgba(245, 184, 46, 0.35);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .unlockBtn:hover {
+    background: rgba(245, 184, 46, 0.12);
+    border-color: var(--accent-gold);
+  }
+}
+.unlockBtn:focus-visible {
+  background: rgba(245, 184, 46, 0.12);
+  border-color: var(--accent-gold);
+}
+.unlockBtn:active {
+  transform: scale(0.96);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.optionRow {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.addOpt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: var(--fs-small);
+  color: var(--accent-data);
+  border: 1px dashed var(--border-accent);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .addOpt:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.08);
+    border-style: solid;
+  }
+}
+.addOpt:focus-visible {
+  background: rgba(56, 189, 248, 0.08);
+  border-style: solid;
+}
+.addOpt:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.addOpt:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  cursor: pointer;
+}
+.check {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--accent-data);
+  cursor: pointer;
+}
+
+/* --- palette ------------------------------------------------------------- */
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.paletteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--sp-2);
+}
+
+.paletteBtn {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+  min-height: 44px;
+  padding: 11px var(--sp-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .paletteBtn:hover:not(:disabled) {
+    border-color: var(--accent-data);
+    background: var(--surface-2);
+  }
+}
+.paletteBtn:focus-visible {
+  border-color: var(--accent-data);
+  background: var(--surface-2);
+}
+.paletteBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.paletteBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.paletteHead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--accent-data);
+}
+.paletteName {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+.paletteBlurb {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* --- problems ------------------------------------------------------------ */
+
+.problems {
+  background: rgba(240, 99, 99, 0.07);
+  border: 1px solid rgba(240, 99, 99, 0.35);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+}
+.problemsTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.95rem;
+  color: var(--danger);
+  margin-bottom: var(--sp-2);
+}
+.problemList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+.problemList li {
+  padding-left: var(--sp-3);
+  border-left: 2px solid rgba(240, 99, 99, 0.35);
+  overflow-wrap: anywhere;
+}
+
+/* --- confirmation dialog ------------------------------------------------- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-3);
+  background: rgba(6, 19, 37, 0.72);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: scrimIn var(--dur-fast) var(--ease-out) both;
+  }
+  .dialog {
+    animation: dialogIn var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--elev-2);
+  padding: var(--sp-5);
+}
+.dialog:focus {
+  outline: none;
+}
+
+.dialogTitle {
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.6;
+}
+.dialogBody strong {
+  color: var(--text-primary);
+}
+
+.dialogActions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btnDanger {
+  background: var(--danger);
+  color: var(--text-primary);
+}
+.btnDanger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btnDanger:hover:not(:disabled) {
+    box-shadow: 0 8px 28px rgba(240, 99, 99, 0.25);
+  }
+}
+.btnDanger:focus-visible:not(:disabled) {
+  box-shadow: 0 8px 28px rgba(240, 99, 99, 0.25);
+}
+
+/* --- the form list (Forms.jsx) ------------------------------------------- */
+
+.seasonHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: var(--sp-4);
+}
+.seasonNow {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+.kindBlock {
+  margin-bottom: var(--sp-5);
+}
+
+/* Composed onto Portal's own `.row`, which sets no flex-wrap of its own. Adding
+   it here lets the actions drop to a second line on a narrow screen instead of
+   pushing the row wider than the viewport. */
+.formRow {
+  flex-wrap: wrap;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 13px;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .actionBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+    background: var(--surface-1);
+  }
+  .actionBtnGo:hover:not(:disabled) {
+    color: var(--accent-gold);
+    border-color: rgba(245, 184, 46, 0.45);
+    background: rgba(245, 184, 46, 0.1);
+  }
+  .actionBtnBad:hover:not(:disabled) {
+    color: var(--danger);
+    border-color: rgba(240, 99, 99, 0.45);
+    background: rgba(240, 99, 99, 0.08);
+  }
+}
+.actionBtn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.actionBtnGo:focus-visible {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.45);
+}
+.actionBtnBad:focus-visible {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.45);
+}
+.actionBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.actionBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.actionBtnGo {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.3);
+}
+
+.missingTag {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--fs-small);
+  color: var(--danger);
+  line-height: 1.45;
+}
+.missingTag svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+/* --- responsive ---------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Sticky is only useful next to something. Stacked, it would pin the preview
+     over the editor the whole way down. */
+  .previewCol {
+    position: static;
+  }
+  .device {
+    max-height: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .barActions {
+    justify-content: flex-end;
+  }
+  .banner {
+    flex-direction: column;
+  }
+  .editorGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dialog {
+    padding: var(--sp-4);
+  }
+  /* The row's actions drop below its text rather than competing with it for a
+     phone's width — which is what would force the page to scroll sideways. */
+  .rowActions {
+    width: 100%;
+  }
+}
+
+/* --- reduced motion ------------------------------------------------------ */
+/* Movement goes; state feedback stays. A block still reorders on drag and on
+   arrow key — it simply arrives instead of travelling. */
+@media (prefers-reduced-motion: reduce) {
+  .listDragging .item {
+    transition: none;
+  }
+  .back,
+  .handle,
+  .summary,
+  .iconBtn,
+  .paletteBtn,
+  .unlockBtn,
+  .addOpt,
+  .actionBtn {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .back:active,
+  .handle:active,
+  .summary:active,
+  .iconBtn:active,
+  .paletteBtn:active,
+  .unlockBtn:active,
+  .addOpt:active,
+  .actionBtn:active {
+    transform: none;
+  }
+  .scrim,
+  .dialog {
+    animation: none;
+  }
+}

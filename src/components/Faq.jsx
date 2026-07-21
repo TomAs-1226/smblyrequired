@@ -2,6 +2,7 @@ import { useState, useId } from 'react'
 import Section from './Section'
 import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
+import Reveal from './Reveal'
 import Icon from './Icon'
 import { faqs, faqNote } from '../data/faq'
 import styles from './Faq.module.css'
@@ -72,8 +73,9 @@ export default function Faq() {
           </p>
         </header>
 
-        {/* Right: accordion column (7-col) */}
-        <div className={styles.list}>
+        {/* Right: accordion column (7-col). Rows stagger in so the list reads
+            as arriving rather than snapping in under the animated heading. */}
+        <Reveal className={styles.list} stagger={0.045} y={18}>
           {faqs.map((item, i) => (
             <FaqItem
               key={item.q}
@@ -84,7 +86,7 @@ export default function Faq() {
               baseId={baseId}
             />
           ))}
-        </div>
+        </Reveal>
       </div>
     </Section>
   )

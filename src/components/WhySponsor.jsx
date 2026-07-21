@@ -104,15 +104,18 @@ export default function WhySponsor() {
       </div>
 
       {/* BENEFITS BAND */}
-      <Reveal as="div" className={styles.benefits} stagger={0.08}>
-        <div className={styles.benefitsHead}>
+      {/* The stagger belongs on the list, not the band: Reveal cascades its
+          DIRECT children, so putting it here would only step the head and the
+          list as two blocks and land every benefit in the same frame. */}
+      <div className={styles.benefits}>
+        <Reveal as="div" className={styles.benefitsHead}>
           <h3 className={styles.benefitsTitle}>What sponsors get</h3>
           <p className={styles.benefitsNote}>
             Every sponsor gets their logo on our team jerseys —{' '}
             <span className={styles.foreshadow}>logo on the robot begins at Platinum.</span>
           </p>
-        </div>
-        <ul className={styles.benefitsList}>
+        </Reveal>
+        <Reveal as="ul" className={styles.benefitsList} stagger={0.08}>
           {sponsorBenefits.map((b) => (
             <li key={b} className={styles.benefit}>
               <span className={styles.benefitCheck}>
@@ -121,8 +124,8 @@ export default function WhySponsor() {
               <span>{b}</span>
             </li>
           ))}
-        </ul>
-      </Reveal>
+        </Reveal>
+      </div>
 
       {/* IN-KIND + CTAS */}
       <div className={styles.footer}>

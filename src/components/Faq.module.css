@@ -53,20 +53,23 @@
   border-bottom: 1px solid var(--border-hairline);
   position: relative;
 }
-/* Cyan reveal bar on the active row's left edge */
+/* Cyan reveal bar on the active row's left edge. Full height at rest and
+   scaled from the top, so the wipe composites instead of animating height. */
 .item::before {
   content: '';
   position: absolute;
   top: -1px;
   left: 0;
   width: 2px;
-  height: 0;
+  height: 100%;
   background: var(--accent-data);
   box-shadow: var(--glow-data);
-  transition: height 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--dur-panel) var(--ease-out);
 }
 .itemOpen::before {
-  height: 100%;
+  transform: scaleY(1);
 }
 
 /* --- Trigger (real button) --- */
@@ -85,15 +88,33 @@
   padding: clamp(20px, 2.4vw, 30px) var(--sp-2) clamp(20px, 2.4vw, 30px) var(--sp-4);
   text-align: left;
   color: var(--text-primary);
-  transition: padding-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Nothing animates padding-left — only the 620px breakpoint changes it, so
+     the old transition fired on window resize and never on interaction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
-.trigger:hover {
+/* Full-width row: 0.98 is the whole press it can take before the edges swim. */
+.trigger:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover {
+    color: var(--text-primary);
+  }
+  .trigger:hover .qText {
+    color: var(--text-primary);
+  }
+  .trigger:hover .chev {
+    border-color: var(--accent-data);
+    color: var(--accent-data);
+  }
+}
+
+/* Same affordance for keyboard — hover is what tells you the row is live. */
+.trigger:focus-visible .qText {
   color: var(--text-primary);
 }
-.trigger:hover .qText {
-  color: var(--text-primary);
-}
-.trigger:hover .chev {
+.trigger:focus-visible .chev {
   border-color: var(--accent-data);
   color: var(--accent-data);
 }
@@ -117,7 +138,7 @@
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--text-body);
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .itemOpen .qText {
   color: var(--text-primary);
@@ -141,8 +162,9 @@
   color: var(--text-muted);
   border: 1px solid var(--border-strong);
   transform: rotate(180deg);
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease,
-    border-color 0.3s ease, background 0.3s ease;
+  transition: transform var(--dur-panel) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
 }
 .itemOpen .chev {
   transform: rotate(0deg);
@@ -156,7 +178,8 @@
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
 }
 .itemOpen .panel {
   grid-template-rows: 1fr;

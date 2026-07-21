@@ -248,10 +248,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-muted);
-  transition: color 0.3s ease;
-}
-.scrollCue:hover {
-  color: var(--text-primary);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 /* The chevron points down (arrowUp icon, rotated). Its bob is driven by GSAP
    for smoother easing; the rotation lives here so the transform composes. */
@@ -259,7 +256,18 @@
   transform: rotate(180deg);
   transform-origin: center;
 }
-.scrollCue:hover .scrollChevron {
+@media (hover: hover) and (pointer: fine) {
+  .scrollCue:hover {
+    color: var(--text-primary);
+  }
+  .scrollCue:hover .scrollChevron {
+    color: var(--accent-data);
+  }
+}
+.scrollCue:focus-visible {
+  color: var(--text-primary);
+}
+.scrollCue:focus-visible .scrollChevron {
   color: var(--accent-data);
 }
 
@@ -370,5 +378,8 @@
 @media (prefers-reduced-motion: reduce) {
   .scrollChevron {
     animation: none;
+  }
+  .scrollCue {
+    transition: none;
   }
 }

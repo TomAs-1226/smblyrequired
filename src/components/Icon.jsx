@@ -91,6 +91,54 @@ const paths = {
   ),
   spark: <path d="M12 3v5m0 8v5m9-9h-5M8 12H3m13.5-6.5l-3.5 3.5m-3 3l-3.5 3.5m13-0l-3.5-3.5m-3-3L5.5 5.5" />,
   flag: <path d="M5 21V4m0 0l10 0-2 4 2 4H5" />,
+
+  /* --- Portal --- */
+  grid: (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="1.2" />
+      <rect x="13" y="4" width="7" height="7" rx="1.2" />
+      <rect x="4" y="13" width="7" height="7" rx="1.2" />
+      <rect x="13" y="13" width="7" height="7" rx="1.2" />
+    </>
+  ),
+  folder: <path d="M4 19V6a1 1 0 011-1h4l2 2.5h8a1 1 0 011 1V19a1 1 0 01-1 1H5a1 1 0 01-1-1z" />,
+  // Node-and-edge glyph — the graph section, matching graphify's own vocabulary.
+  share: (
+    <>
+      <circle cx="18" cy="6" r="2.6" />
+      <circle cx="6" cy="12" r="2.6" />
+      <circle cx="18" cy="18" r="2.6" />
+      <path d="M8.4 10.8l7.2-3.6M8.4 13.2l7.2 3.6" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M5 4.5h9a3 3 0 013 3V20H8a3 3 0 01-3-3V4.5z" />
+      <path d="M5 17a3 3 0 013-3h9" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20c0-3.3 2.7-5.6 6-5.6s6 2.3 6 5.6" />
+      <path d="M16 5.4a3.2 3.2 0 010 5.2M17.5 14.9c2.1.7 3.5 2.5 3.5 5.1" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.2" />
+      <path d="M15.6 15.6L20 20" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  alert: (
+    <>
+      <path d="M12 4l8.5 15H3.5L12 4z" />
+      <path d="M12 10v4" />
+      <circle cx="12" cy="16.6" r="0.6" fill="currentColor" stroke="none" />
+    </>
+  ),
+  arrowLeft: <path d="M19 12H5M11 6l-6 6 6 6" />,
 }
 
 export default function Icon({ name, size = 22, strokeWidth = 1.6, className = '', ...rest }) {

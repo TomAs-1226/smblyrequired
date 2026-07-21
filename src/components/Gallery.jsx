@@ -154,7 +154,7 @@ export default function Gallery() {
       if (!tiles.length) return
 
       if (prefersReducedMotion()) {
-        gsap.set(tiles, { autoAlpha: 1, y: 0 })
+        gsap.set(tiles, { autoAlpha: 1, clearProps: 'transform' })
         return
       }
 
@@ -169,6 +169,9 @@ export default function Gallery() {
             duration: 0.8,
             ease: 'power4.out',
             stagger: 0.07,
+            // See Reveal.jsx — the leftover inline transform outranks the
+            // stylesheet and would kill the tile's hover lift and press state.
+            clearProps: 'transform',
           }),
       })
       ScrollTrigger.refresh()

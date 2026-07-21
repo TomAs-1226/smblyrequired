@@ -155,6 +155,13 @@ export default function Footer() {
           </p>
           <p className={styles.copy}>
             © {team.currentSeason} FRC Team {team.number} · {team.name}
+            {/* Deliberately here and not in the main nav. The nav's job is to
+                move sponsors and prospective students toward the team; an
+                internal login is noise to both. Members know to look down here. */}
+            <span aria-hidden="true"> · </span>
+            <a href="#/portal" className={styles.portalLink}>
+              Team portal
+            </a>
           </p>
         </div>
       </div>

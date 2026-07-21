@@ -11,15 +11,50 @@
   height: var(--nav-h);
   background: transparent;
   border-bottom: 1px solid transparent;
-  transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
-/* Past 80px: raise surface opacity, hairline border, subtle blur. */
-.scrolled {
-  background: rgba(14, 42, 77, 0.82); /* --surface-1 @ raised opacity */
-  border-bottom-color: var(--border-hairline);
+/* The raised surface lives on a pseudo-element, not on .nav itself. Two
+   reasons, both load-bearing:
+
+   1. `backdrop-filter` on an element makes it a containing block for its
+      `position: fixed` descendants — the same trap `transform` sets. With the
+      filter on .nav, the mobile overlay's `inset: 0` resolved against the 72px
+      bar instead of the viewport and the menu opened as a 71px strip. Keeping
+      the filter on a child means .nav can never capture a fixed descendant.
+      (The overlay is also rendered outside <header> now; this is the belt to
+      that braces, so re-parenting it back in cannot silently break it again.)
+
+   2. `none` -> `blur(12px)` is not a smoothly interpolable pair — engines step
+      it, which is the flicker/banding on the surface transition. Fading the
+      opacity of a layer whose filter never changes is clean. */
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--surface-nav);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
+  opacity: 0;
+  transition: opacity var(--dur-panel) var(--ease-out);
+}
+
+/* Past 80px: raise the surface, hairline border. */
+.scrolled::before {
+  opacity: 1;
+}
+.scrolled {
+  border-bottom-color: var(--border-hairline);
+}
+
+/* Firefox shipped for years without backdrop-filter, and it degrades to fully
+   transparent rather than to nothing — an unblurred 82% bar over a photo is
+   marginal, so drop to the opaque surface where the filter is unsupported. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .nav::before {
+    background: var(--surface-1);
+  }
 }
 
 .bar {
@@ -43,10 +78,21 @@
   width: auto;
   flex: none;
   display: block;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.brand:hover .crest {
+/* Gated: touch devices synthesise :hover on tap and then latch it, which left
+   the crest permanently rotated after anyone tapped the logo. */
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .crest {
+    transform: scale(1.05) rotate(-2deg);
+  }
+}
+.brand:focus-visible .crest {
   transform: scale(1.05) rotate(-2deg);
+}
+.brand:active .crest {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 .wordmark {
   display: inline-flex;
@@ -69,9 +115,14 @@
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.brand:hover .brandName {
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .brandName {
+    color: var(--accent-gold-hi);
+  }
+}
+.brand:focus-visible .brandName {
   color: var(--accent-gold-hi);
 }
 
@@ -98,7 +149,7 @@
   color: var(--text-body);
   text-decoration: none;
   padding-block: 6px;
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 /* Cyan underline-wipe on hover */
 .link::after {
@@ -111,14 +162,24 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.link:hover {
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--text-primary);
+  }
+  .link:hover::after {
+    transform: scaleX(1);
+  }
+}
+.link:focus-visible {
   color: var(--text-primary);
 }
-.link:hover::after,
 .link:focus-visible::after {
   transform: scaleX(1);
+}
+.link:active {
+  transform: scale(0.97);
 }
 
 /* Active route */
@@ -136,6 +197,58 @@
   font-size: 0.82rem;
 }
 
+/* --- Sign in (desktop) ---
+   A staff door, not a call to action. Muted text, no fill, no border until it
+   is addressed, and a step down in size from .cta — it has to be findable
+   without competing with the gold CTA, which is the public site's one
+   conversion. */
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 8px 13px;
+  margin-right: calc(var(--sp-2) * -1);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.signInIcon {
+  flex: none;
+  opacity: 0.75;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .signIn:hover {
+    color: var(--text-primary);
+    background: var(--accent-data-wash);
+    border-color: var(--border-accent);
+  }
+  .signIn:hover .signInIcon {
+    opacity: 1;
+  }
+}
+.signIn:focus-visible {
+  color: var(--text-primary);
+  background: var(--accent-data-wash);
+  border-color: var(--border-accent);
+}
+.signIn:focus-visible .signInIcon {
+  opacity: 1;
+}
+.signIn:active {
+  transform: scale(0.97);
+}
+
 /* --- Mobile toggle --- */
 .toggle {
   display: none;
@@ -146,27 +259,57 @@
   margin-right: -8px;
   color: var(--text-primary);
   border-radius: var(--r-sm);
-  transition: color 0.3s ease, background 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
-.toggle:hover {
+@media (hover: hover) and (pointer: fine) {
+  .toggle:hover {
+    color: var(--accent-data);
+    background: var(--accent-data-wash);
+  }
+}
+.toggle:focus-visible {
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: var(--accent-data-wash);
+}
+.toggle:active {
+  transform: scale(0.92);
 }
 
-/* --- Mobile overlay --- */
+/* --- Mobile overlay ---
+   Rendered as a sibling of <header>, so its `inset: 0` always resolves against
+   the viewport. z-index sits just under the bar (1000) so the burger stays
+   visible and tappable over the open menu, and above the sticky CTA dock (850)
+   so that does not punch through. Opaque background — no backdrop-filter here,
+   deliberately: there is nothing worth showing through, and it would be one
+   more containing block plus a second filter to composite every frame. */
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 999;
   display: flex;
   background: var(--bg-void);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  /* Long menus (short landscape phones) scroll inside the overlay rather than
+     being clipped, and `contain` stops an iOS rubber-band at either end from
+     chaining through to the document behind. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* visibility is held until the fade finishes on close, and flipped
+     immediately on open — this is what lets the element stay renderable
+     long enough to animate out. */
+  visibility: hidden;
+  transition: opacity var(--dur-overlay) var(--ease-drawer),
+    visibility 0s linear var(--dur-overlay);
 }
+/* Fixed, not absolute: the overlay is now a scroll container, and an absolute
+   backdrop would stop at the padding box and leave the scrolled-past region
+   bare. */
 .overlay::before {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
   background:
     radial-gradient(120% 70% at 90% 0%, rgba(22, 73, 136, 0.4), transparent 55%),
@@ -176,6 +319,8 @@
 .overlayOpen {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
+  transition: opacity var(--dur-overlay) var(--ease-drawer), visibility 0s;
 }
 
 .overlayInner {
@@ -217,7 +362,7 @@
   color: var(--text-primary);
   text-decoration: none;
   line-height: 1;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 .overlayNum {
   font-size: 0.85rem;
@@ -226,10 +371,22 @@
   color: var(--accent-data);
   transform: translateY(-0.6em);
 }
-.overlayLink:hover,
-.overlayLink:active {
+/* This overlay is mobile-only, so :active is the state that actually fires.
+   It gets a real press response rather than being aliased to :hover. */
+@media (hover: hover) and (pointer: fine) {
+  .overlayLink:hover {
+    color: var(--accent-data);
+    transform: translateX(6px);
+  }
+}
+.overlayLink:focus-visible {
   color: var(--accent-data);
   transform: translateX(6px);
+}
+.overlayLink:active {
+  color: var(--accent-data);
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 
 .overlayCta {
@@ -237,16 +394,66 @@
   margin-top: var(--sp-3);
 }
 
-/* Staggered entrance for overlay items when motion is allowed. */
+/* --- Sign in (mobile overlay) ---
+   Same job as .signIn: present, findable, and audibly quieter than the gold
+   CTA it sits under. Separated by a hairline so it reads as a different class
+   of action rather than a second CTA. */
+.overlaySignIn {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .overlaySignIn:hover {
+    color: var(--accent-data);
+  }
+  .overlaySignIn:hover .signInIcon {
+    opacity: 1;
+  }
+}
+.overlaySignIn:focus-visible {
+  color: var(--accent-data);
+}
+.overlaySignIn:focus-visible .signInIcon {
+  opacity: 1;
+}
+.overlaySignIn:active {
+  color: var(--accent-data);
+  transform: scale(0.97);
+}
+
+/* Staggered entrance for overlay items when motion is allowed.
+   The old timing settled the last item ~920ms after the tap, which reads as
+   the menu being slow to open. Same cascade, roughly half the wall time. */
 @media (prefers-reduced-motion: no-preference) {
   .overlayOpen .overlayLinks li,
   .overlayOpen .overlayCta,
+  .overlayOpen .overlaySignIn,
   .overlayOpen .overlayEyebrow {
-    animation: navItemIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(0.06s * var(--i, 0) + 0.08s);
+    animation: navItemIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0) + 30ms);
   }
+  /* Sits one step past the last link rather than at a hardcoded delay, so it
+     stays correct when links are added or removed from navigation.js. */
   .overlayOpen .overlayCta {
-    animation-delay: 0.42s;
+    animation-delay: calc(var(--stagger-step) * var(--link-count, 6) + 30ms);
+  }
+  .overlayOpen .overlaySignIn {
+    animation-delay: calc(var(--stagger-step) * (var(--link-count, 6) + 1) + 30ms);
   }
 }
 @keyframes navItemIn {
@@ -260,8 +467,14 @@
   }
 }
 
-/* --- Responsive --- */
-@media (max-width: 860px) {
+/* --- Responsive ---
+   Breakpoint raised from 860px. Seven links + the sign-in + the gold CTA no
+   longer fit on one bar below ~1024px: measured at 880px the CTA ran 40px past
+   the viewport and was silently clipped by `body { overflow-x: hidden }`, which
+   is the worst possible failure for the site's primary conversion. Tablets get
+   the overlay instead, which already carries every link, the CTA and sign-in
+   at full size. */
+@media (max-width: 1023px) {
   .desktop {
     display: none;
   }
@@ -270,15 +483,57 @@
   }
 }
 
+/* Between the breakpoint and ~1180px the bar is still snug. Drop the sign-in
+   to its icon rather than shrinking the CTA — the staff door can afford to be
+   terse, the conversion cannot. The label stays in the accessible name. */
+@media (max-width: 1180px) {
+  .signInLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .signIn {
+    padding: 9px 10px;
+    gap: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nav,
+  .nav::before,
   .brandName,
   .crest,
   .link,
   .link::after,
   .overlay,
   .overlayLink,
+  .overlaySignIn,
+  .signIn,
+  .signInIcon,
   .toggle {
     transition: none;
+  }
+  /* Visibility still has to be deferred by a frame on close or the overlay
+     would vanish before `inert` is reapplied — but nothing moves or fades. */
+  .overlay {
+    transition: visibility 0s linear var(--dur-overlay);
+  }
+  .overlayOpen {
+    transition: visibility 0s;
+  }
+  /* Press feedback is the one motion that stays: it is confirmation of a tap,
+     not decoration, and removing it makes the control feel dead. It is only
+     ever 120ms. */
+  .brand:active .crest,
+  .signIn:active,
+  .overlaySignIn:active,
+  .overlayLink:active {
+    transition: transform var(--dur-press) var(--ease-out);
   }
 }

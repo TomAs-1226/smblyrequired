@@ -1,0 +1,341 @@
+/* =========================================================================
+   "Who have we scouted?" — the venue screen.
+
+   Lives in forms/ next to the builder because the two are the same job seen
+   from opposite ends: one defines the questions, the other says who has been
+   asked them. Portal.module.css supplies the shell (stack, toolbar, stat
+   tiles, section titles); everything here is what that sheet does not have.
+
+   This screen is used one-handed, walking, in daylight. So: nothing under
+   44px, no input under 16px of type, and the row is a grid that reflows to a
+   phone without a single horizontal pixel of overflow.
+   ========================================================================= */
+
+/* --- controls ------------------------------------------------------------ */
+
+/* var(--fs-body) is 17px. Under 16px iOS zooms the viewport on focus and does
+   not zoom back out — on a screen used while walking, that is the difference
+   between usable and abandoned. */
+.select,
+.searchInput {
+  width: 100%;
+  min-height: 44px;
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.select {
+  flex: 1;
+  min-width: 180px;
+}
+.select:focus,
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+.select:disabled {
+  opacity: 0.55;
+}
+
+.refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  flex: none;
+  padding: 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-body);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .refresh:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--accent-data);
+    background: rgba(56, 189, 248, 0.08);
+  }
+}
+.refresh:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+}
+.refresh:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.refresh:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.controls {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.searchInput {
+  padding-left: 38px;
+}
+
+/* --- filters ------------------------------------------------------------- */
+/* Full-size buttons rather than the portal's small chips: this is the control
+   that gets pressed with a thumb while holding a phone at arm's length. */
+
+.filters {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .filter:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.filter:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.filter:active {
+  transform: scale(0.96);
+}
+.filterOn {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+
+.filterCount {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+}
+.filterOn .filterCount {
+  background: rgba(6, 19, 37, 0.25);
+  color: var(--text-on-cyan);
+}
+/* A gap with nothing left in it is good news, and should read as good news
+   rather than as another thing to go and do. */
+.filterClear {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.3);
+}
+.filterClear .filterCount {
+  color: var(--success);
+}
+
+.none {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--success);
+  padding: var(--sp-4) 0;
+}
+
+/* --- rows ---------------------------------------------------------------- */
+
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* One grid at every width. The team and its flags share the top line, the
+   numbers wrap underneath — so a narrow phone reflows instead of scrolling. */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head flags'
+    'meta meta';
+  gap: var(--sp-2) var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .row {
+    animation: checklistRowIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0));
+  }
+}
+@keyframes checklistRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rowHead {
+  grid-area: head;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.team {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.nick {
+  color: var(--text-body);
+  font-size: var(--fs-small);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.flags {
+  grid-area: flags;
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+}
+.flagOn {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.35);
+  background: rgba(63, 207, 142, 0.08);
+}
+.flagOff {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+}
+/* The shape carries the meaning as well as the colour — a hollow ring against
+   a filled check, legible without seeing either as green or grey. */
+.ring {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px dashed currentColor;
+  flex: none;
+}
+
+.meta {
+  grid-area: meta;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-body);
+}
+/* A zero is the information here, so it is dimmed rather than hidden — the eye
+   should skip it while scanning and still find it when looking. */
+.zero {
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+.when {
+  color: var(--text-muted);
+}
+.never {
+  color: var(--accent-gold);
+}
+
+/* --- coverage tiles ------------------------------------------------------ */
+/* Composed onto Portal's `.stat`; only the accent differs. */
+
+.statGap {
+  border-color: rgba(245, 184, 46, 0.4);
+  background: rgba(245, 184, 46, 0.07);
+}
+.statDone {
+  border-color: rgba(63, 207, 142, 0.35);
+  background: rgba(63, 207, 142, 0.07);
+}
+
+/* --- reduced motion ------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    animation: none;
+  }
+  .filter,
+  .refresh {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .filter:active,
+  .refresh:active {
+    transform: none;
+  }
+}

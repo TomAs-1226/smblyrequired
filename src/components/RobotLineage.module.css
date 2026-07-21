@@ -182,20 +182,22 @@
 .photo,
 .shadow,
 .spot {
-  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 0.4s ease, opacity 0.4s ease;
+  transition: transform var(--dur-ui) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
-.frame:hover .photo {
-  transform: scale(1.035) translateY(-4px);
-  filter: saturate(0.97) contrast(1.05) brightness(1)
-    drop-shadow(0 28px 32px rgba(6, 19, 37, 0.6));
-}
-.frame:hover .shadow {
-  transform: translateX(-50%) scaleX(1.06);
-  opacity: 0.8;
-}
-.frame:hover .spot {
-  filter: brightness(1.18);
+@media (hover: hover) and (pointer: fine) {
+  .frame:hover .photo {
+    transform: scale(1.035) translateY(-4px);
+    filter: saturate(0.97) contrast(1.05) brightness(1)
+      drop-shadow(0 28px 32px rgba(6, 19, 37, 0.6));
+  }
+  .frame:hover .shadow {
+    transform: translateX(-50%) scaleX(1.06);
+    opacity: 0.8;
+  }
+  .frame:hover .spot {
+    filter: brightness(1.18);
+  }
 }
 
 /* --- Typographic plate (rows with no photo) --- */
@@ -291,12 +293,25 @@
 }
 /* The name doubles as the link into the detail page. */
 .nameLink {
+  /* inline-block, not inline: transform is ignored on non-replaced inline
+     boxes, so the press state below would silently do nothing. Names are a
+     single word at display size, so the line box is unchanged. */
+  display: inline-block;
   color: inherit;
   text-decoration: none;
-  transition: color 0.3s;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.nameLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .nameLink:hover {
+    color: var(--accent-data);
+  }
+}
+.nameLink:focus-visible {
   color: var(--accent-data);
+}
+.nameLink:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 
 /* "Full details →" affordance in each text column. */
@@ -311,17 +326,31 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent-data);
-  transition: color 0.3s, gap 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  /* No `gap` transition: animating gap reflows the label + icon on every
+     hover. The arrow's own translateX below produces the same read for free. */
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 .detailLink :global(.arrow) {
   flex: none;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.detailLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .detailLink:hover {
+    color: var(--accent-gold);
+  }
+  .detailLink:hover :global(.arrow) {
+    transform: translateX(4px);
+  }
+}
+.detailLink:focus-visible {
   color: var(--accent-gold);
 }
-.detailLink:hover :global(.arrow) {
+.detailLink:focus-visible :global(.arrow) {
   transform: translateX(4px);
+}
+.detailLink:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 
 /* Pulsing cyan "Current robot" badge */
@@ -509,5 +538,13 @@
   .photo {
     filter: saturate(0.95) contrast(1.04) brightness(0.98)
       drop-shadow(0 22px 26px rgba(6, 19, 37, 0.55));
+  }
+  .photo,
+  .shadow,
+  .spot,
+  .nameLink,
+  .detailLink,
+  .detailLink :global(.arrow) {
+    transition: none;
   }
 }

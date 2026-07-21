@@ -29,7 +29,7 @@ export default function Reveal({
       const targets = stagger > 0 ? Array.from(el.children) : el
 
       if (prefersReducedMotion()) {
-        gsap.set(targets, { autoAlpha: 1, y: 0 })
+        gsap.set(targets, { autoAlpha: 1, clearProps: 'transform' })
         return
       }
 
@@ -43,6 +43,13 @@ export default function Reveal({
           delay,
           stagger,
           ease: 'expo.out',
+          // Without this, GSAP leaves `transform: translate(0px, 0px)` inline
+          // once the tween lands — and an inline style outranks every selector.
+          // That silently killed the CSS :hover lift and :active press on every
+          // revealed card, since both are transforms. The tween ends at y:0, so
+          // dropping the property is visually identical and hands control back
+          // to the stylesheet.
+          clearProps: 'transform',
           scrollTrigger: { trigger: el, start, once: true },
         }
       )

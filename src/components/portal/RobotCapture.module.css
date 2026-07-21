@@ -1,0 +1,838 @@
+/* =========================================================================
+   Robot capture — the pit-scouting camera.
+
+   Designed for one hand, at arm's length, in a room loud enough that nobody
+   will read a sentence twice. Consequences:
+
+     * Every control is at least 44px on its shortest edge.
+     * The current instruction is the largest text on screen.
+     * Accept and retake are the only two things in the thumb zone, and they
+       never move between shots — muscle memory does the work, not reading.
+     * Nothing important is communicated by colour alone; the verdict carries
+       an icon and a sentence as well as a border.
+
+   Same tokens as the rest of the portal. No raw curve, no raw duration, no
+   raw hex — translucent accent washes follow the rgba() pattern already used
+   throughout Portal.module.css, since the system has no alpha ramp.
+   ========================================================================= */
+
+.capture {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.headMain {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+
+.team {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+}
+
+.event {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  /* Stops the header shifting sideways as the counter climbs. */
+  font-variant-numeric: tabular-nums;
+}
+.count strong {
+  color: var(--text-primary);
+  font-size: 1.3rem;
+}
+.countSub {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* --- Progress ----------------------------------------------------------- */
+/* The house "cyan wipe": scaleX from the left. Transform, never width — width
+   would lay out the page on every frame. */
+
+.progress {
+  position: relative;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+
+/* --- Step strip --------------------------------------------------------- */
+
+.strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  /* Scrolls sideways rather than wrapping to three rows on a narrow phone and
+     pushing the viewfinder off screen. */
+  scrollbar-width: none;
+  padding-bottom: 2px;
+  margin-inline: calc(var(--sp-1) * -1);
+  padding-inline: var(--sp-1);
+  scroll-snap-type: x proximity;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  scroll-snap-align: start;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.stepMark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .step:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.step:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.step:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.step:disabled {
+  opacity: 0.5;
+}
+
+.stepCurrent {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+.stepDone {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.4);
+  background: rgba(63, 207, 142, 0.08);
+}
+/* Amber, not red. A skip is a recorded decision, not a failure — colouring it
+   as an error would push scouts into shooting a photo they said didn't exist. */
+.stepSkipped {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.4);
+  background: rgba(245, 184, 46, 0.08);
+}
+/* Current always wins, whatever the angle's stored state. */
+.stepCurrent.stepDone,
+.stepCurrent.stepSkipped {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+
+/* --- The instruction ---------------------------------------------------- */
+/* The single most important element on the screen. Display face, oversized,
+   with the accent bar the rest of the site uses for section spines. */
+
+.instruction {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-accent);
+  border-left-width: 3px;
+  border-radius: var(--r-md);
+}
+
+.instructionLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.instructionHint {
+  font-size: var(--fs-body);
+  color: var(--text-body);
+}
+
+/* --- Degraded-detector notice ------------------------------------------- */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+}
+.notice svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* --- Stage (viewfinder / review) ---------------------------------------- */
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-void);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+
+/* contain, not cover, on BOTH the live view and the captured frame. With
+   cover the scout composes against a crop and receives a wider photo, and the
+   subject-size check would be grading a frame they never saw. */
+.media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Kept mounted, not unmounted: tearing the <video> down between shots drops
+   the srcObject and costs a full camera restart on every retake. */
+.mediaHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stageNote,
+.checking {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding: var(--sp-4);
+  max-width: 40ch;
+  color: var(--text-body);
+}
+
+.checking {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  max-width: none;
+  background: rgba(6, 19, 37, 0.72);
+  color: var(--text-primary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .checking {
+    animation: veilIn var(--dur-fast) var(--ease-out) both;
+  }
+}
+@keyframes veilIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stageIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.1);
+  border: 1px solid rgba(245, 184, 46, 0.35);
+}
+
+.stageNoteTitle {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stageNoteText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* --- Verdict ------------------------------------------------------------ */
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .verdict {
+    animation: verdictIn var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes verdictIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.verdictPass {
+  border-color: rgba(63, 207, 142, 0.4);
+}
+.verdictFail {
+  border-color: rgba(245, 184, 46, 0.45);
+}
+
+.verdictTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.verdictPass .verdictTitle {
+  color: var(--success);
+}
+.verdictFail .verdictTitle {
+  color: var(--accent-gold);
+}
+
+.issues {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.issue {
+  position: relative;
+  padding-left: 16px;
+  font-size: var(--fs-body);
+  color: var(--text-body);
+}
+.issue::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-gold);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metricLabel {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.metricBad .metricValue,
+.metricBad .metricLabel {
+  color: var(--accent-gold);
+}
+
+/* --- Action bar --------------------------------------------------------- */
+/* Sticky so the decision stays under the thumb no matter how far the verdict
+   list pushes the page. */
+
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0 var(--sp-4);
+  background: linear-gradient(to top, var(--bg-base) 62%, transparent);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 52px;
+  padding: 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  color: var(--text-body);
+  background: var(--surface-1);
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+
+.actionGhost {
+  background: transparent;
+}
+
+.actionPrimary {
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-color: var(--accent-data);
+}
+
+/* A shot that failed a check can still be kept, but it does not get to look
+   like the recommended path. Gold reads as "you are overriding something",
+   which is exactly what is happening. */
+.actionOverride {
+  color: var(--text-on-gold);
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+  }
+  .actionPrimary:hover:not(:disabled) {
+    color: var(--text-on-cyan);
+    background: var(--accent-data);
+    border-color: var(--accent-data);
+    box-shadow: var(--glow-data);
+  }
+  .actionOverride:hover:not(:disabled) {
+    color: var(--text-on-gold);
+    background: var(--accent-gold-hi);
+    border-color: var(--accent-gold-hi);
+  }
+}
+/* Keyboard parity, outside the hover query — same affordance, not just a ring. */
+.action:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+.actionPrimary:focus-visible {
+  color: var(--text-on-cyan);
+  box-shadow: var(--glow-data);
+}
+.actionOverride:focus-visible {
+  color: var(--text-on-gold);
+  background: var(--accent-gold-hi);
+}
+.action:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* --- Shutter ------------------------------------------------------------ */
+
+.shutter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--text-primary);
+  background: transparent;
+  transition: transform var(--dur-press) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.shutterCore {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  transition: transform var(--dur-press) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shutter:hover:not(:disabled) {
+    border-color: var(--accent-data);
+    box-shadow: var(--glow-data);
+  }
+  .shutter:hover:not(:disabled) .shutterCore {
+    background: var(--accent-data);
+  }
+}
+.shutter:focus-visible {
+  border-color: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.shutter:focus-visible .shutterCore {
+  background: var(--accent-data);
+}
+/* The inner disc shrinks inside a ring that does not move — the same gesture a
+   physical shutter makes, and it reads at a glance in peripheral vision. */
+.shutter:active:not(:disabled) .shutterCore {
+  transform: scale(0.86);
+}
+.shutter:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Holds the shutter's footprint when there is no live camera, so Skip and the
+   picker do not slide across the screen the moment permission is refused. */
+.shutterGap {
+  flex: none;
+  width: 72px;
+  height: 72px;
+}
+
+/* --- Skip sheet --------------------------------------------------------- */
+
+.skipSheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skipSheet {
+    animation: sheetIn var(--dur-panel) var(--ease-drawer) both;
+  }
+}
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skipTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+.skipGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+}
+
+.skipBtn {
+  min-height: 48px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  text-align: left;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .skipBtn:hover {
+    color: var(--accent-gold);
+    border-color: rgba(245, 184, 46, 0.4);
+  }
+}
+.skipBtn:focus-visible {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.4);
+}
+.skipBtn:active {
+  transform: scale(0.97);
+}
+
+.skipCancel {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .skipCancel:hover {
+    color: var(--text-primary);
+  }
+}
+.skipCancel:focus-visible {
+  color: var(--text-primary);
+}
+.skipCancel:active {
+  transform: scale(0.97);
+}
+
+/* --- Summary ------------------------------------------------------------ */
+
+.doneCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+
+.doneIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: var(--success);
+  background: rgba(63, 207, 142, 0.1);
+  border: 1px solid rgba(63, 207, 142, 0.35);
+}
+
+.doneTitle {
+  font-size: var(--fs-h3);
+}
+
+.doneText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+.doneList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.doneRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.doneRowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doneRowLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.doneRowMeta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.doneRedo {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .doneRedo:hover {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+  }
+}
+.doneRedo:focus-visible {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+}
+.doneRedo:active {
+  transform: scale(0.96);
+}
+
+/* --- Narrow phones ------------------------------------------------------ */
+
+@media (max-width: 400px) {
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .action {
+    font-size: 0.85rem;
+    padding: 0 var(--sp-2);
+  }
+}
+
+/* --- Reduced motion ----------------------------------------------------- */
+/* Movement goes; feedback stays. Colour and opacity still carry state, which
+   is what the verdict actually depends on. */
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+  .step,
+  .action,
+  .shutter,
+  .shutterCore,
+  .skipBtn,
+  .skipCancel,
+  .doneRedo {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+  }
+  .step:active,
+  .action:active,
+  .shutter:active .shutterCore,
+  .skipBtn:active,
+  .skipCancel:active,
+  .doneRedo:active {
+    transform: none;
+  }
+  .verdict,
+  .skipSheet,
+  .checking {
+    animation: none;
+  }
+}

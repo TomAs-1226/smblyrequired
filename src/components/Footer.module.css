@@ -52,6 +52,11 @@
   align-items: flex-start;
   gap: 4px;
   color: inherit;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+/* Whole lockup takes the press — the plate and name scale with it. */
+.brand:active {
+  transform: scale(0.98);
 }
 
 /* Full-color logo sits on a light plate — it's blue artwork meant for
@@ -64,14 +69,21 @@
   border-radius: var(--r-md);
   margin-bottom: var(--sp-3);
   box-shadow: var(--elev-1);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  transition: transform var(--dur-ui) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .logo {
   height: 46px;
   width: auto;
   display: block;
 }
-.brand:hover .logoPlate {
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .logoPlate {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-2);
+  }
+}
+/* Keyboard gets the same lift the pointer gets, not just the ring. */
+.brand:focus-visible .logoPlate {
   transform: translateY(-2px);
   box-shadow: var(--elev-2);
 }
@@ -90,9 +102,14 @@
   line-height: 0.98;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
-.brand:hover .brandName {
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover .brandName {
+    color: var(--accent-gold);
+  }
+}
+.brand:focus-visible .brandName {
   color: var(--accent-gold);
 }
 
@@ -124,18 +141,30 @@
   font-size: var(--fs-small);
   letter-spacing: 0.01em;
   color: var(--accent-data);
-  transition: color 0.25s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .siteIcon {
   opacity: 0.7;
-  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.siteLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .siteLink:hover {
+    color: var(--accent-gold-hi);
+  }
+  .siteLink:hover .siteIcon {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+}
+.siteLink:focus-visible {
   color: var(--accent-gold-hi);
 }
-.siteLink:hover .siteIcon {
+.siteLink:focus-visible .siteIcon {
   opacity: 1;
   transform: translate(2px, -2px);
+}
+.siteLink:active {
+  transform: scale(0.97);
 }
 
 .motto {
@@ -190,7 +219,7 @@
   font-size: 1.05rem;
   letter-spacing: 0.01em;
   color: var(--text-body);
-  transition: color 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
 .navLink::before {
   content: '';
@@ -202,14 +231,33 @@
   background: var(--accent-gold);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-ui) var(--ease-out);
 }
-.navLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .navLink:hover {
+    color: var(--text-primary);
+    transform: translateX(8px);
+  }
+  .navLink:hover::before {
+    transform: scaleX(1);
+  }
+  /* A pointer press always coincides with hover — carry the 8px shift into the
+     press, or the link snaps back left the moment it's clicked. */
+  .navLink:hover:active {
+    transform: translateX(8px) scale(0.97);
+  }
+}
+.navLink:focus-visible {
   color: var(--text-primary);
   transform: translateX(8px);
 }
-.navLink:hover::before {
+.navLink:focus-visible::before {
   transform: scaleX(1);
+}
+/* Touch has no hover to inherit from, so the press stands alone. */
+.navLink:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
 }
 
 /* ---- (3) Connect -------------------------------------------------------- */
@@ -228,7 +276,7 @@
   gap: 12px;
   color: var(--text-body);
   font-size: var(--fs-small);
-  transition: color 0.25s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .contactLink span span {
   display: block;
@@ -236,7 +284,7 @@
 .contactIcon {
   color: var(--text-muted);
   flex: none;
-  transition: color 0.25s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .contactRole {
   font-family: var(--font-display);
@@ -247,11 +295,22 @@
   color: var(--text-muted);
   margin-bottom: 1px;
 }
-.contactLink:hover {
+@media (hover: hover) and (pointer: fine) {
+  .contactLink:hover {
+    color: var(--accent-data);
+  }
+  .contactLink:hover .contactIcon {
+    color: var(--accent-data);
+  }
+}
+.contactLink:focus-visible {
   color: var(--accent-data);
 }
-.contactLink:hover .contactIcon {
+.contactLink:focus-visible .contactIcon {
   color: var(--accent-data);
+}
+.contactLink:active {
+  transform: scale(0.97);
 }
 
 /* Socials — small, quiet text links */
@@ -272,18 +331,30 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
-  transition: color 0.25s ease;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .socialIcon {
   opacity: 0.65;
-  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
 }
-.social:hover {
+@media (hover: hover) and (pointer: fine) {
+  .social:hover {
+    color: var(--text-primary);
+  }
+  .social:hover .socialIcon {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+}
+.social:focus-visible {
   color: var(--text-primary);
 }
-.social:hover .socialIcon {
+.social:focus-visible .socialIcon {
   opacity: 1;
   transform: translate(2px, -2px);
+}
+.social:active {
+  transform: scale(0.97);
 }
 
 /* ---- Legal baseline ----------------------------------------------------- */
@@ -309,6 +380,26 @@
   font-size: var(--fs-small);
   letter-spacing: 0.04em;
   color: var(--text-body);
+}
+
+/* Quiet by default — this is a staff door, not a call to action. It brightens
+   on hover/focus so it is still clearly a link when you go looking for it. */
+.portalLink {
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  display: inline-block;
+}
+@media (hover: hover) and (pointer: fine) {
+  .portalLink:hover {
+    color: var(--accent-data);
+  }
+}
+.portalLink:focus-visible {
+  color: var(--accent-data);
+}
+.portalLink:active {
+  transform: scale(0.97);
 }
 
 /* ---- Responsive --------------------------------------------------------- */
@@ -340,11 +431,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .brand,
   .navLink,
   .navLink::before,
   .social,
   .socialIcon,
   .contactLink,
+  .contactIcon,
   .brandName,
   .logoPlate,
   .siteLink,
