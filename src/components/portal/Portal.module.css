@@ -488,6 +488,17 @@
   color: var(--text-muted);
 }
 
+/* graphify's rendered view. Tall on purpose — a 2000-node graph in a 300px box
+   is unreadable, and this is the whole reason the tab exists. */
+.graphFrame {
+  width: 100%;
+  height: min(78vh, 900px);
+  min-height: 460px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  background: var(--bg-void);
+}
+
 .legError {
   font-family: var(--font-mono);
   font-size: 0.72rem;

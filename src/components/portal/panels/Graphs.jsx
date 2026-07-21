@@ -27,27 +27,29 @@ export default function Graphs() {
     load()
   }, [])
 
-  // Fetch the payload and render it, rather than handing the user a signed URL
-  // to a 2 MB JSON file their browser will offer to download. Seeing the graph
-  // is the entire point of storing it.
+  // Prefer graphify's OWN rendered graph.html when it exists — it is what the
+  // tool's authors intended, it stays correct when graphify changes, and it is
+  // already tuned for the graphs it produces. The canvas viewer is the fallback
+  // for graphs uploaded as bare JSON.
   async function open(g) {
-    const f = g.files
-    if (!f) return
     setOpening(g.id)
     setState((s) => ({ ...s, error: null }))
-
-    const { data: url, error } = await signedUrl(f.bucket, f.path, 600)
-    if (error || !url) {
-      setOpening(null)
-      setState((s) => ({ ...s, error: error ?? 'Could not open that graph.' }))
-      return
-    }
     try {
+      if (g.html_file?.path) {
+        const { data: url, error } = await signedUrl(g.html_file.bucket, g.html_file.path, 900)
+        if (error || !url) throw new Error(error ?? 'could not sign the URL')
+        setViewing({ mode: 'html', url, meta: g })
+        return
+      }
+      const f = g.files
+      if (!f) throw new Error('no payload attached')
+      const { data: url, error } = await signedUrl(f.bucket, f.path, 600)
+      if (error || !url) throw new Error(error ?? 'could not sign the URL')
       const res = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setViewing({ graph: await res.json(), meta: g })
+      setViewing({ mode: 'canvas', graph: await res.json(), meta: g })
     } catch (err) {
-      setState((s) => ({ ...s, error: `Could not load the graph: ${err.message}` }))
+      setState((s) => ({ ...s, error: `Could not open that graph: ${err.message}` }))
     } finally {
       setOpening(null)
     }
@@ -131,9 +133,24 @@ export default function Graphs() {
             {viewing.meta.source && <code className={styles.bucketTag}>{viewing.meta.source}</code>}
           </span>
         </div>
-        <Suspense fallback={<Loading rows={3} label="Loading the graph viewer" />}>
-          <GraphViewer graph={viewing.graph} />
-        </Suspense>
+        {viewing.mode === 'html' ? (
+          /* graphify's own render. `sandbox="allow-scripts"` WITHOUT
+             `allow-same-origin` is the load-bearing part: the file is 2 MB of
+             author-supplied markup with scripts in it, and that exact
+             combination is what stops it reaching back into the signed-in
+             session. Do not add allow-same-origin to "fix" anything. */
+          <iframe
+            src={viewing.url}
+            title={`${viewing.meta.title} — interactive graph`}
+            className={styles.graphFrame}
+            sandbox="allow-scripts"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <Suspense fallback={<Loading rows={3} label="Loading the graph viewer" />}>
+            <GraphViewer graph={viewing.graph} />
+          </Suspense>
+        )}
       </div>
     )
   }

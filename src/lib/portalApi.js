@@ -108,7 +108,7 @@ export async function listGraphs() {
   const { data, error } = await supabase
     .from('graphs')
     .select(
-      'id, slug, title, summary, source, node_count, edge_count, community_count, god_nodes, generated_at, file_id, files(bucket, path)'
+      'id, slug, title, summary, source, node_count, edge_count, community_count, god_nodes, generated_at, file_id, html_file_id, files!graphs_file_id_fkey(bucket, path), html_file:files!graphs_html_file_id_fkey(bucket, path)'
     )
     .order('generated_at', { ascending: false, nullsFirst: false })
   return { data: data ?? [], error: wrap(error) }
