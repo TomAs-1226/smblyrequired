@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Icon from '../../Icon'
 import { useAuth } from '../../../lib/auth'
 import { supabase } from '../../../lib/supabase'
@@ -7,10 +7,15 @@ import Uploader, { inspectGraphFile } from '../Uploader'
 import { Loading, Empty, ErrorState, Row } from '../ui'
 import styles from '../Portal.module.css'
 
+// Lazy: the viewer carries its own canvas/force-layout code, and most visits to
+// this tab are to upload or check a count rather than to open a 2000-node graph.
+const GraphViewer = lazy(() => import('../graph/GraphViewer'))
+
 export default function Graphs() {
   const { atLeast } = useAuth()
   const [state, setState] = useState({ loading: true, error: null, graphs: [] })
   const [opening, setOpening] = useState(null)
+  const [viewing, setViewing] = useState(null)
 
   async function load() {
     setState((s) => ({ ...s, loading: true, error: null }))
@@ -22,17 +27,30 @@ export default function Graphs() {
     load()
   }, [])
 
+  // Fetch the payload and render it, rather than handing the user a signed URL
+  // to a 2 MB JSON file their browser will offer to download. Seeing the graph
+  // is the entire point of storing it.
   async function open(g) {
     const f = g.files
     if (!f) return
     setOpening(g.id)
-    const { data, error } = await signedUrl(f.bucket, f.path, 600)
-    setOpening(null)
-    if (error || !data) {
+    setState((s) => ({ ...s, error: null }))
+
+    const { data: url, error } = await signedUrl(f.bucket, f.path, 600)
+    if (error || !url) {
+      setOpening(null)
       setState((s) => ({ ...s, error: error ?? 'Could not open that graph.' }))
       return
     }
-    window.open(data, '_blank', 'noopener,noreferrer')
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setViewing({ graph: await res.json(), meta: g })
+    } catch (err) {
+      setState((s) => ({ ...s, error: `Could not load the graph: ${err.message}` }))
+    } finally {
+      setOpening(null)
+    }
   }
 
   // Slug must be unique and stable; derived from the title but editable, since
@@ -94,6 +112,28 @@ export default function Graphs() {
           <code>graphify-out/</code> here. The graph stays queryable instead of living on one
           laptop.
         </Empty>
+      </div>
+    )
+  }
+
+  // A 2000-node graph wants the whole panel, so it replaces the list rather than
+  // opening in a cramped overlay. Back returns to exactly where they were.
+  if (viewing) {
+    return (
+      <div className={styles.stack}>
+        <div className={styles.docHead}>
+          <button type="button" className={styles.backBtn} onClick={() => setViewing(null)}>
+            <Icon name="arrowLeft" size={15} />
+            All graphs
+          </button>
+          <span className={styles.rowMeta}>
+            <strong>{viewing.meta.title}</strong>
+            {viewing.meta.source && <code className={styles.bucketTag}>{viewing.meta.source}</code>}
+          </span>
+        </div>
+        <Suspense fallback={<Loading rows={3} label="Loading the graph viewer" />}>
+          <GraphViewer graph={viewing.graph} />
+        </Suspense>
       </div>
     )
   }
