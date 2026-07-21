@@ -97,23 +97,38 @@ export default function App() {
     { scope: root }
   )
 
+  const isPortal = path.startsWith('/portal')
+
+  // Portal sub-tabs are ONE page, not eleven.
+  //
+  // Keying <main> on the full path remounts the whole subtree on every route
+  // change. Inside the portal that means remounting AuthProvider on every tab
+  // click — so each one re-ran getSession(), refetched the profile, flashed
+  // "Checking your session…", and made every panel start from nothing. It read
+  // as a full page reload because functionally it was one.
+  //
+  // Public pages still key per route: they genuinely are separate pages and the
+  // remount is what plays their entrance animation.
+  const pageKey = isPortal ? '/portal' : path
+
   // On every route change: jump to top, then re-measure ScrollTriggers once the
-  // new page has painted.
+  // new page has painted. Skipped inside the portal — it has no scroll-driven
+  // animation to re-measure, and yanking the view to the top on every tab click
+  // loses your place in a long list for no benefit.
   useEffect(() => {
+    if (isPortal) return
     const lenis = getLenis()
     if (lenis) lenis.scrollTo(0, { immediate: true })
     else window.scrollTo(0, 0)
     const id = requestAnimationFrame(() => ScrollTrigger.refresh())
     return () => cancelAnimationFrame(id)
-  }, [path])
-
-  const isPortal = path.startsWith('/portal')
+  }, [path, isPortal])
 
   return (
     <div ref={root}>
       <Grain />
       <Nav />
-      <main key={path} className={`page ${isHome ? '' : 'page--sub'}`}>
+      <main key={pageKey} className={`page ${isHome ? '' : 'page--sub'}`}>
         {/* No spinner in the fallback: the portal chunk resolves in a few
             hundred ms on any real connection, and a spinner that flashes for
             200ms reads as jank rather than as progress. Reserving the height

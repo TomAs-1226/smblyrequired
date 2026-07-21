@@ -488,6 +488,102 @@
   color: var(--text-muted);
 }
 
+/* --- Overview extras ---------------------------------------------------- */
+
+.greeting {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text-body);
+}
+
+/* A row that exists because something needs doing. Gold rather than red: these
+   are prompts, not failures, and colouring them as errors teaches people to
+   ignore the ones that matter. */
+.alertRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  text-align: left;
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.alertRow span {
+  flex: 1;
+}
+.alertRow:active {
+  transform: scale(0.99);
+}
+.alertRow:focus-visible {
+  border-color: var(--accent-gold);
+}
+@media (hover: hover) and (pointer: fine) {
+  .alertRow:hover {
+    background: rgba(245, 184, 46, 0.14);
+    border-color: var(--accent-gold);
+  }
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-5);
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-2);
+}
+
+.quickCard {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 52px;
+  padding: var(--sp-3);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-body);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.quickCard:active {
+  transform: scale(0.98);
+}
+.quickCard:focus-visible {
+  border-color: var(--accent-data);
+  color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .quickCard:hover {
+    border-color: var(--accent-data);
+    color: var(--text-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alertRow,
+  .quickCard {
+    transition-property: color, background-color, border-color;
+  }
+  .alertRow:active,
+  .quickCard:active {
+    transform: none;
+  }
+}
+
 /* graphify's rendered view. Tall on purpose — a 2000-node graph in a 300px box
    is unreadable, and this is the whole reason the tab exists. */
 .graphFrame {
