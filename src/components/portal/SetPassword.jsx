@@ -3,11 +3,15 @@ import Icon from '../Icon'
 import { useAuth } from '../../lib/auth'
 import styles from './Portal.module.css'
 
-// Shown while a password-recovery link is active (AuthProvider swaps it in for
-// everything else). Also the first-password path: an account provisioned without
-// one gets the same recovery email, lands here, and sets its first password.
-export default function SetPassword() {
+// Two jobs, one form:
+//   - Recovery/first-password: AuthProvider renders <SetPassword/> with no props
+//     when a recovery link is active. Cancel signs out.
+//   - Change password while signed in: rendered with onClose as a dismissible
+//     dialog from the portal header. Cancel just closes. Either way it calls
+//     updatePassword(), which works for any authenticated session with no email.
+export default function SetPassword({ onClose }) {
   const { updatePassword, signOut } = useAuth()
+  const dismissible = typeof onClose === 'function'
   const [pw, setPw] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,28 +35,33 @@ export default function SetPassword() {
   }
 
   if (done) {
+    // In the dismissible (signed-in) case there is nothing to reload — just
+    // close. In recovery, a reload lands them in the portal proper.
     return (
-      <div className={`container ${styles.wrap}`}>
+      <Shell dismissible={dismissible} onClose={onClose}>
         <div className={styles.center}>
           <span className={`pill ${styles.centerPill}`}>Password set</span>
-          <h1 className={styles.title}>You're all set</h1>
+          <h1 className={dismissible ? styles.authTitle : styles.title}>You're all set</h1>
           <p className={styles.centerText}>
-            You can now sign in with your email and this password. Next time, use the password
-            option on the sign-in screen.
+            You can now sign in with your email and this password.
           </p>
-          <button type="button" className="btn btn--gold" onClick={() => window.location.reload()}>
-            Continue to the portal
+          <button
+            type="button"
+            className="btn btn--gold"
+            onClick={() => (dismissible ? onClose() : window.location.reload())}
+          >
+            {dismissible ? 'Done' : 'Continue to the portal'}
           </button>
         </div>
-      </div>
+      </Shell>
     )
   }
 
   return (
-    <div className={`container ${styles.wrap}`}>
+    <Shell dismissible={dismissible} onClose={onClose}>
       <div className={styles.authCard}>
         <span className={styles.eyebrow}>Team Portal</span>
-        <h1 className={styles.authTitle}>Set your password</h1>
+        <h1 className={styles.authTitle}>{dismissible ? 'Change your password' : 'Set your password'}</h1>
         <p className={styles.authLead}>Choose a password for signing in from now on.</p>
 
         <form className={styles.form} onSubmit={submit} noValidate>
@@ -100,10 +109,31 @@ export default function SetPassword() {
           </button>
         </form>
 
-        <button type="button" className={styles.switchMode} onClick={signOut}>
-          Cancel and sign out
+        <button
+          type="button"
+          className={styles.switchMode}
+          onClick={() => (dismissible ? onClose() : signOut())}
+        >
+          {dismissible ? 'Cancel' : 'Cancel and sign out'}
         </button>
       </div>
+    </Shell>
+  )
+}
+
+// Full-screen page during recovery; a centered dismissible dialog when changing
+// a password while signed in. The dialog keeps modal transform-origin (centered)
+// per the motion rules — it is not anchored to a trigger.
+function Shell({ dismissible, onClose, children }) {
+  if (!dismissible) return <div className={`container ${styles.wrap}`}>{children}</div>
+  return (
+    <div
+      className={styles.pwOverlay}
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className={styles.pwDialog}>{children}</div>
     </div>
   )
 }

@@ -902,6 +902,41 @@
   margin-bottom: var(--sp-5);
 }
 
+/* Change-password dialog. Centered (modal origin), scrim-dismissible. */
+.pwOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(4, 11, 22, 0.72);
+  animation: pwFade var(--dur-panel) var(--ease-out) both;
+}
+.pwDialog {
+  width: 100%;
+  max-width: 440px;
+  animation: pwPop var(--dur-panel) var(--ease-out) both;
+}
+@keyframes pwFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pwPop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pwOverlay,
+  .pwDialog {
+    animation: none;
+  }
+}
+
 .authSwitches {
   display: flex;
   flex-direction: column;

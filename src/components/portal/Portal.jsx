@@ -3,6 +3,7 @@ import Icon from '../Icon'
 import { AuthProvider, useAuth } from '../../lib/auth'
 import { navigate } from '../../lib/router'
 import SignIn from './SignIn'
+import SetPassword from './SetPassword'
 import Dashboard from './panels/Dashboard'
 import Scouting from './panels/Scouting'
 import Checklist from './panels/Checklist'
@@ -63,6 +64,9 @@ function PortalInner({ sub }) {
   const { configured, loading, signedIn, awaitingApproval, profile, role, atLeast, signOut } =
     useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  // Lets any signed-in user change their password with no email round trip —
+  // the path a teammate uses to replace an admin-issued temporary password.
+  const [changingPw, setChangingPw] = useState(false)
 
   useEffect(() => {
     setMenuOpen(false)
@@ -93,11 +97,16 @@ function PortalInner({ sub }) {
             <span className={styles.whoName}>{profile?.full_name || 'Signed in'}</span>
             <span className={`${styles.roleTag} ${styles[`role_${role}`] ?? ''}`}>{role}</span>
           </span>
+          <button type="button" className={styles.signOut} onClick={() => setChangingPw(true)}>
+            Password
+          </button>
           <button type="button" className={styles.signOut} onClick={signOut}>
             Sign out
           </button>
         </div>
       </header>
+
+      {changingPw && <SetPassword onClose={() => setChangingPw(false)} />}
 
       <button
         type="button"
