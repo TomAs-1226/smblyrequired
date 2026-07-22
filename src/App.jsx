@@ -111,15 +111,23 @@ export default function App() {
   // remount is what plays their entrance animation.
   const pageKey = isPortal ? '/portal' : path
 
-  // On every route change: jump to top, then re-measure ScrollTriggers once the
-  // new page has painted. Skipped inside the portal — it has no scroll-driven
-  // animation to re-measure, and yanking the view to the top on every tab click
-  // loses your place in a long list for no benefit.
+  // On every route change — including a portal tab switch — jump to the top.
+  //
+  // This used to be skipped inside the portal to "keep your place in a long
+  // list", but that backfired: the nav rail is sticky, so clicking from a tall
+  // tab to a shorter one left the browser's scroll clamped to the new content's
+  // bottom — you landed at the foot of the tab you just opened. Each tab is
+  // different content, so there is no place worth preserving across a switch;
+  // top is where a freshly opened tab should start. `immediate` (no smooth
+  // scroll) because a tab click happens constantly and must feel instant.
+  //
+  // Only the public pages own scroll-driven animation, so only they re-measure
+  // ScrollTrigger afterward; the portal has none.
   useEffect(() => {
-    if (isPortal) return
     const lenis = getLenis()
     if (lenis) lenis.scrollTo(0, { immediate: true })
     else window.scrollTo(0, 0)
+    if (isPortal) return
     const id = requestAnimationFrame(() => ScrollTrigger.refresh())
     return () => cancelAnimationFrame(id)
   }, [path, isPortal])
