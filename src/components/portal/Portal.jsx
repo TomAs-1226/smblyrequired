@@ -11,6 +11,7 @@ import Compare from './compare/Compare'
 import TeamDetail from './panels/TeamDetail'
 import PickList from './picklist/PickList'
 import Forms from './forms/Forms'
+import Control from './panels/Control'
 import Files from './panels/Files'
 import Graphs from './panels/Graphs'
 import CodeArchive from './panels/CodeArchive'
@@ -41,6 +42,9 @@ const PANELS = [
   { id: 'picks', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
   // Authoring the season's questions is a mentor/lead job, not a scout's.
   { id: 'forms', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
+  // Leadership sets the active event and the scouting window here; both are
+  // enforced in the database (migration 0010), not just this screen.
+  { id: 'control', label: 'Event control', icon: 'calendar', min: 'lead', Component: Control },
   { id: 'files', label: 'Files', icon: 'folder', min: 'viewer', Component: Files },
   { id: 'graphs', label: 'Graphs', icon: 'share', min: 'member', Component: Graphs },
   { id: 'code', label: 'Code', icon: 'code', min: 'member', Component: CodeArchive },

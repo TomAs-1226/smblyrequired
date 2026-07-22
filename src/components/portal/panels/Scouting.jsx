@@ -8,6 +8,7 @@ import {
   recordEntry,
   syncFromTba,
   passesRemaining,
+  scoutControl,
 } from '../../../lib/scoutingApi'
 import FormRenderer, { missingRequired } from '../scouting/FormRenderer'
 import MatchTimer from '../scouting/MatchTimer'
@@ -50,6 +51,27 @@ export default function Scouting() {
   const [capturing, setCapturing] = useState(false)
   const [photoCount, setPhotoCount] = useState(0)
   const [passesLeft, setPassesLeft] = useState(null)
+  const [control, setControl] = useState(null)
+
+  // The active event and scouting window are leadership's to set (migration
+  // 0010). A scout follows them: the event picker locks to the active event, and
+  // saving is blocked when the window is closed. This is the friendly mirror of
+  // the database trigger — the trigger is what actually enforces it.
+  useEffect(() => {
+    let alive = true
+    scoutControl().then(({ data }) => {
+      if (!alive || !data) return
+      setControl(data)
+      // Snap the scout to the active event unless they are a lead who may roam.
+      if (data.active_event_key && !atLeast('lead')) setEventKey(data.active_event_key)
+    })
+    return () => {
+      alive = false
+    }
+  }, [atLeast])
+
+  const lockedToEvent = control?.active_event_key && !atLeast('lead')
+  const scoutingClosed = control?.lock_enabled && control?.open_now === false
 
   // Pit and strategy are capped at 2 per team per day (migration 0007). Check
   // the remaining allowance when the team changes, so the scout learns the limit
@@ -205,22 +227,48 @@ export default function Scouting() {
         )}
       </div>
 
+      {/* Scouting window closed — say so plainly and stop the form being filled
+          for nothing. The database refuses the entry regardless; this is the
+          courtesy that saves a scout twenty taps first. */}
+      {scoutingClosed && (
+        <div className={scout.closedBanner}>
+          <Icon name="alert" size={17} />
+          <span>
+            Scouting is closed right now. A lead has set the window to{' '}
+            {String(control.window_start).slice(0, 5)}–{String(control.window_end).slice(0, 5)}. Your
+            entries will not save until it opens.
+          </span>
+        </div>
+      )}
+
       {/* --- Event --- */}
       <section>
         <h2 className={styles.sectionTitle}>Event</h2>
         <div className={styles.toolbar}>
-          <select
-            className={styles.input}
-            value={eventKey}
-            onChange={(e) => setEventKey(e.target.value)}
-          >
-            <option value="">Select an event…</option>
-            {events.map((e) => (
-              <option key={e.key} value={e.key}>
-                {e.short_name || e.name} — {e.start_date}
-              </option>
-            ))}
-          </select>
+          {lockedToEvent ? (
+            // A scout is held to the active event, so it is shown as a fixed
+            // label, not a picker they cannot really use.
+            <div className={scout.fixedEvent}>
+              <Icon name="flag" size={15} />
+              {events.find((e) => e.key === eventKey)?.short_name ??
+                events.find((e) => e.key === eventKey)?.name ??
+                eventKey}
+              <span className={scout.fixedEventTag}>set by a lead</span>
+            </div>
+          ) : (
+            <select
+              className={styles.input}
+              value={eventKey}
+              onChange={(e) => setEventKey(e.target.value)}
+            >
+              <option value="">Select an event…</option>
+              {events.map((e) => (
+                <option key={e.key} value={e.key}>
+                  {e.short_name || e.name} — {e.start_date}
+                </option>
+              ))}
+            </select>
+          )}
           {atLeast('lead') && (
             <button
               type="button"
@@ -429,9 +477,16 @@ export default function Scouting() {
                 viewport keeps the one action a scout repeats all day always under
                 the thumb. */}
             <div className={scout.saveDock}>
-              <button type="button" className={scout.saveBtn} onClick={save}>
-                <Icon name="check" size={20} />
-                Save {mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}
+              <button
+                type="button"
+                className={scout.saveBtn}
+                onClick={save}
+                disabled={scoutingClosed}
+              >
+                <Icon name={scoutingClosed ? 'alert' : 'check'} size={20} />
+                {scoutingClosed
+                  ? 'Scouting closed'
+                  : `Save ${mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}`}
               </button>
             </div>
           </>

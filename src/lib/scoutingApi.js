@@ -200,6 +200,30 @@ export async function deleteForm(id) {
   return { error: wrap(error) }
 }
 
+// --- scouting control (active event + time window) ----------------------------
+
+// The live control state, computed server-side (timezone maths and all), so the
+// browser never has to guess whether scouting is open. Everyone reads it; only
+// leadership writes the underlying settings.
+export async function scoutControl() {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const { data, error } = await supabase.from('scout_control_status').select('*').maybeSingle()
+  return { data, error: wrap(error) }
+}
+
+export async function saveScoutSettings(patch) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  // Always the singleton row. RLS lets only lead+ through; a member's write is
+  // refused by the policy, not by hiding the control.
+  const { data, error } = await supabase
+    .from('scout_settings')
+    .update(patch)
+    .eq('id', 1)
+    .select()
+    .single()
+  return { data, error: wrap(error) }
+}
+
 // --- entries ------------------------------------------------------------------
 
 /**
