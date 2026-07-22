@@ -8,6 +8,7 @@ import Dashboard from './panels/Dashboard'
 import Scouting from './panels/Scouting'
 import Checklist from './panels/Checklist'
 import Compare from './compare/Compare'
+import TeamDetail from './panels/TeamDetail'
 import PickList from './picklist/PickList'
 import Forms from './forms/Forms'
 import Files from './panels/Files'
@@ -31,6 +32,9 @@ const PANELS = [
   // question asked between matches, by the same person, on the same phone.
   { id: 'checklist', label: 'Coverage', icon: 'check', min: 'member', Component: Checklist },
   { id: 'compare', label: 'Compare', icon: 'bars', min: 'member', Component: Compare },
+  // Drill into one team: their scouting, photos, official TBA numbers, and how
+  // workable they are as a partner. The strategy-analysis cluster's detail view.
+  { id: 'team', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },
   // Members can read the board — everyone benefits from knowing the ranking.
   // Editing is lead+, enforced in RLS: one careless drag during selection is
   // expensive and hard to notice.

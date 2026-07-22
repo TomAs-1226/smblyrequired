@@ -1,0 +1,244 @@
+/* =========================================================================
+   Overview (Dashboard) — presentation specific to the portal's front screen.
+
+   The shared primitives it leans on (.statGrid/.stat, .alertRow, .miniList,
+   .sectionTitle, .roleTag, .leg*, .twoCol, .quickGrid) stay in
+   Portal.module.css and are imported alongside this file — a component may
+   import both. What lives here is only what the overview alone uses: its
+   header band, the headline scouting card, and the activity sparkline.
+
+   Same discipline as the rest of the site: every colour is a token, never a
+   raw value. This screen is read on every single visit, so it holds still —
+   there is no motion here at all beyond the shared list stagger the mini-lists
+   already carry from Portal.module.css.
+   ========================================================================= */
+
+/* --- Header band -------------------------------------------------------- */
+/* Distinct from the body: a raised surface with a faint cyan corner wash, so
+   "who you are / what day it is" reads as a frame around the numbers rather
+   than as the first of them. */
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-5);
+  background:
+    radial-gradient(140% 160% at 100% 0%, var(--accent-data-wash), transparent 55%),
+    var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.heroEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.heroGreeting {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
+  line-height: 1.05;
+  color: var(--text-primary);
+}
+.heroSub {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+.heroMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  flex: none;
+}
+.identChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.identLabel {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* --- Headline scouting card --------------------------------------------- */
+/* The overview's centre of gravity: the three numbers people open this screen
+   for, and a 14-day pulse of activity beneath them. Raised like the header, so
+   it reads as primary — the Archive and Backup blocks below are plain sections
+   by contrast, and that contrast IS the hierarchy. */
+.headline {
+  padding: var(--sp-5);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+}
+
+.headlineTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+/* The card's own title: the .sectionTitle look without its block margin, since
+   it sits in a flex row beside the export control rather than above content. */
+.headTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Three headline figures, separated by hairlines rather than boxed as cards —
+   an instrument readout, not three tiles. Each keeps the stat tiles' cyan tick
+   so a headline number and a detail tile read as one family. */
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.figure + .figure {
+  padding-left: var(--sp-4);
+  border-left: 1px solid var(--border-hairline);
+}
+.figureLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.figureLabel::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.figureValue {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--text-primary);
+  /* Keeps the row from reflowing as a counting value changes width. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Activity sparkline ------------------------------------------------- */
+.sparkWrap {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+}
+.sparkHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.sparkTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sparkStat {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.sparkStat strong {
+  font-weight: 600;
+  color: var(--text-body);
+}
+/* A fixed viewBox stretched to fill the card width (preserveAspectRatio
+   "none"). The line keeps a constant weight via a non-scaling stroke, so it
+   stays crisp at any width while the area fill is free to distort — a solid
+   wash cannot show it. overflow is visible so the top of the stroke is not
+   clipped where a peak sits against the frame. */
+.spark {
+  display: block;
+  width: 100%;
+  height: 52px;
+  overflow: visible;
+}
+.sparkArea {
+  fill: var(--accent-data-wash);
+}
+.sparkLine {
+  fill: none;
+  stroke: var(--accent-data);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* No data in the window: a calm, grounded line and a plain sentence — never a
+   collapsed or jagged axis pretending there is a shape to read. */
+.sparkEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  padding: 0 var(--sp-3);
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--r-md);
+}
+
+/* --- Narrow screens ----------------------------------------------------- */
+@media (max-width: 620px) {
+  .heroMeta {
+    align-items: flex-start;
+  }
+  /* Below three-up the hairline dividers read as stray indents, so drop them
+     and let the grid gap do the separating. */
+  .figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .figure + .figure {
+    padding-left: 0;
+    border-left: none;
+  }
+}

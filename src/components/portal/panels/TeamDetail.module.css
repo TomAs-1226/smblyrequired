@@ -1,0 +1,860 @@
+/* =========================================================================
+   Team detail — one team, one event, everything we know.
+
+   Reuses the portal's own vocabulary (Portal.module.css: .stat, .statGrid,
+   .sectionTitle, .countBadge) and adds only what this screen needs on top: the
+   identity header with its confidence chip, the entry cards, the photo gallery
+   and its lightbox, and the workability block. Read on a phone in a pit minutes
+   before a conversation with a drive team, so the same rule as Compare shapes
+   it: nothing may look more certain than the sample behind it.
+
+   Every duration and curve is a token. No raw hex, no raw ms.
+   ========================================================================= */
+
+/* --- Event select + team search ----------------------------------------- */
+
+.select,
+.searchInput {
+  width: 100%;
+  font: inherit;
+  /* 16px floor — anything smaller and iOS zooms the page on focus, landing the
+     scout in a horizontally scrolled viewport. */
+  font-size: 1rem;
+  min-height: 48px;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 11px 12px;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.select {
+  max-width: 480px;
+}
+.select:focus,
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+  background: var(--bg-base);
+}
+@media (hover: hover) and (pointer: fine) {
+  .select:hover,
+  .searchInput:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.pickerBar {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search .searchInput {
+  padding-left: 38px;
+}
+
+.note {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 62ch;
+}
+
+.pickList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px;
+  /* The one inner scroll region on the picker — the page itself never grows a
+     bar, only this box does. */
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.pickBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.pickBtn:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pickBtn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.pickBtn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+}
+.pickOn {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
+  background: var(--accent-data-wash);
+}
+.pickNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  flex: none;
+  min-width: 3.4ch;
+}
+.pickName {
+  font-size: var(--fs-small);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pickIcon {
+  color: var(--text-muted);
+  flex: none;
+}
+.pickOn .pickIcon {
+  color: var(--accent-data);
+}
+
+/* --- Header: identity + confidence -------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.headMain {
+  min-width: 0;
+}
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.teamNum {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 8vw, 3.4rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.identityText {
+  min-width: 0;
+}
+.teamNick {
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.teamSub {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.headMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: none;
+}
+.matchCount {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+.matchCount strong {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+.matchScored {
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* The confidence chip is the header's whole job: a two-match team must not read
+   as authoritative as a fifteen-match one. Tiers are colour-coded AND worded, so
+   the distinction survives a daylit phone screen and colour-blindness alike. */
+.conf {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.confDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: currentColor;
+}
+.conf_none {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+/* Gold: provisional, not broken. The same amber the rest of the portal uses for
+   "real but unproven". */
+.conf_thin {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.35);
+  background: rgba(245, 184, 46, 0.08);
+}
+.conf_building {
+  color: var(--accent-data);
+  border-color: var(--border-accent);
+  background: var(--accent-data-wash);
+}
+.conf_solid {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.35);
+  background: rgba(63, 207, 142, 0.08);
+}
+
+/* --- Captions + provisional bed ----------------------------------------- */
+
+.caption {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 72ch;
+  margin-bottom: var(--sp-3);
+}
+.captionThin {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--accent-gold);
+}
+.captionThin svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* A thin sample gets a faint gold hatch under the whole stat block rather than a
+   fade — greying real numbers into illegibility is worse than untrusted, so this
+   marks the bed as provisional while leaving every figure readable. */
+.provisional {
+  padding: var(--sp-3);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-md);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 6px,
+    rgba(245, 184, 46, 0.05) 6px,
+    rgba(245, 184, 46, 0.05) 12px
+  );
+}
+
+/* Sub-line under a stat value — the ± spread, the plain-language read, the
+   "context not a rating" disclaimer. */
+.statSub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 8px;
+  max-width: 34ch;
+}
+.statBad {
+  border-color: rgba(240, 99, 99, 0.35);
+}
+
+/* Pit estimate is walled off from match play (migration 0009). Its own block,
+   its own left accent, and a label that never says "score". */
+.pitBlock {
+  margin-top: var(--sp-3);
+}
+.pitTile {
+  border-left: 3px solid var(--accent-gold);
+}
+
+/* --- Entries ------------------------------------------------------------- */
+
+.entryList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.entry {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .entry {
+    animation: entryIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0));
+  }
+}
+@keyframes entryIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.entryHead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.kindTag {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.kind_match {
+  color: var(--accent-data);
+  border-color: var(--border-accent);
+  background: var(--accent-data-wash);
+}
+.kind_pit {
+  color: var(--text-body);
+  border-color: var(--border-strong);
+}
+.kind_strategy {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.3);
+  background: rgba(245, 184, 46, 0.06);
+}
+.matchTag {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+.alliance {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.alliance_red {
+  color: var(--danger);
+  border-color: rgba(240, 99, 99, 0.4);
+  background: rgba(240, 99, 99, 0.08);
+}
+.alliance_blue {
+  color: var(--accent-action);
+  border-color: rgba(46, 125, 246, 0.4);
+  background: rgba(46, 125, 246, 0.1);
+}
+.entryWhen {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.dataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-2) var(--sp-3);
+}
+.dataRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dataKey {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.dataKeyOrphan {
+  border-bottom: 1px dashed var(--border-strong);
+  align-self: flex-start;
+}
+.dataVal {
+  font-size: var(--fs-small);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.notes {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+.notesLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.emptyData {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* --- Photos -------------------------------------------------------------- */
+
+.angleGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.angleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.angleLabel {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.thumbGrid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: var(--sp-2);
+}
+.thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  transition: border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.thumb:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .thumb:hover {
+    border-color: var(--accent-data);
+  }
+}
+.thumb:focus-visible {
+  border-color: var(--accent-data);
+}
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .thumb:hover .thumbImg {
+    transform: scale(1.04);
+  }
+}
+.thumbBad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+/* --- Lightbox ------------------------------------------------------------ */
+
+.lbOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+.lbBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 11, 22, 0.86);
+  animation: lbFade var(--dur-panel) var(--ease-out) both;
+}
+.lbDialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: 100%;
+  max-width: 960px;
+  max-height: 100%;
+  animation: lbPop var(--dur-panel) var(--ease-out) both;
+}
+@keyframes lbFade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes lbPop {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+.lbBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.lbCaption {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+.lbClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.lbClose:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lbClose:hover {
+    border-color: var(--accent-data);
+    color: var(--accent-data);
+  }
+}
+.lbClose:focus-visible {
+  border-color: var(--accent-data);
+  color: var(--accent-data);
+}
+.lbStage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.lbImg {
+  max-width: 100%;
+  /* Room for the caption bar above; the image scales inside the viewport rather
+     than pushing the dialog past it. */
+  max-height: calc(100vh - var(--sp-8));
+  object-fit: contain;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+}
+.lbBadText {
+  color: var(--text-muted);
+  padding: var(--sp-6);
+}
+.lbNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--text-primary);
+  background: rgba(4, 11, 22, 0.6);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.lbPrev {
+  left: var(--sp-2);
+}
+.lbNext {
+  right: var(--sp-2);
+}
+.lbNav:active {
+  transform: translateY(-50%) scale(0.94);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lbNav:hover {
+    background: var(--surface-1);
+    border-color: var(--accent-data);
+  }
+}
+.lbNav:focus-visible {
+  border-color: var(--accent-data);
+}
+
+/* --- Workability --------------------------------------------------------- */
+/* No bespoke tiles — it reuses .statGrid / .stat from Portal.module.css. The
+   only rule here is the caption, styled by .caption above. */
+
+/* --- AI ------------------------------------------------------------------ */
+
+.aiBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.aiBar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.aiBtn {
+  min-height: 48px;
+}
+.aiCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+/* Verbatim, so the model's own paragraphing survives rather than collapsing. */
+.aiText {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 74ch;
+}
+.aiFoot {
+  margin-top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+/* Muted, never red. The numbers above are complete without any of this. */
+.aiOff {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.aiWhy {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 2px 7px;
+  overflow-wrap: anywhere;
+}
+
+/* --- Responsive ---------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  .head {
+    flex-direction: column;
+  }
+  .headMeta {
+    align-items: flex-start;
+  }
+  .entryWhen {
+    margin-left: 0;
+    width: 100%;
+  }
+  .pickList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Reduced motion ------------------------------------------------------ */
+/* Movement goes; the colour and border feedback that carries meaning stays. */
+@media (prefers-reduced-motion: reduce) {
+  .entry,
+  .lbBackdrop,
+  .lbDialog {
+    animation: none;
+  }
+  .pickBtn,
+  .thumb,
+  .thumbImg,
+  .lbClose,
+  .lbNav,
+  .select,
+  .searchInput {
+    transition-property: color, background-color, border-color, opacity;
+  }
+  .pickBtn:active,
+  .thumb:active,
+  .lbClose:active,
+  .lbNav:active {
+    transform: none;
+  }
+  .lbNav:active {
+    transform: translateY(-50%);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .thumb:hover .thumbImg {
+      transform: none;
+    }
+  }
+}
+
+/* --- Official numbers (The Blue Alliance) -------------------------------- */
+.tbaHint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--text-muted);
+}
+.tbaNote {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+.tbaMatches {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-3);
+}
+.tbaMatch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: var(--fs-small);
+}
+.tbaMatchLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 84px;
+}
+.tbaAlliance {
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+}
+.tbaAlliance_red {
+  color: #ff9a8f;
+  border-color: rgba(224, 85, 72, 0.5);
+}
+.tbaAlliance_blue {
+  color: #8fb8ff;
+  border-color: rgba(58, 130, 224, 0.5);
+}
+.tbaScore {
+  font-family: var(--font-mono);
+  color: var(--text-body);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.tbaOutcome {
+  font-family: var(--font-display);
+  font-weight: 700;
+  width: 22px;
+  text-align: center;
+}
+.tbaOutcome_W {
+  color: var(--success);
+}
+.tbaOutcome_L {
+  color: var(--danger);
+}
+.tbaOutcome_T {
+  color: var(--text-muted);
+}

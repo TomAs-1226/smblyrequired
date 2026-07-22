@@ -522,12 +522,10 @@
 }
 
 /* --- Overview extras ---------------------------------------------------- */
-
-.greeting {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  color: var(--text-body);
-}
+/* The overview's own header band (greeting, identity chip, date) lives in
+   Dashboard.module.css — it is presentation only that screen uses. What stays
+   here is genuinely shared: the alert row, the two-column split, and the
+   quick-links grid all appear on other panels too. */
 
 /* A row that exists because something needs doing. Gold rather than red: these
    are prompts, not failures, and colouring them as errors teaches people to
@@ -1374,52 +1372,13 @@
 }
 
 /* =========================================================================
-   Overview header band + Admin panel.
+   Admin panel.
 
    Same vocabulary as everything above — .row, .rowMain, .miniRow, .roleTag,
-   .statGrid all get reused. The only genuinely new things are the greeting
-   band, the pending-approvals callout, and a couple of inline-editing helpers.
+   .statGrid all get reused. The only genuinely new things are the
+   pending-approvals callout and a couple of inline-editing helpers. (The
+   overview's own header band moved to Dashboard.module.css.)
    ========================================================================= */
-
-/* --- Overview header band ----------------------------------------------- */
-
-.overviewHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  padding-bottom: var(--sp-4);
-  border-bottom: 1px solid var(--border-hairline);
-}
-.overviewGreet {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.overviewSub {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-}
-.overviewMeta {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-}
-.overviewIdent {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-.overviewIdentLabel {
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
 
 /* --- Admin: action error banner ----------------------------------------- */
 /* A guard-rail talking (self-demotion, last admin) is an expected answer, not a
@@ -1514,4 +1473,29 @@
   .adminRow .roleSelect {
     width: 100%;
   }
+}
+
+/* =========================================================================
+   Export button (shared primitive).
+
+   A CSV export control that any list-bearing panel can drop in — it lives here
+   with the other portal primitives, not with the one panel that happens to use
+   it first. The button itself is a global `.btn`, so its hover / :active /
+   focus-visible / reduced-motion states already come from index.css; these
+   rules only lay out its optional inline error and dim it while disabled.
+   ========================================================================= */
+
+.exportButton {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+.exportButton button:disabled {
+  cursor: not-allowed;
+}
+/* Busy keeps full weight — the spinner already says "working". Only a genuinely
+   unavailable export dims, so the two states never look the same. */
+.exportButton button:disabled:not([aria-busy='true']) {
+  opacity: 0.55;
 }

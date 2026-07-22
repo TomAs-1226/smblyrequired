@@ -282,6 +282,76 @@ export async function teamStats(eventKey) {
   return { data: data ?? [], error: wrap(error) }
 }
 
+/**
+ * One team's aggregate row from `team_event_stats` (migration 0009).
+ *
+ * `teamStats` above pulls the whole event ordered for a leaderboard; this is the
+ * single-row read the team-detail screen wants instead of dragging sixty rows
+ * over a venue network to keep one. `maybeSingle`, not `single`: a team nobody
+ * has scouted yet has NO row in the view at all — it groups `scout_entries`, and
+ * a team with zero entries simply is not in the result. That is a first-morning
+ * state, not an error, so it comes back as { data: null }.
+ *
+ * Every scoring number in the row is match-only and the pit estimate is kept
+ * apart from it — that separation is the whole point of 0009, so a caller must
+ * surface `pit_estimate` on its own and never fold it into `avg_score`.
+ */
+export async function teamStat(eventKey, teamNumber) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('team_event_stats')
+    .select('*')
+    .eq('event_key', eventKey)
+    .eq('team_number', teamNumber)
+    .maybeSingle()
+  return { data, error: wrap(error) }
+}
+
+/**
+ * One team's collaboration summary (migration 0008) — the "workability" signal.
+ *
+ * `workability` is null until at least two INDEPENDENT observers have weighed in;
+ * the view enforces that floor, not this caller, so a non-null row can still be
+ * reporting "not enough data". The detail screen reads `observers` to decide
+ * whether to show anything at all — a single opinion about another school's
+ * students is exactly what 0008 was written to withhold. `maybeSingle`: a team
+ * with no observation has no row, which is the common case and not an error.
+ */
+export async function teamCollaboration(eventKey, teamNumber) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('team_collaboration_summary')
+    .select('*')
+    .eq('event_key', eventKey)
+    .eq('team_number', teamNumber)
+    .maybeSingle()
+  return { data, error: wrap(error) }
+}
+
+/**
+ * Robot photos for a team, newest first, each carrying the bucket + path its
+ * bytes live at (migration 0005: `robot_photos.file_id` -> `files`).
+ *
+ * The embed is why this is its own query rather than a bare select: a photo row
+ * records only a `file_id`, and minting a signed URL needs the bucket and path
+ * that `files` holds. The caller mints those per photo through
+ * `portalApi.signedUrl` (bucket 'media' is private). RobotCapture writes a fresh
+ * row per retake with no unique index on (team, angle), so one angle can carry
+ * several rows — ordered newest-first here so a reader can lead with the latest
+ * and still see the rest. A row whose `file` came back null (the object was
+ * deleted out from under it) is handed across as-is for the caller to skip.
+ */
+export async function teamPhotos(eventKey, teamNumber) {
+  if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('robot_photos')
+    .select('id, angle, created_at, quality, file:files(bucket, path)')
+    .eq('event_key', eventKey)
+    .eq('team_number', teamNumber)
+    .order('created_at', { ascending: false })
+  return { data: data ?? [], error: wrap(error) }
+}
+
 // --- repo sources -------------------------------------------------------------
 
 export async function listRepoSources() {
