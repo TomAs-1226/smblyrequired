@@ -5,19 +5,13 @@ import { supabase } from '../../../lib/supabase'
 import { backupHealth, listFiles, formatBytes } from '../../../lib/portalApi'
 import { navigate } from '../../../lib/router'
 import { Loading, ErrorState, StatTile, Empty } from '../ui'
+import BackupLeg from '../BackupLeg'
 import styles from '../Portal.module.css'
-
-// Kept generic on purpose — this repo is public, so machine names stay out of
-// it. Rename here if the team prefers something more specific internally.
-const LEG_LABEL = {
-  'supabase->server': 'Cloud → backup server',
-  'server->optiplex': 'Backup server → OptiPlex',
-}
 
 // The overview answers "what is the state of things?" in one screen. Every item
 // on it is either a number somebody acts on, or a link to where they act.
 export default function Dashboard() {
-  const { atLeast, profile } = useAuth()
+  const { atLeast, profile, role } = useAuth()
   // backup_runs is member+ in RLS, so a viewer legitimately reads zero rows.
   // Without this gate an empty result would render as "No backup has ever run",
   // which is alarming, wrong, and unactionable for the person seeing it. Not
@@ -84,15 +78,40 @@ export default function Dashboard() {
   const bytes = Math.max(0, ...s.health.map((r) => r.byte_total ?? 0))
   const objects = Math.max(0, ...s.health.map((r) => r.object_count ?? 0))
   const first = profile?.full_name?.split(' ')[0]
+  const today = new Date()
 
   return (
     <div className={styles.stack}>
-      {first && <p className={styles.greeting}>Hello, {first}.</p>}
+      {/* A quiet header band: who you are and what day it is, so the numbers
+          below have a frame. No motion — this is read on every single visit. */}
+      <header className={styles.overviewHead}>
+        <div className={styles.overviewGreet}>
+          <p className={styles.greeting}>{first ? `Hello, ${first}.` : 'Welcome back.'}</p>
+          <p className={styles.overviewSub}>Here's where things stand.</p>
+        </div>
+        <div className={styles.overviewMeta}>
+          {role && (
+            <span className={styles.overviewIdent}>
+              <span className={styles.overviewIdentLabel}>Signed in as</span>
+              <span className={`${styles.roleTag} ${styles[`role_${role}`] ?? ''}`}>{role}</span>
+            </span>
+          )}
+          <span className="data-tag">
+            <time dateTime={today.toISOString().slice(0, 10)}>
+              {today.toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </time>
+          </span>
+        </div>
+      </header>
 
       {/* Pending approvals lead, because this is the only item here that blocks
           another person from working — and it is invisible unless someone looks. */}
       {atLeast('admin') && c.pending > 0 && (
-        <button type="button" className={styles.alertRow} onClick={() => navigate('/portal/roster')}>
+        <button type="button" className={styles.alertRow} onClick={() => navigate('/portal/admin')}>
           <Icon name="users" size={17} />
           <span>
             <strong>{c.pending}</strong> {c.pending === 1 ? 'person is' : 'people are'} waiting for
@@ -103,7 +122,10 @@ export default function Dashboard() {
       )}
 
       <section>
-        <h2 className={styles.sectionTitle}>Scouting</h2>
+        <h2 className={styles.sectionTitle}>
+          <Icon name="flag" size={15} />
+          Scouting
+        </h2>
         <div className={styles.statGrid}>
           <StatTile label="Entries recorded" value={c.entries.toLocaleString()} />
           <StatTile
@@ -129,7 +151,10 @@ export default function Dashboard() {
       </section>
 
       <section>
-        <h2 className={styles.sectionTitle}>Archive</h2>
+        <h2 className={styles.sectionTitle}>
+          <Icon name="folder" size={15} />
+          Archive
+        </h2>
         <div className={styles.statGrid}>
           <StatTile label="Knowledge docs" value={c.docs} />
           <StatTile label="Code archives" value={c.archives} />
@@ -139,7 +164,10 @@ export default function Dashboard() {
 
       {canSeeBackups && (
         <section>
-          <h2 className={styles.sectionTitle}>Backup — as of last run</h2>
+          <h2 className={styles.sectionTitle}>
+            <Icon name="check" size={15} />
+            Backup — as of last run
+          </h2>
           <div className={styles.statGrid}>
             <StatTile label="Objects stored" value={objects.toLocaleString()} />
             <StatTile label="Total size" value={formatBytes(bytes)} />
@@ -161,7 +189,10 @@ export default function Dashboard() {
 
       <div className={styles.twoCol}>
         <section>
-          <h2 className={styles.sectionTitle}>Latest scouting</h2>
+          <h2 className={styles.sectionTitle}>
+            <Icon name="flag" size={15} />
+            Latest scouting
+          </h2>
           {s.activity.length === 0 ? (
             <Empty title="Nothing scouted yet">Entries appear as soon as a phone syncs.</Empty>
           ) : (
@@ -180,7 +211,10 @@ export default function Dashboard() {
         </section>
 
         <section>
-          <h2 className={styles.sectionTitle}>Recently added</h2>
+          <h2 className={styles.sectionTitle}>
+            <Icon name="folder" size={15} />
+            Recently added
+          </h2>
           {s.recent.length === 0 ? (
             <Empty title="Nothing uploaded yet">Files added anywhere show up here.</Empty>
           ) : (
@@ -200,7 +234,10 @@ export default function Dashboard() {
       </div>
 
       <section>
-        <h2 className={styles.sectionTitle}>Jump to</h2>
+        <h2 className={styles.sectionTitle}>
+          <Icon name="spark" size={15} />
+          Jump to
+        </h2>
         <div className={styles.quickGrid}>
           {[
             { to: '/portal/scout', icon: 'flag', label: 'Scout a match' },
@@ -218,62 +255,5 @@ export default function Dashboard() {
         </div>
       </section>
     </div>
-  )
-}
-
-function BackupLeg({ leg }) {
-  const ok = leg.healthy
-  // "Ran successfully" and "was proven restorable" are different claims. A run
-  // that has never been restore-tested is reported as unverified rather than
-  // green, because an untested backup is a hypothesis.
-  const verified = Boolean(leg.restore_tested_at)
-  const when = leg.started_at ? new Date(leg.started_at) : null
-
-  return (
-    <li className={`${styles.leg} ${ok ? styles.legOk : styles.legBad}`}>
-      <span className={styles.legDot} aria-hidden="true" />
-      <div className={styles.legMain}>
-        <span className={styles.legName}>{LEG_LABEL[leg.leg] ?? leg.leg}</span>
-        <span className={styles.legWhen}>
-          {when
-            ? `${when.toLocaleDateString()} ${when.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}`
-            : 'never'}
-          {leg.object_count != null && ` · ${leg.object_count.toLocaleString()} objects`}
-          {leg.byte_total != null && ` · ${formatBytes(leg.byte_total)}`}
-        </span>
-        {/* The scripts record why a run degraded. Surfacing it here is the
-            difference between "something is wrong" and knowing what to fix. */}
-        {leg.error && <span className={styles.legError}>{leg.error}</span>}
-      </div>
-      <span className={styles.legFlags}>
-        {/* "Failed last night" and "hasn't run in a week" are different problems
-            needing different responses, and both used to render as "Stale". */}
-        <span className={`${styles.legState} ${ok ? styles.legStateOk : styles.legStateBad}`}>
-          {ok
-            ? 'Current'
-            : leg.status === 'running'
-              ? 'Running'
-              : leg.status === 'failed'
-                ? 'Failed'
-                : leg.status === 'partial'
-                  ? 'Partial'
-                  : 'Stale'}
-        </span>
-        <span
-          className={`${styles.legState} ${verified ? styles.legStateOk : styles.legStateWarn}`}
-          title={
-            verified
-              ? `Restore tested ${new Date(leg.restore_tested_at).toLocaleDateString()}`
-              : 'This copy has never been restore-tested'
-          }
-        >
-          <Icon name={verified ? 'check' : 'alert'} size={13} />
-          {verified ? 'Verified' : 'Unverified'}
-        </span>
-      </span>
-    </li>
   )
 }

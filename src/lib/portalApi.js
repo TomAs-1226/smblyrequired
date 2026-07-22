@@ -190,6 +190,54 @@ export async function listMembers() {
   return { data: data ?? [], error: wrap(error) }
 }
 
+// ---------- audit log ----------
+
+// Lead+ read the audit trail (RLS in migration 0004). Each row's `detail` is
+// jsonb — for a role change it is { from, to }. The actor is embedded so the log
+// can name who acted without a second round trip. `entity_id` is bare text (the
+// target's id, not a foreign key), so callers resolve the target's name from a
+// roster they already hold rather than joining here.
+export async function listAuditLog({ limit = 50 } = {}) {
+  if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('audit_log')
+    .select('id, action, entity, entity_id, detail, created_at, actor:profiles(full_name, role)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: data ?? [], error: wrap(error) }
+}
+
+// ---------- storage summary ----------
+
+// The five buckets declared in migration 0002. Listed here so the admin storage
+// view can render an untouched bucket as 0 objects / 0 bytes rather than
+// omitting it — "nothing has been uploaded to media yet" is information, and a
+// missing row hides it.
+export const BUCKETS = ['graphs', 'code', 'knowledge', 'media', 'public-media']
+
+// Per-bucket object counts and byte totals, folded client-side. PostgREST has no
+// GROUP BY, and a SQL view would be another migration; the `files` index is one
+// small row per stored object (not the bytes themselves), so pulling bucket +
+// size and grouping here is cheap and keeps the rule in one readable place. An
+// admin reads every row through the lead-manage policy, so the totals are
+// complete for them; a lower role would legitimately see only what RLS allows.
+export async function storageSummary({ limit = 1000 } = {}) {
+  if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
+  const { data, error } = await supabase.from('files').select('bucket, byte_size').limit(limit)
+  if (error) return { data: [], error: wrap(error) }
+
+  const by = new Map(BUCKETS.map((b) => [b, { bucket: b, objects: 0, bytes: 0 }]))
+  for (const row of data ?? []) {
+    // A bucket not in the known five is still surfaced rather than dropped, so a
+    // future bucket cannot go silently uncounted.
+    const slot = by.get(row.bucket) ?? { bucket: row.bucket, objects: 0, bytes: 0 }
+    slot.objects += 1
+    slot.bytes += row.byte_size ?? 0
+    by.set(row.bucket, slot)
+  }
+  return { data: [...by.values()], error: null }
+}
+
 export function formatBytes(n) {
   if (n == null) return '—'
   if (n < 1024) return `${n} B`

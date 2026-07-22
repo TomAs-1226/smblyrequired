@@ -4,7 +4,8 @@ import { useAuth } from '../../lib/auth'
 import styles from './Portal.module.css'
 
 export default function SignIn() {
-  const { signIn, signInWithLink } = useAuth()
+  const { signIn, signInWithLink, sendPasswordReset } = useAuth()
+  // 'password' | 'link' | 'reset'
   const [mode, setMode] = useState('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,28 +20,33 @@ export default function SignIn() {
     setError(null)
 
     const result =
-      mode === 'password' ? await signIn(email.trim(), password) : await signInWithLink(email.trim())
+      mode === 'password'
+        ? await signIn(email.trim(), password)
+        : mode === 'link'
+          ? await signInWithLink(email.trim())
+          : await sendPasswordReset(email.trim())
 
     setBusy(false)
     if (result?.error) {
       setError(result.error)
       return
     }
-    // On success in password mode the auth listener swaps this whole view out,
-    // so there is nothing to do here. Magic-link mode has to stay and explain
-    // that the next step happens in the user's inbox.
-    if (mode === 'link') setSent(true)
+    // On success in password mode the auth listener swaps this whole view out.
+    // The two email flows stay and explain the next step is in the inbox.
+    if (mode !== 'password') setSent(true)
   }
 
   if (sent) {
+    const isReset = mode === 'reset'
     return (
       <div className={`container ${styles.wrap}`}>
         <div className={styles.center}>
           <span className={`pill ${styles.centerPill}`}>Check your email</span>
-          <h1 className={styles.title}>Link sent</h1>
+          <h1 className={styles.title}>{isReset ? 'Reset link sent' : 'Link sent'}</h1>
           <p className={styles.centerText}>
-            If <strong>{email}</strong> has an account, a sign-in link is on its way. It expires
-            shortly, so use it soon.
+            If <strong>{email}</strong> has an account, {isReset ? 'a link to set your password' : 'a sign-in link'}{' '}
+            is on its way. It expires shortly, so use it soon.
+            {isReset && ' Opening it brings you back here to choose a password.'}
           </p>
           <button
             type="button"
@@ -61,9 +67,11 @@ export default function SignIn() {
     <div className={`container ${styles.wrap}`}>
       <div className={styles.authCard}>
         <span className={styles.eyebrow}>Team Portal</span>
-        <h1 className={styles.authTitle}>Sign in</h1>
+        <h1 className={styles.authTitle}>{mode === 'reset' ? 'Set a password' : 'Sign in'}</h1>
         <p className={styles.authLead}>
-          For team members. Everything public lives on the main site — this is the internal side.
+          {mode === 'reset'
+            ? 'Enter your email and we will send a link to choose a password — this also works if you have never set one.'
+            : 'For team members. Everything public lives on the main site — this is the internal side.'}
         </p>
 
         <form className={styles.form} onSubmit={onSubmit} noValidate>
@@ -113,23 +121,35 @@ export default function SignIn() {
               </>
             ) : (
               <>
-                {mode === 'password' ? 'Sign in' : 'Email me a link'}
+                {mode === 'password' ? 'Sign in' : mode === 'link' ? 'Email me a link' : 'Send the link'}
                 <Icon name="arrowRight" size={17} className="arrow" />
               </>
             )}
           </button>
         </form>
 
-        <button
-          type="button"
-          className={styles.switchMode}
-          onClick={() => {
-            setMode((m) => (m === 'password' ? 'link' : 'password'))
-            setError(null)
-          }}
-        >
-          {mode === 'password' ? 'Sign in with an email link instead' : 'Use a password instead'}
-        </button>
+        <div className={styles.authSwitches}>
+          <button
+            type="button"
+            className={styles.switchMode}
+            onClick={() => {
+              setMode((m) => (m === 'link' ? 'password' : 'link'))
+              setError(null)
+            }}
+          >
+            {mode === 'link' ? 'Use a password instead' : 'Sign in with an email link instead'}
+          </button>
+          <button
+            type="button"
+            className={styles.switchMode}
+            onClick={() => {
+              setMode('reset')
+              setError(null)
+            }}
+          >
+            Forgot or need to set a password?
+          </button>
+        </div>
 
         <p className={styles.authFoot}>
           No account? Accounts are created by a team lead — ask in the build channel rather than

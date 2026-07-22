@@ -14,6 +14,7 @@ import Graphs from './panels/Graphs'
 import CodeArchive from './panels/CodeArchive'
 import Knowledge from './panels/Knowledge'
 import Roster from './panels/Roster'
+import Admin from './panels/Admin'
 import styles from './Portal.module.css'
 
 // Panels are declared with the privilege floor they require. The gate below is
@@ -40,6 +41,11 @@ const PANELS = [
   { id: 'code', label: 'Code', icon: 'code', min: 'member', Component: CodeArchive },
   { id: 'kb', label: 'Knowledge', icon: 'book', min: 'member', Component: Knowledge },
   { id: 'roster', label: 'Team', icon: 'users', min: 'lead', Component: Roster },
+  // Last, and admin-only. Approvals, role changes, the audit trail, and storage
+  // health — the controls a lead can see the results of but only an admin may
+  // touch. RLS is the real gate; `min: 'admin'` just hides a door that would not
+  // open anyway.
+  { id: 'admin', label: 'Admin', icon: 'cog', min: 'admin', Component: Admin },
 ]
 
 // AuthProvider lives here rather than in App so that the Supabase client is

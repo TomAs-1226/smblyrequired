@@ -229,20 +229,53 @@
 }
 
 .statLabel {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
   font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+/* A small field-telemetry tick — the same cyan mark `.data-tag` uses — gives
+   every reading an accent and a shared identity, without a per-tile icon or a
+   parallel component. The tone classes below recolour it. Static: these tiles
+   are read on every visit, so nothing here moves. */
+.statLabel::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
 }
 
 .statValue {
   font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   line-height: 1;
   /* Stops the tile resizing as a counting number changes width. */
   font-variant-numeric: tabular-nums;
+}
+
+/* StatTile exposes a `tone`; these complete it. Gold stays scarce — reserved
+   for a genuinely prestige/attention reading, never a default. */
+.stat_gold .statLabel::before {
+  background: var(--accent-gold);
+  box-shadow: none;
+}
+.stat_gold .statValue {
+  color: var(--accent-gold);
+}
+.stat_success .statLabel::before {
+  background: var(--success);
+  box-shadow: none;
 }
 
 .statUnit {
@@ -869,10 +902,21 @@
   margin-bottom: var(--sp-5);
 }
 
+.authSwitches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--sp-3);
+  align-items: flex-start;
+}
+.authSwitches .switchMode {
+  margin-top: 0;
+}
 .switchMode {
   margin-top: var(--sp-3);
   font-size: var(--fs-small);
   color: var(--accent-data);
+  text-align: left;
   transition: color var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -1291,5 +1335,148 @@
   .previewToggle:active,
   .panelToggle:active {
     transform: none;
+  }
+}
+
+/* =========================================================================
+   Overview header band + Admin panel.
+
+   Same vocabulary as everything above — .row, .rowMain, .miniRow, .roleTag,
+   .statGrid all get reused. The only genuinely new things are the greeting
+   band, the pending-approvals callout, and a couple of inline-editing helpers.
+   ========================================================================= */
+
+/* --- Overview header band ----------------------------------------------- */
+
+.overviewHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.overviewGreet {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.overviewSub {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.overviewMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.overviewIdent {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.overviewIdentLabel {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* --- Admin: action error banner ----------------------------------------- */
+/* A guard-rail talking (self-demotion, last admin) is an expected answer, not a
+   crash — so it reads as a calm danger note, not the full-panel error state. */
+.adminAlert {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  background: rgba(240, 99, 99, 0.08);
+  border: 1px solid rgba(240, 99, 99, 0.3);
+  border-radius: var(--r-md);
+}
+.adminAlert svg {
+  color: var(--danger);
+  flex: none;
+}
+
+/* --- Admin: pending-approvals callout ----------------------------------- */
+/* Gold-tinted because this is the one block another person is waiting on. The
+   gold stays a hairline and a faint wash; the solid gold is spent only on the
+   Approve button, so the accent keeps meaning "the primary action". */
+.adminCallout {
+  background: rgba(245, 184, 46, 0.05);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+/* Seat the rows inside the card: no stray divider under the last one, no gap
+   above the first beyond the title's own margin. */
+.adminCallout .row:first-child {
+  padding-top: 0;
+}
+.adminCallout .row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* --- Admin: rows with inline controls ----------------------------------- */
+
+.adminActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  flex: none;
+}
+.adminFields {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.adminField {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+/* Editing here is touch-first, so these inputs opt up to a 16px floor (no iOS
+   focus-zoom) and a 44px tap target. The shared .input stays at 14px for the
+   dense, read-mostly panels where that density is the point. */
+.adminInput {
+  font-size: 1rem;
+  min-height: 44px;
+}
+
+/* --- Admin: audit entries ----------------------------------------------- */
+.auditChange {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-weight: 500;
+  color: var(--text-body);
+}
+.auditArrow {
+  color: var(--text-muted);
+  flex: none;
+}
+
+/* --- Admin: narrow screens ---------------------------------------------- */
+/* Below this width the name + inline fields + role control cannot share a line
+   without crushing, so the row wraps and the controls take the full width. */
+@media (max-width: 560px) {
+  .adminRow {
+    flex-wrap: wrap;
+  }
+  .adminActions {
+    width: 100%;
+  }
+  .adminRow .roleSelect {
+    width: 100%;
   }
 }

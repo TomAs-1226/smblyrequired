@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, isConfigured, cleanAuthParamsFromUrl, readableAuthError } from './supabase'
+import SetPassword from '../components/portal/SetPassword'
 
 // Mirrors the member_role enum in supabase/migrations/0001_identity.sql.
 // Order is privilege order — index comparison is what `atLeast` relies on, so
@@ -28,6 +29,10 @@ export function AuthProvider({ children }) {
   // had no role yet, so `awaitingApproval` was briefly true and a legitimate
   // admin was told they were not on the roster — on every single page load.
   const [profileLoading, setProfileLoading] = useState(false)
+  // True while the user is inside a password-recovery link. Supabase signs them
+  // in with a limited recovery session and fires PASSWORD_RECOVERY; the only
+  // sane thing to show then is "set your new password", not the dashboard.
+  const [recovery, setRecovery] = useState(false)
   const mounted = useRef(true)
 
   useEffect(() => {
@@ -70,6 +75,7 @@ export function AuthProvider({ children }) {
       // A token refresh is not a login. The session object is new but the person
       // is the same, so there is nothing to re-resolve and nothing to show a
       // spinner for.
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
       if (event === 'TOKEN_REFRESHED' && next?.user?.id === loadedFor.current) {
         setSession(next)
         return
@@ -142,6 +148,25 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }, [])
 
+  // Works for accounts that have no password yet — Supabase sends the same
+  // recovery email either way, which is exactly what a first-time set needs.
+  const sendPasswordReset = useCallback(async (email) => {
+    if (!isConfigured) return { error: 'The portal is not configured yet.' }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}${window.location.pathname}#/portal`,
+    })
+    return { error: readableAuthError(error) }
+  }, [])
+
+  // Called from inside the recovery session. On success the user is a normal
+  // signed-in member with a password, so recovery mode ends.
+  const updatePassword = useCallback(async (password) => {
+    if (!isConfigured) return { error: 'The portal is not configured yet.' }
+    const { error } = await supabase.auth.updateUser({ password })
+    if (!error) setRecovery(false)
+    return { error: readableAuthError(error) }
+  }, [])
+
   const loading = sessionLoading || profileLoading
 
   const value = useMemo(() => {
@@ -158,13 +183,23 @@ export function AuthProvider({ children }) {
       // state right after signup and needs its own UI — it is not an error.
       awaitingApproval: Boolean(session) && (!role || role === 'pending'),
       atLeast: (minimum) => roleAtLeast(role, minimum),
+      recovery,
       signIn,
       signInWithLink,
       signOut,
+      sendPasswordReset,
+      updatePassword,
     }
-  }, [loading, session, profile, signIn, signInWithLink, signOut])
+  }, [loading, session, profile, recovery, signIn, signInWithLink, signOut, sendPasswordReset, updatePassword])
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  // The set-password overlay pre-empts everything else. Rendering it here rather
+  // than threading `recovery` through Portal keeps the whole flow in files the
+  // rest of the portal does not need to know about.
+  return (
+    <AuthContext.Provider value={value}>
+      {recovery ? <SetPassword /> : children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
