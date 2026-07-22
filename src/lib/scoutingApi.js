@@ -257,6 +257,21 @@ export async function listEntries({ eventKey, teamNumber, kind, limit = 200 } = 
   return { data: data ?? [], error: wrap(error) }
 }
 
+// How many pit/strategy passes this scout has left on a team today, via the
+// passes_remaining() RPC from migration 0007. Surfaced BEFORE a scout invests in
+// a thirty-field form, so "daily limit reached" is a heads-up, not a rejection
+// after the work is done. Match scouting is unlimited (bounded per-match), so
+// callers only ask for pit/strategy.
+export async function passesRemaining(teamNumber, kind, eventKey) {
+  if (!isConfigured || !teamNumber) return { data: null, error: null }
+  const { data, error } = await supabase.rpc('passes_remaining', {
+    p_team: Number(teamNumber),
+    p_kind: kind,
+    p_event: eventKey ?? null,
+  })
+  return { data, error: wrap(error) }
+}
+
 export async function teamStats(eventKey) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
   const { data, error } = await supabase

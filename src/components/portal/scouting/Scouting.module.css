@@ -414,6 +414,18 @@
   border-color: var(--accent-data);
 }
 
+/* Sticks the save action to the bottom of the viewport. A blurred bed lifts it
+   off whatever form fields scroll under it so it always reads as "the button",
+   not part of the content. */
+.saveDock {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: var(--sp-3) calc(var(--sp-3) * -1) 0;
+  padding: var(--sp-3);
+  background: linear-gradient(to top, var(--bg-base) 55%, transparent);
+}
+
 .saveBtn {
   display: flex;
   align-items: center;
@@ -421,7 +433,6 @@
   gap: 10px;
   width: 100%;
   min-height: 64px;
-  margin-top: var(--sp-3);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 1.1rem;
@@ -442,6 +453,178 @@
 .saveBtn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
+}
+
+/* --- Match timer --------------------------------------------------------- */
+
+.timer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  /* The border colour tracks the phase — a scout catches the state from the
+     edge of their eye without reading the label. */
+  transition: border-color var(--dur-ui) var(--ease-out);
+}
+.timer_auto {
+  border-color: var(--accent-data);
+}
+.timer_teleop {
+  border-color: var(--accent-action);
+}
+/* Endgame is the moment a scout must look up — gold, the scarce attention
+   colour, earns its place here. */
+.timer_endgame {
+  border-color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.06);
+}
+.timer_done {
+  border-color: var(--border-hairline);
+  opacity: 0.85;
+}
+
+.timerMain {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.timerPhase {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.timer_auto .timerPhase {
+  color: var(--accent-data);
+}
+.timer_endgame .timerPhase {
+  color: var(--accent-gold);
+}
+.timerClock {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.timerFlag {
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+.timerTrack {
+  position: relative;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.timerFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  background: var(--accent-data);
+  /* No transition: the fill is redriven every animation frame from real elapsed
+     time, so a CSS transition would fight the rAF updates and lag the truth. */
+}
+.timer_endgame .timerFill {
+  background: var(--accent-gold);
+}
+.timerTick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--bg-void);
+  opacity: 0.6;
+}
+
+.timerBtns {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.timerStart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 56px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-on-cyan);
+  background: var(--accent-data);
+  border-radius: var(--r-md);
+  transition: transform var(--dur-press) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  touch-action: manipulation;
+}
+.timerStart:active {
+  transform: scale(0.98);
+}
+.timerReset {
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+  touch-action: manipulation;
+}
+.timerReset:active {
+  transform: scale(0.97);
+}
+.timerReset:focus-visible,
+.timerStart:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.timerElapsed {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer,
+  .timerStart,
+  .timerReset {
+    transition-property: border-color, color, background-color;
+  }
+  .timerStart:active,
+  .timerReset:active {
+    transform: none;
+  }
+}
+
+.limitHit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-gold);
 }
 
 .photoRow {

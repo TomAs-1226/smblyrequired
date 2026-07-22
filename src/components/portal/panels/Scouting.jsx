@@ -7,8 +7,10 @@ import {
   activeForm,
   recordEntry,
   syncFromTba,
+  passesRemaining,
 } from '../../../lib/scoutingApi'
 import FormRenderer, { missingRequired } from '../scouting/FormRenderer'
+import MatchTimer from '../scouting/MatchTimer'
 import SyncBadge from '../SyncBadge'
 import { Loading, Empty, ErrorState } from '../ui'
 import styles from '../Portal.module.css'
@@ -47,6 +49,24 @@ export default function Scouting() {
   const [saveError, setSaveError] = useState(null)
   const [capturing, setCapturing] = useState(false)
   const [photoCount, setPhotoCount] = useState(0)
+  const [passesLeft, setPassesLeft] = useState(null)
+
+  // Pit and strategy are capped at 2 per team per day (migration 0007). Check
+  // the remaining allowance when the team changes, so the scout learns the limit
+  // before filling the form rather than at submit. Match scouting is unlimited.
+  useEffect(() => {
+    if (mode === 'match' || !teamNumber) {
+      setPassesLeft(null)
+      return
+    }
+    let alive = true
+    passesRemaining(teamNumber, mode, eventKey || null).then(({ data }) => {
+      if (alive) setPassesLeft(data)
+    })
+    return () => {
+      alive = false
+    }
+  }, [teamNumber, mode, eventKey, saved])
 
   useEffect(() => {
     let alive = true
@@ -312,6 +332,22 @@ export default function Scouting() {
           )}
         </div>
 
+        {/* The match timer sits with the match entry — it is only meaningful
+            while watching a match, and having it here means a scout starts it
+            with the same thumb that just set the alliance. */}
+        {mode === 'match' && form && <MatchTimer />}
+
+        {/* Daily-limit heads-up for pit/strategy, shown before the form is filled. */}
+        {passesLeft != null && passesLeft <= 0 && (
+          <p className={`${styles.uploadNote} ${scout.limitHit}`}>
+            <Icon name="alert" size={14} /> You have used both {mode} passes on team {teamNumber}{' '}
+            today. Edit an existing entry instead — the allowance resets tomorrow.
+          </p>
+        )}
+        {passesLeft != null && passesLeft === 1 && (
+          <p className={styles.uploadNote}>1 {mode} pass left on team {teamNumber} today.</p>
+        )}
+
         {teamNumber && teams.length > 0 && (
           <p className={styles.uploadNote}>
             {teams.find((t) => String(t.team_number) === String(teamNumber))?.nickname ??
@@ -387,12 +423,17 @@ export default function Scouting() {
               )}
             </div>
 
-            {/* Full-width and unmissable. This is pressed between matches, in a
-                hurry, often without looking directly at it. */}
-            <button type="button" className={scout.saveBtn} onClick={save}>
-              <Icon name="check" size={20} />
-              Save {mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}
-            </button>
+            {/* Full-width and unmissable, and STICKY: the pit form is 30 fields,
+                so a static button at the bottom means scrolling a screen and a
+                half to save between every team. Sticking it to the bottom of the
+                viewport keeps the one action a scout repeats all day always under
+                the thumb. */}
+            <div className={scout.saveDock}>
+              <button type="button" className={scout.saveBtn} onClick={save}>
+                <Icon name="check" size={20} />
+                Save {mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}
+              </button>
+            </div>
           </>
         )}
       </section>
