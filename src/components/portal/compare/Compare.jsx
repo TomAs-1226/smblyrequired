@@ -411,24 +411,32 @@ function Verdict({ overall, columns }) {
   return (
     <section className={`${css.verdict} ${tone}`} aria-live="polite">
       <div className={css.verdictHead}>
-        <Icon
-          name={overall.verdict === 'winner' ? 'trophy' : overall.verdict === 'provisional' ? 'alert' : 'bars'}
-          size={20}
-        />
+        <span className={css.verdictIcon} aria-hidden="true">
+          <Icon
+            name={overall.verdict === 'winner' ? 'trophy' : overall.verdict === 'provisional' ? 'alert' : 'bars'}
+            size={20}
+          />
+        </span>
         <h2 className={css.verdictTitle}>{heading}</h2>
       </div>
       <p className={css.verdictReason}>{overall.reason}</p>
 
       {overall.tally.length > 0 && (
         <ul className={css.tally}>
-          {overall.tally.map((t) => (
-            <li key={t.team} className={css.tallyItem}>
-              <span className={css.tallyTeam}>{t.team}</span>
-              <span className={css.tallyCount}>
-                {t.count} {t.count === 1 ? 'category' : 'categories'}
-              </span>
-            </li>
-          ))}
+          {overall.tally.map((t) => {
+            // Gold is spent here and only here: the team the data actually
+            // decided on, and only on a confident verdict — the one top pick.
+            const isPick = overall.verdict === 'winner' && t.team === overall.winner
+            return (
+              <li key={t.team} className={`${css.tallyItem} ${isPick ? css.tallyPick : ''}`}>
+                {isPick && <Icon name="trophy" size={13} className={css.tallyPickIcon} />}
+                <span className={css.tallyTeam}>{t.team}</span>
+                <span className={css.tallyCount}>
+                  {t.count} {t.count === 1 ? 'category' : 'categories'}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -626,8 +634,8 @@ function MetricRow({ row, columns, onFlip }) {
           <td
             key={col.team}
             className={`${css.cell} ${css.value} ${won ? css.won : ''} ${
-              col.thin || col.empty ? css.thin : ''
-            }`}
+              ahead ? css.aheadCell : ''
+            } ${col.thin || col.empty ? css.thin : ''}`}
           >
             <span className={css.valueRow}>
               <span className={css.valueNum}>{value == null ? '—' : row.format(value)}</span>

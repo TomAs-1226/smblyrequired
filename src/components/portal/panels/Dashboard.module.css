@@ -26,9 +26,10 @@
   padding: var(--sp-5);
   background:
     radial-gradient(140% 160% at 100% 0%, var(--accent-data-wash), transparent 55%),
-    var(--surface-1);
+    var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
 }
 
 .heroText {
@@ -97,9 +98,10 @@
    by contrast, and that contrast IS the hierarchy. */
 .headline {
   padding: var(--sp-5);
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
 }
 
 .headlineTop {

@@ -153,10 +153,26 @@
 .railLink:active {
   transform: scale(0.98);
 }
+.railLink > svg {
+  color: var(--text-muted);
+  flex: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .railLink:hover > svg {
+    color: var(--text-body);
+  }
+}
 .railLinkActive {
   color: var(--text-primary);
-  background: var(--surface-1);
+  /* A lit cyan wash fading to nothing, so the active tab reads as a channel that
+     is switched on — more present than a flat fill, still restrained. */
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.16), rgba(56, 189, 248, 0.02) 80%);
   border-left-color: var(--accent-data);
+  box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
+}
+.railLinkActive > svg {
+  color: var(--accent-data);
 }
 
 .panelToggle {
@@ -204,6 +220,19 @@
   color: var(--text-muted);
   margin-bottom: var(--sp-3);
 }
+/* A telemetry-channel rule trailing every section label: it ties the heading to
+   the width of its panel and gives the portal a consistent instrument-panel
+   cadence, at zero markup cost. The leading icon (cyan) stays the anchor. */
+.sectionTitle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  min-width: var(--sp-4);
+  background: linear-gradient(90deg, var(--border-hairline), transparent 85%);
+}
+.sectionTitle > svg:first-child {
+  color: var(--accent-data);
+}
 
 .countBadge {
   font-size: 0.7rem;
@@ -222,10 +251,11 @@
 }
 
 .stat {
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   padding: var(--sp-4);
+  box-shadow: var(--card-depth);
 }
 
 .statLabel {
@@ -480,9 +510,10 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3);
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
   margin-bottom: var(--sp-2);
 }
 .legBad {
@@ -584,11 +615,17 @@
   font-weight: 500;
   font-size: 0.9rem;
   color: var(--text-body);
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
   transition: color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out);
+}
+.quickCard > svg {
+  color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .quickCard:active {
   transform: scale(0.98);
@@ -599,18 +636,24 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .quickCard:hover {
-    border-color: var(--accent-data);
+    border-color: var(--border-accent);
     color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--card-depth-hover);
+  }
+  .quickCard:hover > svg {
+    color: var(--accent-data);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .alertRow,
   .quickCard {
-    transition-property: color, background-color, border-color;
+    transition-property: color, background-color, border-color, box-shadow;
   }
   .alertRow:active,
-  .quickCard:active {
+  .quickCard:active,
+  .quickCard:hover {
     transform: none;
   }
 }
@@ -790,9 +833,10 @@
 }
 
 .uploader {
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
   padding: var(--sp-4);
 }
 
@@ -882,11 +926,11 @@
 .authCard {
   max-width: 440px;
   margin: var(--sp-6) auto;
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-lg);
   padding: var(--sp-6);
-  box-shadow: var(--elev-2);
+  box-shadow: var(--elev-2), var(--edge-hi);
 }
 
 .authTitle {

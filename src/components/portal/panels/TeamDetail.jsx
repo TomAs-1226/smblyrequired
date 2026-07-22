@@ -107,6 +107,9 @@ function f1(n) {
   return (Math.round(n * 10) / 10).toString()
 }
 
+// Fraction in [0,1] for meter fills — null/NaN collapse to 0 rather than throw.
+const clamp01 = (x) => (x == null || Number.isNaN(x) ? 0 : Math.max(0, Math.min(1, x)))
+
 function prettifyKey(key) {
   return key.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
 }
@@ -527,14 +530,23 @@ function Header({ team, info, stat }) {
     <header className={css.head}>
       <div className={css.headMain}>
         <div className={css.identity}>
-          <span className={css.teamNum}>{team}</span>
+          <div className={css.teamNumPlate}>
+            <span className={css.teamNumTag}>Team</span>
+            <span className={css.teamNum}>{team}</span>
+          </div>
           <div className={css.identityText}>
             <h2 className={css.teamNick}>{info?.nickname || 'Unnamed team'}</h2>
             {(place || info?.rookie_year) && (
               <p className={css.teamSub}>
-                {place}
-                {place && info?.rookie_year ? ' · ' : ''}
-                {info?.rookie_year ? `rookie ${info.rookie_year}` : ''}
+                {place && (
+                  <span className={css.teamSubItem}>
+                    <Icon name="pin" size={13} />
+                    {place}
+                  </span>
+                )}
+                {info?.rookie_year && (
+                  <span className={css.teamSubItem}>rookie {info.rookie_year}</span>
+                )}
               </p>
             )}
           </div>
@@ -580,73 +592,84 @@ function OfficialNumbers({ tba }) {
         <span className={css.tbaHint}>the field's own record</span>
       </h2>
 
-      {hasComponents && (
-        <div className={styles.statGrid}>
-          {tba.rank != null && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Event rank</span>
-              <span className={styles.statValue}>
-                #{tba.rank}
-                {tba.total_ranked && <span className={styles.statUnit}>of {tba.total_ranked}</span>}
-              </span>
-            </div>
-          )}
-          {tba.record && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Record</span>
-              <span className={styles.statValue}>{tba.record}</span>
-            </div>
-          )}
-          {tba.opr != null && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>OPR</span>
-              <span className={styles.statValue}>{tba.opr.toFixed(1)}</span>
-            </div>
-          )}
-          {tba.dpr != null && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>DPR</span>
-              <span className={styles.statValue}>{tba.dpr.toFixed(1)}</span>
-            </div>
-          )}
-          {tba.ccwm != null && (
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>CCWM</span>
-              <span className={styles.statValue}>{tba.ccwm.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* A framed external cluster: corner-ticked housing with recessed readouts,
+          so the field's own numbers read as a different SOURCE than the raised
+          tiles above that carry your scouts' work. */}
+      <div className={css.official}>
+        <span className={css.officialTag}>
+          <Icon name="external" size={12} />
+          External feed · not your scouts
+        </span>
 
-      {/* OPR is a least-squares ESTIMATE of contribution, not a measurement —
-          labelled so nobody reads it as ground truth next to scouted numbers. */}
-      {tba.opr != null && (
-        <p className={css.tbaNote}>
-          OPR/DPR/CCWM are alliance-wide statistical estimates, not per-robot measurements — use
-          them to sanity-check scouting, not replace it.
-        </p>
-      )}
-
-      {matches.length > 0 && (
-        <ul className={css.tbaMatches}>
-          {matches.map((m) => (
-            <li key={m.key} className={css.tbaMatch}>
-              <span className={css.tbaMatchLabel}>{m.label}</span>
-              <span className={`${css.tbaAlliance} ${css[`tbaAlliance_${m.alliance}`] ?? ''}`}>
-                {m.alliance}
-              </span>
-              <span className={css.tbaScore}>
-                {m.us_score != null ? `${m.us_score}–${m.them_score}` : 'TBD'}
-              </span>
-              {m.outcome && (
-                <span className={`${css.tbaOutcome} ${css[`tbaOutcome_${m.outcome}`] ?? ''}`}>
-                  {m.outcome}
+        {hasComponents && (
+          <div className={css.officialGrid}>
+            {tba.rank != null && (
+              <div className={`${css.oStat} ${tba.rank === 1 ? css.oStatGold : ''}`}>
+                <span className={css.oLabel}>Event rank</span>
+                <span className={css.oValue}>
+                  <span className={css.oHash}>#</span>
+                  {tba.rank}
+                  {tba.total_ranked && <span className={css.oUnit}>of {tba.total_ranked}</span>}
                 </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+              </div>
+            )}
+            {tba.record && (
+              <div className={css.oStat}>
+                <span className={css.oLabel}>Record</span>
+                <span className={css.oValue}>{tba.record}</span>
+              </div>
+            )}
+            {tba.opr != null && (
+              <div className={css.oStat}>
+                <span className={css.oLabel}>OPR</span>
+                <span className={css.oValue}>{tba.opr.toFixed(1)}</span>
+              </div>
+            )}
+            {tba.dpr != null && (
+              <div className={css.oStat}>
+                <span className={css.oLabel}>DPR</span>
+                <span className={css.oValue}>{tba.dpr.toFixed(1)}</span>
+              </div>
+            )}
+            {tba.ccwm != null && (
+              <div className={css.oStat}>
+                <span className={css.oLabel}>CCWM</span>
+                <span className={css.oValue}>{tba.ccwm.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* OPR is a least-squares ESTIMATE of contribution, not a measurement —
+            labelled so nobody reads it as ground truth next to scouted numbers. */}
+        {tba.opr != null && (
+          <p className={css.tbaNote}>
+            OPR/DPR/CCWM are alliance-wide statistical estimates, not per-robot measurements — use
+            them to sanity-check scouting, not replace it.
+          </p>
+        )}
+
+        {matches.length > 0 && (
+          <ul className={css.tbaMatches}>
+            {matches.map((m) => (
+              <li key={m.key} className={css.tbaMatch}>
+                <span className={css.tbaMatchLabel}>{m.label}</span>
+                <span className={`${css.tbaAlliance} ${css[`tbaAlliance_${m.alliance}`] ?? ''}`}>
+                  {m.alliance}
+                </span>
+                <span className={css.tbaScore}>
+                  {m.us_score != null ? `${m.us_score}–${m.them_score}` : 'TBD'}
+                </span>
+                {m.outcome && (
+                  <span className={`${css.tbaOutcome} ${css[`tbaOutcome_${m.outcome}`] ?? ''}`}>
+                    {m.outcome}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }
@@ -690,6 +713,14 @@ function Performance({ stat }) {
   const max = num(stat.max_score)
   const pit = num(stat.pit_estimate)
 
+  // Where the mean and its ±1σ band sit inside the observed range, for the
+  // hero's spread meter. Purely presentational — it plots numbers already on
+  // the card (min, max, avg, sd), it does not compute a new statistic.
+  const span = min != null && max != null && max > min ? max - min : null
+  const avgPos = span != null && avg != null ? clamp01((avg - min) / span) : null
+  const bandLo = span != null && avg != null && sd != null ? clamp01((avg - sd - min) / span) : null
+  const bandHi = span != null && avg != null && sd != null ? clamp01((avg + sd - min) / span) : null
+
   return (
     <section>
       <h2 className={styles.sectionTitle}>Performance</h2>
@@ -703,41 +734,59 @@ function Performance({ stat }) {
         </p>
       )}
 
-      <div className={`${styles.statGrid} ${provisional ? css.provisional : ''}`}>
-        <div className={styles.stat}>
+      <div className={`${css.perfWrap} ${provisional ? css.provisional : ''}`}>
+        {/* The average is the star of the page — given a hero tile with a big
+            display readout and a spread meter placing it inside its own range. */}
+        <div className={`${styles.stat} ${css.heroStat}`}>
           <span className={styles.statLabel}>Avg match score</span>
-          <span className={styles.statValue}>{f1(avg)}</span>
-          <span className={css.statSub}>
+          <span className={css.heroValue}>{f1(avg)}</span>
+          <span className={css.heroRead}>
             {sd != null ? `±${f1(sd)} — ` : ''}
             {consistencyLabel(avg, sd)}
           </span>
+          {avgPos != null && (
+            <span className={css.spreadMeter} aria-hidden="true">
+              <span className={css.spreadTrack}>
+                {bandLo != null && bandHi != null && (
+                  <span className={css.spreadBand} style={{ '--lo': bandLo, '--hi': bandHi }} />
+                )}
+                <span className={css.spreadAvg} style={{ '--p': avgPos }} />
+              </span>
+              <span className={css.spreadEnds}>
+                <span>{f1(min)}</span>
+                <span>{f1(max)}</span>
+              </span>
+            </span>
+          )}
         </div>
 
-        <div className={styles.stat}>
-          <span className={styles.statLabel}>Range seen</span>
-          <span className={styles.statValue}>
-            {min == null && max == null ? (
-              '—'
-            ) : (
-              <>
-                {f1(min)}
-                <span className={styles.statUnit}>–{f1(max)}</span>
-              </>
-            )}
-          </span>
-          <span className={css.statSub}>lowest to highest scored — context, not a rating</span>
-        </div>
+        <div className={css.perfSupport}>
+          <div className={styles.stat}>
+            <span className={styles.statLabel}>Range seen</span>
+            <span className={styles.statValue}>
+              {min == null && max == null ? (
+                '—'
+              ) : (
+                <>
+                  {f1(min)}
+                  <span className={styles.statUnit}>–{f1(max)}</span>
+                </>
+              )}
+            </span>
+            <span className={css.statSub}>lowest to highest scored — context, not a rating</span>
+          </div>
 
-        <div className={`${styles.stat} ${int(stat.breakdowns) > 0 ? css.statBad : ''}`}>
-          <span className={styles.statLabel}>Breakdowns</span>
-          <span className={styles.statValue}>{int(stat.breakdowns)}</span>
-          <span className={css.statSub}>matches scouted as broken</span>
-        </div>
+          <div className={`${styles.stat} ${int(stat.breakdowns) > 0 ? css.statBad : ''}`}>
+            <span className={styles.statLabel}>Breakdowns</span>
+            <span className={styles.statValue}>{int(stat.breakdowns)}</span>
+            <span className={css.statSub}>matches scouted as broken</span>
+          </div>
 
-        <div className={`${styles.stat} ${int(stat.no_shows) > 0 ? css.statBad : ''}`}>
-          <span className={styles.statLabel}>No-shows</span>
-          <span className={styles.statValue}>{int(stat.no_shows)}</span>
-          <span className={css.statSub}>matches they did not appear for</span>
+          <div className={`${styles.stat} ${int(stat.no_shows) > 0 ? css.statBad : ''}`}>
+            <span className={styles.statLabel}>No-shows</span>
+            <span className={styles.statValue}>{int(stat.no_shows)}</span>
+            <span className={css.statSub}>matches they did not appear for</span>
+          </div>
         </div>
       </div>
 
@@ -869,7 +918,7 @@ function Photos({ groups, flat, onOpen }) {
                 {g.list.map((p) => {
                   const flatIndex = flat.indexOf(p)
                   return (
-                    <li key={p.id}>
+                    <li key={p.id} className={css.thumbCell} style={{ '--i': Math.min(flatIndex, 8) }}>
                       <button
                         type="button"
                         className={css.thumb}
@@ -1021,38 +1070,53 @@ function Workability({ collab, team }) {
           cannot stand in for a pattern.
         </p>
       ) : (
-        <>
-          <p className={css.caption}>
+        // Calm on purpose. This is a measured read on observed interaction with
+        // minors, so it gets muted readings and quiet /5 meters — never the loud
+        // display treatment the performance numbers earn.
+        <div className={css.workPanel}>
+          <p className={css.workNote}>
             From {observers} observers. This describes observed interaction with team {team}, not the
             people — read it as what to plan around.
           </p>
-          <div className={styles.statGrid}>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Communication</span>
-              <span className={styles.statValue}>
+          <div className={css.workReadings}>
+            <div className={css.workReading}>
+              <span className={css.workLabel}>Communication</span>
+              <span className={css.workValue}>
                 {f1(num(collab.avg_communication))}
-                <span className={styles.statUnit}>/5</span>
+                <span className={css.workScale}>/5</span>
+              </span>
+              <span className={css.workMeter} aria-hidden="true">
+                <span
+                  className={css.workMeterFill}
+                  style={{ '--v': clamp01(num(collab.avg_communication) / 5) }}
+                />
               </span>
             </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Coordination</span>
-              <span className={styles.statValue}>
+            <div className={css.workReading}>
+              <span className={css.workLabel}>Coordination</span>
+              <span className={css.workValue}>
                 {f1(num(collab.avg_coordination))}
-                <span className={styles.statUnit}>/5</span>
+                <span className={css.workScale}>/5</span>
+              </span>
+              <span className={css.workMeter} aria-hidden="true">
+                <span
+                  className={css.workMeterFill}
+                  style={{ '--v': clamp01(num(collab.avg_coordination) / 5) }}
+                />
               </span>
             </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Would partner</span>
-              <span className={styles.statValue}>
+            <div className={css.workReading}>
+              <span className={css.workLabel}>Would partner</span>
+              <span className={css.workValue}>
                 {int(collab.would_partner)}
-                <span className={styles.statUnit}>yes</span>
+                <span className={css.workScale}> yes</span>
               </span>
-              <span className={css.statSub}>
+              <span className={css.workSub}>
                 {int(collab.would_not_partner)} said no · {observers} observers
               </span>
             </div>
           </div>
-        </>
+        </div>
       )}
     </section>
   )

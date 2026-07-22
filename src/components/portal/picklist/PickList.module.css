@@ -345,15 +345,19 @@
   width: 216px;
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
-  background: var(--surface-1);
+  background: var(--surface-raised);
+  box-shadow: var(--card-depth);
   overflow: hidden;
   transition: border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 }
 
+/* box-shadow only on hover — NOT transform. A transform here would make .card a
+   containing block and break the position:fixed drag maths this file warns about. */
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
     border-color: var(--border-strong);
+    box-shadow: var(--card-depth-hover);
   }
 }
 .card:focus-within {

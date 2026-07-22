@@ -1,0 +1,664 @@
+/* =============================================================================
+   Analytics (Catalyst) — the strategy flagship. Numbers are the subject here, so
+   they get the weight: display font, tabular figures, and bars that make a
+   magnitude legible at a glance. Dark-navy telemetry, elevated with the premium
+   surface tokens. Motion is restrained — this is an occasional analysis view, so
+   bars may ease in once, but nothing that is read repeatedly moves.
+   ============================================================================= */
+
+.emptyAction {
+  margin-top: var(--sp-3);
+}
+
+/* --- Hero -------------------------------------------------------------------- */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+  position: relative;
+  overflow: hidden;
+}
+/* A faint data-glow bleeding from the top-right — the "engine is warm" cue. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 140% at 100% 0%, var(--accent-data-wash), transparent 55%);
+  pointer-events: none;
+}
+.heroMain {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.heroEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  margin-bottom: var(--sp-2);
+}
+.heroDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.heroTitle {
+  font-size: var(--fs-h2);
+  line-height: 1;
+  margin-bottom: var(--sp-2);
+}
+.heroSub {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.heroEvent {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+}
+.epaTag {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  border: 1px solid rgba(245, 184, 46, 0.35);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+.refresh {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  padding: 8px 15px;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.refresh:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .refresh:hover {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+  }
+}
+
+/* --- Insight strip ----------------------------------------------------------- */
+.insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-3);
+}
+.insight {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'icon label' 'team value';
+  align-items: center;
+  gap: 3px var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+}
+.insightIcon {
+  grid-area: icon;
+  display: inline-flex;
+  color: var(--accent-data);
+}
+.insightLabel {
+  grid-area: label;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.insightTeam {
+  grid-area: team;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+.insightNick {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.insightValue {
+  grid-area: value;
+  justify-self: end;
+  align-self: end;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tone_gold .insightIcon,
+.tone_gold .insightValue {
+  color: var(--accent-gold);
+}
+.tone_data .insightIcon,
+.tone_data .insightValue {
+  color: var(--accent-data);
+}
+.tone_success .insightIcon,
+.tone_success .insightValue {
+  color: var(--success);
+}
+
+/* --- Rankings board ---------------------------------------------------------- */
+.board {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+  overflow: hidden;
+}
+.boardRow,
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+.boardHead {
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+}
+.boardList {
+  list-style: none;
+}
+.rankRow {
+  border-bottom: 1px solid var(--border-hairline);
+}
+.rankRow:last-child {
+  border-bottom: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rankRow {
+    animation: rankIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0));
+  }
+}
+@keyframes rankIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* Columns — flex bases so a missing EPA column just isn't there. */
+.rankNum {
+  width: 30px;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.rank1 {
+  color: var(--accent-gold);
+}
+.rank2 {
+  color: var(--tier-silver);
+}
+.rank3 {
+  color: var(--tier-bronze);
+}
+.boardHead > span:first-child {
+  width: 30px;
+  flex: none;
+  text-align: center;
+}
+
+.teamCell {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.boardHead > span:nth-child(2) {
+  flex: 1 1 auto;
+}
+.teamNum {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.teamNick {
+  font-size: 0.8rem;
+  color: var(--text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16ch;
+}
+.conf {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.conf_high {
+  color: var(--success);
+  border-color: rgba(63, 207, 142, 0.3);
+}
+.conf_medium {
+  color: var(--accent-data);
+  border-color: var(--border-accent);
+}
+.conf_low {
+  color: var(--accent-gold);
+  border-color: rgba(245, 184, 46, 0.3);
+}
+
+.colCr {
+  width: 132px;
+  flex: none;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 2px 7px;
+}
+.crValue {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-data);
+  font-variant-numeric: tabular-nums;
+}
+.crDelta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.crDelta.up {
+  color: var(--success);
+}
+.crDelta.down {
+  color: var(--danger);
+}
+.crBar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+  margin-top: 3px;
+}
+.crBarFill {
+  display: block;
+  height: 100%;
+  width: var(--w, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-action), var(--accent-data));
+  box-shadow: var(--glow-data);
+}
+
+.colTrend {
+  width: 108px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.trendChip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+.trendUp {
+  color: var(--success);
+  background: rgba(63, 207, 142, 0.1);
+}
+.trendDown {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.1);
+}
+.trendFlat {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+}
+.spark {
+  width: 52px;
+  height: 18px;
+  flex: none;
+}
+.spark path {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.sparkGap {
+  width: 52px;
+  flex: none;
+}
+
+.colCons {
+  width: 132px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.consBar {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.consFill {
+  display: block;
+  height: 100%;
+  width: var(--w, 0%);
+  border-radius: inherit;
+  background: var(--accent-data);
+}
+.consPct {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  width: 3.2ch;
+  text-align: right;
+}
+.dim {
+  color: var(--text-muted);
+}
+
+.colEpa {
+  width: 52px;
+  flex: none;
+  text-align: right;
+}
+.epaVal {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .crBarFill,
+  .consFill {
+    animation: barGrow var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+}
+
+/* --- Method note ------------------------------------------------------------- */
+.method {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+.method svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent-data);
+}
+.method strong {
+  color: var(--text-body);
+}
+
+/* --- Predictor --------------------------------------------------------------- */
+.predict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+}
+.alliances {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.vs {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.alliance {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+}
+.allianceRed {
+  background: rgba(240, 99, 99, 0.06);
+  border-color: rgba(240, 99, 99, 0.25);
+}
+.allianceBlue {
+  background: var(--accent-data-wash);
+  border-color: var(--border-accent);
+}
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.slotInput {
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 9px 4px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.slotInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+.slotMeta {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slotNick {
+  display: block;
+  color: var(--text-body);
+}
+
+.prediction {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.predScores {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.predRed,
+.predBlue {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.predRed {
+  color: var(--danger);
+}
+.predBlue {
+  color: var(--accent-data);
+}
+.predMid {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.winBar {
+  display: flex;
+  height: 26px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.winRed,
+.winBlue {
+  display: flex;
+  align-items: center;
+  width: var(--w, 50%);
+  color: var(--text-primary);
+  transition: width var(--dur-panel) var(--ease-out);
+}
+.winRed {
+  justify-content: flex-start;
+  padding-left: 9px;
+  background: linear-gradient(90deg, rgba(240, 99, 99, 0.5), rgba(240, 99, 99, 0.25));
+}
+.winBlue {
+  justify-content: flex-end;
+  padding-right: 9px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.25), rgba(56, 189, 248, 0.5));
+}
+.predNote,
+.predHint {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.predHint {
+  text-align: center;
+  padding: var(--sp-3) 0;
+}
+
+/* --- Responsive -------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .colCons {
+    display: none;
+  }
+  .colCr {
+    width: 96px;
+  }
+  .colTrend {
+    width: 62px;
+  }
+  .spark {
+    display: none;
+  }
+  .boardHead .colCons {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .alliances {
+    grid-template-columns: 1fr;
+  }
+  .vs {
+    text-align: center;
+  }
+  .colTrend {
+    display: none;
+  }
+}

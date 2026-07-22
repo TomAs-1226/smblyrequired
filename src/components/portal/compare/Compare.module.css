@@ -127,6 +127,9 @@
   color: var(--text-primary);
   border-color: var(--accent-data);
   background: rgba(56, 189, 248, 0.1);
+  /* A lit cyan edge on the selected chip — the selection reads instantly in a
+     grid of sixty. */
+  box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
 }
 
 .pickNum {
@@ -169,7 +172,8 @@
   border: 1px solid var(--border-hairline);
   border-left: 3px solid var(--text-muted);
   border-radius: var(--r-md);
-  background: var(--surface-1);
+  background: var(--surface-raised);
+  box-shadow: var(--card-depth);
   padding: var(--sp-4);
 }
 .verdictWin {
@@ -188,7 +192,7 @@
 .verdictHead {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   color: var(--text-muted);
   margin-bottom: var(--sp-2);
 }
@@ -197,6 +201,28 @@
 }
 .verdictWarn .verdictHead {
   color: var(--accent-gold);
+}
+/* The verdict's glyph gets a seated badge so it reads as an instrument light
+   rather than a loose icon. Its bed picks up the verdict's tone. */
+.verdictIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: var(--surface-sunken);
+  color: inherit;
+}
+.verdictWin .verdictIcon {
+  border-color: var(--border-accent);
+  background: var(--accent-data-wash);
+}
+.verdictWarn .verdictIcon {
+  border-color: rgba(245, 184, 46, 0.35);
+  background: rgba(245, 184, 46, 0.08);
 }
 .verdictTitle {
   font-size: var(--fs-h3);
@@ -218,7 +244,7 @@
 }
 .tallyItem {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -237,6 +263,21 @@
 .tallyCount {
   font-family: var(--font-mono);
   font-size: 0.7rem;
+}
+/* The confirmed pick — the only gold on the page, and only on a confident
+   verdict. A quiet gold wash and a small trophy, not a shout. */
+.tallyPick {
+  border-color: rgba(245, 184, 46, 0.4);
+  background: rgba(245, 184, 46, 0.08);
+  box-shadow: var(--glow-gold);
+}
+.tallyPick .tallyTeam,
+.tallyPick .tallyCount {
+  color: var(--accent-gold);
+}
+.tallyPickIcon {
+  color: var(--accent-gold);
+  flex: none;
 }
 
 .verdictFlag {
@@ -283,6 +324,7 @@
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 /* The region is focusable so a keyboard can scroll it; it gets the same
@@ -669,25 +711,38 @@
 
 .bar {
   display: block;
-  height: 3px;
-  margin-top: 9px;
+  height: 6px;
+  margin-top: 10px;
   border-radius: var(--r-pill);
-  background: var(--surface-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
   overflow: hidden;
 }
 .barFill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--text-muted);
+  /* Non-leaders sit in a calm steel — the bar is magnitude, never a claim. */
+  background: var(--border-strong);
   transform-origin: left;
   transform: scaleX(var(--v, 0));
 }
+/* Leader of an undecided row: highlighted cyan, but held back from full so it
+   reads as ahead, not proven. */
+.aheadCell .barFill {
+  background: var(--accent-data);
+  opacity: 0.5;
+}
+/* The decisive winner: full-strength cyan. */
 .won .barFill {
   background: var(--accent-data);
+  opacity: 1;
 }
+/* A thin column stays muted even when it leads — held at arm's length like
+   everywhere else. Last in source order so it wins the cascade. */
 .thin .barFill {
   background: var(--border-strong);
+  opacity: 0.6;
 }
 @media (prefers-reduced-motion: no-preference) {
   .barFill {
@@ -790,9 +845,10 @@
 }
 
 .aiCard {
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
   padding: var(--sp-4);
 }
 .aiHead {

@@ -8,6 +8,7 @@ import Dashboard from './panels/Dashboard'
 import Scouting from './panels/Scouting'
 import Checklist from './panels/Checklist'
 import Compare from './compare/Compare'
+import Analytics from './panels/Analytics'
 import TeamDetail from './panels/TeamDetail'
 import PickList from './picklist/PickList'
 import VisionPanel from './vision/VisionPanel'
@@ -34,6 +35,10 @@ const PANELS = [
   // question asked between matches, by the same person, on the same phone.
   { id: 'checklist', label: 'Coverage', icon: 'check', min: 'member', Component: Checklist },
   { id: 'compare', label: 'Compare', icon: 'bars', min: 'member', Component: Compare },
+  // The Catalyst engine on screen: power rankings computed from our own scouting
+  // (with Statbotics EPA alongside when it answers), plus a match predictor. The
+  // strategy cluster's overview — where a lead starts before drilling in.
+  { id: 'analytics', label: 'Analytics', icon: 'compass', min: 'member', Component: Analytics },
   // Drill into one team: their scouting, photos, official TBA numbers, and how
   // workable they are as a partner. The strategy-analysis cluster's detail view.
   { id: 'team', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },

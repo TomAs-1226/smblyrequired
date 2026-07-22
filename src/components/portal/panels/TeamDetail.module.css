@@ -121,6 +121,8 @@
   color: var(--text-primary);
   border-color: var(--accent-data);
   background: var(--accent-data-wash);
+  /* A lit cyan edge so the open team reads instantly in the grid. */
+  box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
 }
 .pickNum {
   font-family: var(--font-display);
@@ -148,15 +150,31 @@
 }
 
 /* --- Header: identity + confidence -------------------------------------- */
+/* A premium identity plate rather than a title bar: the team number is the
+   star, seated on a lit raised surface with a cyan channel along the top edge
+   so the header reads as this team's live readout. */
 
 .head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--sp-4);
   flex-wrap: wrap;
-  padding-bottom: var(--sp-4);
-  border-bottom: 1px solid var(--border-hairline);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+  position: relative;
+  overflow: hidden;
+}
+.head::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-data), transparent 62%);
+  opacity: 0.75;
 }
 .headMain {
   min-width: 0;
@@ -167,15 +185,33 @@
   gap: var(--sp-3);
   min-width: 0;
 }
+.teamNumPlate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding-right: var(--sp-3);
+  border-right: 1px solid var(--border-hairline);
+  flex: none;
+}
+.teamNumTag {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 .teamNum {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2.4rem, 8vw, 3.4rem);
-  line-height: 0.9;
+  font-size: clamp(2.6rem, 8vw, 3.6rem);
+  line-height: 0.86;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-  flex: none;
+  /* A faint cyan halo — the number is lit, not printed. */
+  text-shadow: 0 0 24px var(--accent-data-glow);
 }
 .identityText {
   min-width: 0;
@@ -187,9 +223,25 @@
   overflow-wrap: anywhere;
 }
 .teamSub {
-  font-size: var(--fs-small);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 7px;
+}
+.teamSubItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.teamSubItem svg {
+  color: var(--accent-data);
+  opacity: 0.7;
+  flex: none;
 }
 
 .headMeta {
@@ -260,6 +312,115 @@
   background: rgba(63, 207, 142, 0.08);
 }
 
+/* --- Performance: hero avg + supporting tiles --------------------------- */
+/* The average is the star of the page, so it gets a hero tile with real weight
+   above a row of supporting readings, rather than sitting as one of four equal
+   cards. Hierarchy does the work the old uniform grid could not. */
+.perfWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.heroStat {
+  position: relative;
+  overflow: hidden;
+}
+/* A lit cyan channel along the top edge marks the primary readout. */
+.heroStat::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-data), transparent 55%);
+  opacity: 0.8;
+}
+.heroValue {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.9rem, 9vw, 4.25rem);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-1);
+}
+.heroRead {
+  display: block;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  margin-top: var(--sp-2);
+  max-width: 40ch;
+}
+
+/* Spread meter — plots min/avg/max and the ±1σ band already shown on the card.
+   Reads as a field-telemetry gauge, not a second statistic. */
+.spreadMeter {
+  display: block;
+  margin-top: var(--sp-3);
+  max-width: 340px;
+}
+.spreadTrack {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  overflow: hidden;
+}
+.spreadBand {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--lo, 0) * 100%);
+  right: calc((1 - var(--hi, 1)) * 100%);
+  background: var(--accent-data-wash);
+  border-left: 1px solid var(--accent-data-glow);
+  border-right: 1px solid var(--accent-data-glow);
+}
+.spreadAvg {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: calc(var(--p, 0) * 100%);
+  width: 2px;
+  transform: translateX(-1px);
+  background: var(--accent-data);
+  box-shadow: var(--glow-data);
+}
+.spreadEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* The gauge draws in from the left on mount — an occasional view, so a short
+   reveal is welcome. Reduced motion opts out entirely (rule is gated below). */
+@media (prefers-reduced-motion: no-preference) {
+  .spreadTrack {
+    transform-origin: left;
+    animation: spreadIn var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes spreadIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.perfSupport {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sp-3);
+}
+
 /* --- Captions + provisional bed ----------------------------------------- */
 
 .caption {
@@ -327,10 +488,20 @@
   gap: var(--sp-3);
 }
 .entry {
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   padding: var(--sp-4);
+  box-shadow: var(--card-depth);
+  /* A read surface, so the hover is a calm lift of light — no transform. */
+  transition: border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .entry:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--card-depth-hover);
+  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .entry {
@@ -494,6 +665,27 @@
   grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: var(--sp-2);
 }
+.thumbCell {
+  min-width: 0;
+}
+/* Thumbnails cascade in on mount — a genuine gallery, so a short stagger is
+   appropriate. The delay is capped by the caller at 8. */
+@media (prefers-reduced-motion: no-preference) {
+  .thumbCell {
+    animation: thumbIn var(--dur-panel) var(--ease-out) both;
+    animation-delay: calc(var(--stagger-step) * var(--i, 0));
+  }
+}
+@keyframes thumbIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 .thumb {
   display: block;
   width: 100%;
@@ -502,8 +694,9 @@
   border-radius: var(--r-md);
   border: 1px solid var(--border-hairline);
   background: var(--surface-sunken);
+  box-shadow: var(--card-depth);
   transition: border-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-press) var(--ease-out);
+    box-shadow var(--dur-ui) var(--ease-out), transform var(--dur-press) var(--ease-out);
   touch-action: manipulation;
 }
 .thumb:active {
@@ -512,6 +705,7 @@
 @media (hover: hover) and (pointer: fine) {
   .thumb:hover {
     border-color: var(--accent-data);
+    box-shadow: var(--card-depth-hover);
   }
 }
 .thumb:focus-visible {
@@ -672,8 +866,101 @@
 }
 
 /* --- Workability --------------------------------------------------------- */
-/* No bespoke tiles — it reuses .statGrid / .stat from Portal.module.css. The
-   only rule here is the caption, styled by .caption above. */
+/* Deliberately calm. This is a measured read on observed interaction with
+   minors, so it lives in a quiet sunken panel with muted readings and small /5
+   meters — never the loud display treatment the performance numbers earn. */
+.workPanel {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+}
+.workNote {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 72ch;
+  margin-bottom: var(--sp-4);
+}
+.workReadings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--sp-4);
+}
+.workReading {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.workLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+/* Muted tick, not a lit cyan one — the restraint is the point. */
+.workLabel::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--text-muted);
+}
+.workValue {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+.workScale {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.workMeter {
+  display: block;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.workMeterFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-data);
+  opacity: 0.6;
+  transform-origin: left;
+  transform: scaleX(var(--v, 0));
+}
+.workSub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workMeterFill {
+    animation: workMeterIn var(--dur-panel) var(--ease-out) both;
+  }
+}
+@keyframes workMeterIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(var(--v, 0));
+  }
+}
 
 /* --- AI ------------------------------------------------------------------ */
 
@@ -692,10 +979,11 @@
   min-height: 48px;
 }
 .aiCard {
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   padding: var(--sp-4);
+  box-shadow: var(--card-depth);
 }
 /* Verbatim, so the model's own paragraphing survives rather than collapsing. */
 .aiText {
@@ -736,6 +1024,8 @@
 @media (max-width: 560px) {
   .head {
     flex-direction: column;
+    align-items: flex-start;
+    padding: var(--sp-4);
   }
   .headMeta {
     align-items: flex-start;
@@ -783,6 +1073,123 @@
 }
 
 /* --- Official numbers (The Blue Alliance) -------------------------------- */
+/* Framed as an external instrument cluster so the field's own record reads as a
+   different SOURCE than your scouts' raised tiles above. Corner-ticked housing,
+   recessed readouts, a steel tick on each label instead of the data-cyan one —
+   and a scarce gold treatment reserved for a genuine #1 seed. */
+.official {
+  position: relative;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+  padding: var(--sp-4);
+}
+.official::before,
+.official::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border-accent);
+  pointer-events: none;
+}
+.official::before {
+  top: 8px;
+  left: 8px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.official::after {
+  bottom: 8px;
+  right: 8px;
+  border-left: 0;
+  border-top: 0;
+}
+.officialTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
+.officialTag svg {
+  color: var(--text-muted);
+  flex: none;
+}
+.officialGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: var(--sp-2);
+}
+/* Recessed readout — inset shadow reads as "seated in the housing", the inverse
+   of the raised your-scouts tiles, so the two sources never look alike. */
+.oStat {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.oLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-2);
+}
+.oLabel::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  /* Steel, not cyan — a neutral tick marks these as an external reference. */
+  background: var(--tier-silver);
+}
+.oValue {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.oHash {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+}
+.oUnit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+/* A #1 seed is prestige, and prestige is the one thing gold is for. Scarce by
+   construction: only the rank tile, only when it is literally first. */
+.oStatGold {
+  border-color: rgba(245, 184, 46, 0.4);
+  background: linear-gradient(180deg, rgba(245, 184, 46, 0.1), var(--surface-sunken) 72%);
+  box-shadow: inset 0 1px 0 rgba(255, 212, 94, 0.15), var(--glow-gold);
+}
+.oStatGold .oLabel::before {
+  background: var(--accent-gold);
+}
+.oStatGold .oValue,
+.oStatGold .oHash {
+  color: var(--accent-gold);
+}
+
 .tbaHint {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -793,7 +1200,7 @@
   color: var(--text-muted);
 }
 .tbaNote {
-  margin-top: var(--sp-2);
+  margin-top: var(--sp-3);
   font-size: var(--fs-small);
   color: var(--text-muted);
   max-width: 60ch;
@@ -811,6 +1218,12 @@
   padding: 10px 0;
   border-bottom: 1px solid var(--border-hairline);
   font-size: var(--fs-small);
+}
+/* Seated inside the housing now, so the last row drops its divider rather than
+   drawing a stray hairline above the card's own padding. */
+.tbaMatch:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 .tbaMatchLabel {
   font-family: var(--font-display);
