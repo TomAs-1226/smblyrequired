@@ -48,25 +48,26 @@ const RATE_WINDOW_SECONDS = Number(Deno.env.get('AI_RATE_WINDOW_SECONDS') ?? '30
 
 // Per-task model and output cap.
 //
-// gpt-4o-mini for the grounded, high-volume work: scouting summaries and note
-// condensation are "restate these numbers without embellishing them", which is
-// instruction-following rather than reasoning, and they run once per team per
-// event — dozens of calls in an afternoon.
+// The model is ENV-CONFIGURABLE so it can be bumped without a redeploy, and it
+// defaults to the GPT-5.3 tier the team asked for. `gpt-5.3-chat-latest` is the
+// instant/chat variant: it follows instructions well — which is all these
+// grounded "restate the numbers, do not embellish" tasks need — AND it accepts a
+// custom temperature, unlike the pure reasoning variants (which 400 on one). Set
+// OPENAI_MODEL to any Chat Completions model the account can reach; the one
+// genuinely-reasoning task, picklist_help, can be pointed at a heavier model on
+// its own via OPENAI_MODEL_REASONING.
 //
-// gpt-4o for picklist_help alone. Comparing thirty teams on several axes at once
-// and explaining the ordering is the one task here that is genuinely reasoning,
-// it runs a few times per event rather than dozens, and it is the output that
-// most directly moves a pick. That is the trade worth paying for.
-//
-// max_completion_tokens rather than max_tokens: the latter is deprecated in
-// Chat Completions and only still works for non-reasoning models, so using the
-// current name is what keeps this from breaking on a future model swap.
+// max_completion_tokens rather than max_tokens: the latter is deprecated in Chat
+// Completions, so the current name is what keeps this from breaking on a swap.
+const BASE_MODEL = Deno.env.get('OPENAI_MODEL') ?? 'gpt-5.3-chat-latest'
+const REASONING_MODEL = Deno.env.get('OPENAI_MODEL_REASONING') ?? BASE_MODEL
+
 const TASKS = {
-  scouting_summary: { model: 'gpt-4o-mini', maxOut: 500, temperature: 0.2 },
-  picklist_help: { model: 'gpt-4o', maxOut: 900, temperature: 0.2 },
-  kb_answer: { model: 'gpt-4o-mini', maxOut: 700, temperature: 0.1 },
-  form_suggest: { model: 'gpt-4o-mini', maxOut: 1200, temperature: 0.4 },
-  summarise_notes: { model: 'gpt-4o-mini', maxOut: 350, temperature: 0.2 },
+  scouting_summary: { model: BASE_MODEL, maxOut: 500, temperature: 0.2 },
+  picklist_help: { model: REASONING_MODEL, maxOut: 900, temperature: 0.2 },
+  kb_answer: { model: BASE_MODEL, maxOut: 700, temperature: 0.1 },
+  form_suggest: { model: BASE_MODEL, maxOut: 1200, temperature: 0.4 },
+  summarise_notes: { model: BASE_MODEL, maxOut: 350, temperature: 0.2 },
 } as const
 
 type TaskName = keyof typeof TASKS
@@ -101,6 +102,11 @@ async function complete(
   if (!key) return { error: 'OPENAI_API_KEY is not configured on the server.', status: 500 }
 
   const cfg = TASKS[task]
+  // Reasoning models (o-series, GPT-5 "thinking") reject a non-default temperature
+  // with a 400; the instant/chat variants accept it. Only send temperature when
+  // the model id looks like one that takes it, so pointing OPENAI_MODEL at a
+  // reasoning model degrades to its default temperature rather than erroring.
+  const acceptsTemperature = /chat|gpt-4|gpt-3/i.test(cfg.model)
   let res: Response
   try {
     res = await fetch(OPENAI_URL, {
@@ -108,7 +114,7 @@ async function complete(
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: cfg.model,
-        temperature: cfg.temperature,
+        ...(acceptsTemperature ? { temperature: cfg.temperature } : {}),
         max_completion_tokens: cfg.maxOut,
         ...(json ? { response_format: { type: 'json_object' } } : {}),
         messages: [
@@ -207,7 +213,7 @@ async function scoutingSummary(req: Request, db: SupabaseClient, p: Record<strin
     .limit(MAX_ENTRIES)
   if (error) return fail(req, error.message, 400)
 
-  // No data means no model call. Spending a token to have gpt-4o-mini phrase
+  // No data means no model call. Spending a token to have the model phrase
   // "nobody has scouted this team" is both wasteful and an invitation for it to
   // fill the silence with something plausible.
   if (!entries?.length) {

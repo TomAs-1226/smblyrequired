@@ -61,6 +61,19 @@ export const CONFIDENT_N = 5
  */
 export const SEPARATION = 2
 
+/**
+ * Below SEPARATION but at or above this, a row is not crowned — but it LEANS.
+ *
+ * The gap is bigger than the wobble in it, just not by the 2x a call demands. One
+ * standard error is the honest line for "probably real, worth acting on with your
+ * eyes open". Without this tier every gap under 2σ collapsed into the same "too
+ * close to call", which — on 6-to-8-match samples, where almost nothing clears
+ * 2σ — turned the whole table into a wall of shrugs. A lean points somewhere
+ * without ever dressing itself up as a decision: it is reported as "leans 4021",
+ * never as a winner, and it can never spend the gold.
+ */
+export const SEPARATION_LEAN = 1
+
 /** Postgres numerics can arrive as strings. Anything unusable becomes null. */
 export function num(v) {
   if (v == null || v === '') return null
@@ -181,6 +194,7 @@ export function judgeRow(cells, { direction = 'higher', kind = 'mean', scored = 
     verdict: 'none',
     leader: null,
     winner: null,
+    lean: null,
     gap: null,
     uncertainty: null,
     separation: null,
@@ -219,9 +233,15 @@ export function judgeRow(cells, { direction = 'higher', kind = 'mean', scored = 
   // to be defended against.
   const separation = uncertainty > 0 ? gap / uncertainty : Infinity
 
-  return separation >= SEPARATION
-    ? { ...base, verdict: 'decisive', leader: best.team, winner: best.team, gap, uncertainty, separation }
-    : { ...base, verdict: 'close', leader: best.team, gap, uncertainty, separation }
+  if (separation >= SEPARATION) {
+    return { ...base, verdict: 'decisive', leader: best.team, winner: best.team, gap, uncertainty, separation }
+  }
+  // Between one and two standard errors: a real lean, not a call. Named, hedged,
+  // and never allowed to crown or to count as a decisive win.
+  if (separation >= SEPARATION_LEAN) {
+    return { ...base, verdict: 'lean', leader: best.team, lean: best.team, gap, uncertainty, separation }
+  }
+  return { ...base, verdict: 'close', leader: best.team, gap, uncertainty, separation }
 }
 
 /**
@@ -245,18 +265,23 @@ export function judgeRow(cells, { direction = 'higher', kind = 'mean', scored = 
 export function judgeOverall(rows, sampleSize) {
   const scorable = rows.filter((r) => r.spec.scored && r.judgment.verdict !== 'none')
   const decided = scorable.filter((r) => r.judgment.verdict === 'decisive')
+  const leaned = scorable.filter((r) => r.judgment.verdict === 'lean')
 
   if (!scorable.length) {
     return {
       verdict: 'insufficient',
       winner: null,
       tally: [],
+      edgeTally: [],
       decided: 0,
+      leaned: 0,
       scorable: 0,
       reason: 'Nothing here can be compared yet — no category has usable numbers for two teams.',
     }
   }
 
+  // Crowned wins — the strong tally, and the ONLY thing that can produce a
+  // confident overall winner.
   const wins = new Map()
   for (const r of decided) {
     wins.set(r.judgment.winner, (wins.get(r.judgment.winner) ?? 0) + 1)
@@ -265,46 +290,90 @@ export function judgeOverall(rows, sampleSize) {
     .map(([team, count]) => ({ team, count }))
     .sort((a, b) => b.count - a.count)
 
+  // Edges — decisive wins PLUS leans: every category where a team is ahead by
+  // more than the noise in it. This is what powers the softer "leans" overall
+  // when nothing is decisive enough to crown, so a lopsided-but-thin comparison
+  // still points somewhere instead of shrugging.
+  const edges = new Map()
+  for (const r of decided) edges.set(r.judgment.winner, (edges.get(r.judgment.winner) ?? 0) + 1)
+  for (const r of leaned) edges.set(r.judgment.lean, (edges.get(r.judgment.lean) ?? 0) + 1)
+  const edgeTally = [...edges.entries()]
+    .map(([team, count]) => ({ team, count }))
+    .sort((a, b) => b.count - a.count)
+
   const shared = {
     tally,
+    edgeTally,
     decided: decided.length,
+    leaned: leaned.length,
     scorable: scorable.length,
   }
 
-  if (decided.length < 3) {
-    return {
-      ...shared,
-      verdict: 'too-close',
-      winner: null,
-      reason:
-        `Only ${decided.length} of ${scorable.length} categories separated these teams by more ` +
-        `than the noise in them. That is not enough to call an overall winner — the differences ` +
-        `you can see in the table are mostly the sample talking.`,
+  const edgeTotal = decided.length + leaned.length
+
+  // When nothing crowns, does the balance of edges point clearly one way? Needs a
+  // real lead (2+ categories) AND a clear margin, so a 2-1 edge split still reads
+  // as too close. A lean, never a winner: no gold, and the reason says "watch
+  // them" not "pick them".
+  const softLean = () => {
+    const [ef, es] = edgeTally
+    const margin = (ef?.count ?? 0) - (es?.count ?? 0)
+    if (ef && ef.count >= 2 && margin >= 2) {
+      return {
+        ...shared,
+        verdict: 'lean',
+        winner: ef.team,
+        // Show the edges, so the reader can see where the lean came from.
+        tally: edgeTally,
+        reason:
+          `No category separates these teams by enough to call outright, but ${ef.team} is ahead ` +
+          `beyond the noise in ${ef.count} of ${edgeTotal} — a lean worth a closer look, not a ` +
+          `lock. Go watch them before you commit.`,
+      }
     }
+    return null
+  }
+
+  if (decided.length < 3) {
+    return (
+      softLean() ?? {
+        ...shared,
+        verdict: 'too-close',
+        winner: null,
+        reason:
+          `Only ${decided.length} of ${scorable.length} categories separated these teams by more ` +
+          `than the noise in them, and the leans do not agree. The differences you can see are ` +
+          `mostly the sample talking — more matches will sharpen it.`,
+      }
+    )
   }
 
   const [first, second] = tally
   if (!first || (second && first.count === second.count)) {
-    return {
-      ...shared,
-      verdict: 'too-close',
-      winner: null,
-      reason: `${first?.count ?? 0} categories each. The data does not prefer either of them.`,
-    }
+    return (
+      softLean() ?? {
+        ...shared,
+        verdict: 'too-close',
+        winner: null,
+        reason: `${first?.count ?? 0} categories each. The data does not prefer either of them.`,
+      }
+    )
   }
 
   const margin = first.count - (second?.count ?? 0)
   const share = first.count / decided.length
   if (margin < 2 && share < 0.6) {
-    return {
-      ...shared,
-      verdict: 'too-close',
-      winner: null,
-      reason:
-        `${first.team} leads ${first.count}–${second?.count ?? 0}, which is one category. ` +
-        `A single-category lead across ${decided.length} decided categories flips on one more ` +
-        `match being scouted.`,
-    }
+    return (
+      softLean() ?? {
+        ...shared,
+        verdict: 'too-close',
+        winner: null,
+        reason:
+          `${first.team} leads ${first.count}–${second?.count ?? 0}, which is one category. ` +
+          `A single-category lead across ${decided.length} decided categories flips on one more ` +
+          `match being scouted.`,
+      }
+    )
   }
 
   const n = sampleSize.get(first.team) ?? 0

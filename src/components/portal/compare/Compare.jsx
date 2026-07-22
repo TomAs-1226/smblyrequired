@@ -395,7 +395,7 @@ function Verdict({ overall, columns }) {
   const tone =
     overall.verdict === 'winner'
       ? css.verdictWin
-      : overall.verdict === 'provisional'
+      : overall.verdict === 'provisional' || overall.verdict === 'lean'
         ? css.verdictWarn
         : css.verdictNeutral
 
@@ -404,16 +404,26 @@ function Verdict({ overall, columns }) {
       ? `${overall.winner} comes out ahead`
       : overall.verdict === 'provisional'
         ? `${overall.winner} leads — provisionally`
-        : overall.verdict === 'insufficient'
-          ? 'Nothing to compare yet'
-          : 'Too close to call'
+        : overall.verdict === 'lean'
+          ? `${overall.winner} has the edge`
+          : overall.verdict === 'insufficient'
+            ? 'Nothing to compare yet'
+            : 'Too close to call'
 
   return (
     <section className={`${css.verdict} ${tone}`} aria-live="polite">
       <div className={css.verdictHead}>
         <span className={css.verdictIcon} aria-hidden="true">
           <Icon
-            name={overall.verdict === 'winner' ? 'trophy' : overall.verdict === 'provisional' ? 'alert' : 'bars'}
+            name={
+              overall.verdict === 'winner'
+                ? 'trophy'
+                : overall.verdict === 'lean'
+                  ? 'arrowUp'
+                  : overall.verdict === 'provisional'
+                    ? 'alert'
+                    : 'bars'
+            }
             size={20}
           />
         </span>
@@ -622,7 +632,10 @@ function MetricRow({ row, columns, onFlip }) {
         const cell = row.cells.find((c) => c.team === col.team) ?? { team: col.team, value: null }
         const value = cell.value ?? null
         const won = j.winner === col.team
-        const ahead = j.winner == null && j.leader === col.team
+        const leans = j.lean === col.team
+        // Only the genuinely-indistinguishable leader gets the faint "ahead" —
+        // once a gap clears one sigma it is a "leans", a stronger claim.
+        const ahead = j.winner == null && j.lean == null && j.leader === col.team
         const frac = value != null && max > 0 ? Math.max(0, Math.min(1, value / max)) : 0
         const detail = row.detail ? row.detail(cell) : null
         // A key nobody filled in on every pass has its own sample size, smaller
@@ -634,8 +647,8 @@ function MetricRow({ row, columns, onFlip }) {
           <td
             key={col.team}
             className={`${css.cell} ${css.value} ${won ? css.won : ''} ${
-              ahead ? css.aheadCell : ''
-            } ${col.thin || col.empty ? css.thin : ''}`}
+              leans ? css.leansCell : ''
+            } ${ahead ? css.aheadCell : ''} ${col.thin || col.empty ? css.thin : ''}`}
           >
             <span className={css.valueRow}>
               <span className={css.valueNum}>{value == null ? '—' : row.format(value)}</span>
@@ -643,6 +656,12 @@ function MetricRow({ row, columns, onFlip }) {
                 <span className={css.crown} title="Clear winner in this category">
                   <Icon name="check" size={13} />
                   <span className="sr-only">winner, {row.label}</span>
+                </span>
+              )}
+              {leans && (
+                <span className={css.leansTag} title="Ahead by more than the noise — a lean, not a call">
+                  leans
+                  <span className="sr-only">, {row.label}</span>
                 </span>
               )}
               {ahead && (
@@ -685,6 +704,18 @@ function Chip({ row }) {
     return (
       <span className={`${css.chip} ${css.chipWin}`}>
         gap {q(j.gap)} vs ±{q(j.uncertainty)} noise
+      </span>
+    )
+  }
+  if (j.verdict === 'lean') {
+    return (
+      <span className={`${css.chip} ${css.chipLean}`}>
+        leans {j.lean}
+        {j.uncertainty != null && (
+          <span className={css.chipWhy}>
+            gap {q(j.gap)}, noise ±{q(j.uncertainty)} — past the noise, not past doubt
+          </span>
+        )}
       </span>
     )
   }

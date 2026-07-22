@@ -659,6 +659,16 @@
 .won .valueNum {
   color: var(--accent-data);
 }
+/* Lean: a hedged cyan, a clear step up from the muted "ahead" but short of the
+   full-strength winner. Same data-colour family, deliberately softer — it says
+   "probably", where the winner says "yes". */
+.leansCell {
+  background-color: rgba(56, 189, 248, 0.045);
+}
+.leansCell .valueNum {
+  color: var(--accent-data);
+  opacity: 0.9;
+}
 /* The house cyan wipe: scaleX from the left, transform only. */
 .won::before {
   content: '';
@@ -704,6 +714,16 @@
   border-radius: var(--r-sm);
   padding: 1px 5px;
 }
+/* The cyan cousin of .aheadTag — a lean reads as "on the data's side", so it
+   takes the accent, not the muted grey of a coin-flip lead. */
+.leansTag {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--accent-data);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
 
 /* --- bars ---------------------------------------------------------------- */
 /* Drawn in CSS on purpose. A charting library for five bars would cost more
@@ -732,6 +752,10 @@
 .aheadCell .barFill {
   background: var(--accent-data);
   opacity: 0.5;
+}
+.leansCell .barFill {
+  background: var(--accent-data);
+  opacity: 0.72;
 }
 /* The decisive winner: full-strength cyan. */
 .won .barFill {
@@ -785,6 +809,14 @@
   color: var(--text-body);
   background: var(--surface-2);
   border-color: var(--border-strong);
+}
+/* Cyan but dashed — a lean is on the data's side (colour) yet not solid (border).
+   The dash is the hedge made visible. */
+.chipLean {
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.05);
+  border-color: var(--border-accent);
+  border-style: dashed;
 }
 .chipThin {
   color: var(--accent-gold);
