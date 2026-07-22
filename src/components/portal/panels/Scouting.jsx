@@ -12,6 +12,7 @@ import {
 } from '../../../lib/scoutingApi'
 import FormRenderer, { missingRequired } from '../scouting/FormRenderer'
 import MatchTimer from '../scouting/MatchTimer'
+import NexusLive from '../live/NexusLive'
 import SyncBadge from '../SyncBadge'
 import { Loading, Empty, ErrorState } from '../ui'
 import styles from '../Portal.module.css'
@@ -293,6 +294,12 @@ export default function Scouting() {
           </p>
         )}
       </section>
+
+      {/* Live field status from Nexus — "which match is queuing now" is the
+          question asked between matches, so it belongs right under the event the
+          scout picked. Renders nothing until an event is chosen, polls on its
+          own, and degrades quietly to a setup hint when the Nexus key is unset. */}
+      {eventKey && <NexusLive eventKey={eventKey} />}
 
       {/* --- Mode --- */}
       <section>

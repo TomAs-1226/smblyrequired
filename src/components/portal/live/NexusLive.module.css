@@ -1,0 +1,431 @@
+/* NexusLive — live field-status card. It sits in the portal grid beside the
+   other panels, so it borrows Control's surface/hairline/token vocabulary
+   rather than inventing its own. Everything is scoped; only the design tokens
+   from index.css cross the boundary — no raw hex that duplicates a token. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+
+/* --- Header --------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+}
+.headMain {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--danger);
+  flex: none;
+}
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 0 rgba(240, 99, 99, 0.5);
+  animation: nexusPulse 1.8s var(--ease-out) infinite;
+}
+@keyframes nexusPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(240, 99, 99, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(240, 99, 99, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 99, 99, 0);
+  }
+}
+.eventKey {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cachedTag {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+.headSide {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.updated {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r-pill);
+  padding: 8px 14px;
+  transition: background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .refresh:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.18);
+    border-color: var(--accent-data);
+  }
+}
+.refresh:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* --- Now queuing ---------------------------------------------------------- */
+
+.queuing {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+/* Prominent, but NOT gold — gold is reserved as the single home-team signal
+   below, so it stays a scarce, unambiguous "that's us". */
+.queuing strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* --- Stale banner (a poll failed but we're still showing the last good copy) */
+
+.stale {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--fs-label);
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.08);
+  border: 1px solid rgba(245, 184, 46, 0.28);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+}
+
+/* --- Sections ------------------------------------------------------------- */
+
+.section {
+  min-width: 0;
+}
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-3);
+}
+
+/* --- Matches -------------------------------------------------------------- */
+
+.matchList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.match {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+}
+.matchTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.matchLabel {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.pill {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.pill_queuing {
+  color: var(--accent-gold);
+  background: rgba(245, 184, 46, 0.12);
+  border-color: rgba(245, 184, 46, 0.35);
+}
+.pill_active {
+  color: var(--success);
+  background: rgba(63, 207, 142, 0.12);
+  border-color: rgba(63, 207, 142, 0.38);
+}
+.pill_done {
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-color: var(--border-hairline);
+}
+.pill_idle {
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border-color: var(--border-accent);
+}
+
+/* --- Alliances ------------------------------------------------------------ */
+
+.alliances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.alliance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 140px;
+  padding: 6px;
+  border-radius: var(--r-sm);
+  border-left: 3px solid transparent;
+}
+.allianceRed {
+  background: rgba(240, 99, 99, 0.07);
+  border-left-color: var(--danger);
+}
+.allianceBlue {
+  background: rgba(46, 125, 246, 0.08);
+  border-left-color: var(--accent-action);
+}
+.team {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-body);
+  background: var(--surface-2);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  font-variant-numeric: tabular-nums;
+}
+/* The number a scout is hunting for. Gold is scarce in this system, and only
+   one team per match can ever wear it — so it stays scarce and unmistakable. */
+.teamHome {
+  color: var(--accent-gold);
+  font-weight: 700;
+  background: rgba(245, 184, 46, 0.14);
+  border-color: rgba(245, 184, 46, 0.55);
+}
+
+/* --- Match time ----------------------------------------------------------- */
+
+.matchTime {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-label);
+}
+.matchClock {
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+.matchIn {
+  color: var(--accent-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Announcements -------------------------------------------------------- */
+
+.annList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.ann {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.ann:last-child {
+  border-bottom: 0;
+}
+.annBody {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  line-height: 1.45;
+  min-width: 0;
+}
+.annTime {
+  flex: none;
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Placeholder (no event selected) -------------------------------------- */
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  padding: var(--sp-4);
+}
+
+/* --- State cards: setup / error / empty ----------------------------------- */
+/* Mirrors Portal's shared empty state so this card's failure modes read the
+   same as every other panel's. */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: center;
+  padding: var(--sp-6) var(--sp-4);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--r-md);
+}
+.stateIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: var(--accent-data);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid var(--border-accent);
+}
+.stateIconBad {
+  color: var(--danger);
+  background: rgba(240, 99, 99, 0.08);
+  border-color: rgba(240, 99, 99, 0.3);
+}
+.stateTitle {
+  font-size: var(--fs-h3);
+}
+.stateText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  max-width: 42ch;
+}
+
+/* --- First-load spinner (only when there is no data at all) ---------------- */
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-4);
+}
+.centerText {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent-data);
+  animation: nexusSpin 620ms linear infinite;
+}
+.spinnerSm {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  border-top-color: currentColor;
+  animation: nexusSpin 620ms linear infinite;
+}
+@keyframes nexusSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Narrow pit phones (~360px): stack the alliances so team chips never crowd,
+   and let the header meta+button share a full row. */
+@media (max-width: 380px) {
+  .alliances {
+    flex-direction: column;
+  }
+  .headSide {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* A pit is loud and the LIVE dot is only decoration — honour a reduced-motion
+   request by holding everything still. Text and colour still carry the state. */
+@media (prefers-reduced-motion: reduce) {
+  .liveDot,
+  .spinner,
+  .spinnerSm,
+  .refresh {
+    animation: none;
+    transition: none;
+  }
+}

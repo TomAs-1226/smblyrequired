@@ -663,3 +663,131 @@ export async function setPicklistLock({ id, locked, userId }) {
     .single()
   return { data, error: wrap(error) }
 }
+
+// --- nexus (live event status) ------------------------------------------------
+
+/**
+ * Live field/queuing status for an event from Nexus for FRC, via the edge proxy.
+ *
+ * Nexus answers "what is about to happen on the field" — which match is queuing,
+ * estimated vs scheduled times, announcements. It is deliberately NOT results:
+ * scores/OPR/rankings come from `syncFromTba`. TBA is the past, Nexus is the next
+ * ten minutes. The NEXUS_KEY is server-side only, so — like TBA — this routes
+ * through an edge function rather than the browser.
+ *
+ * Returns `{ event_key, nexus (Nexus's raw payload), summary (best-effort pill
+ * fields) }`. The raw payload is always present, so the UI reads it defensively
+ * and a field the proxy guessed wrong about is a UI fix, not a redeploy.
+ */
+export async function nexusStatus(eventKey, { force = false } = {}) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  if (!eventKey) return { data: null, error: null }
+  const { data, error } = await supabase.functions.invoke('nexus-proxy', {
+    body: { action: 'event_status', eventKey, force },
+  })
+  if (error) {
+    // functions.invoke throws on non-2xx and discards the body, so the proxy's
+    // real message — e.g. "NEXUS_KEY is not configured" — is recovered from the
+    // response the same way askAi does, rather than surfacing a useless "non-2xx".
+    const body = await error?.context?.json?.().catch(() => null)
+    if (body?.error) return { data: null, error: body.error }
+    return { data: null, error: wrap(error) }
+  }
+  if (data?.error) return { data: null, error: data.error }
+  return { data: data?.data ?? data, error: null }
+}
+
+// --- vision pipeline (on-device detection) ------------------------------------
+//
+// The "master device" streams detections, not video — a phone runs an object
+// detector locally and only the counts and boxes leave it (migration 0011).
+// These writes are BEST-EFFORT and deliberately NOT on the offline queue: they
+// are high-frequency, and a dropped batch of frames is acceptable where a dropped
+// scouting entry never is. The capture UI holds unsent batches and retries; a
+// failure here comes back as { error }, it does not throw.
+
+/**
+ * Open a capture session. `model` is required and names WHAT produced the
+ * numbers — today a generic detector, later a trained model — so every
+ * observation stays honestly attributable. `userId` must be the caller's own id:
+ * RLS refuses a session opened in someone else's name.
+ */
+export async function startVisionSession({
+  eventKey,
+  matchKey,
+  deviceLabel,
+  model,
+  modelNote,
+  userId,
+}) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('vision_sessions')
+    .insert({
+      event_key: eventKey ?? null,
+      match_key: matchKey ?? null,
+      device_label: deviceLabel ?? null,
+      model,
+      model_note: modelNote ?? null,
+      started_by: userId ?? null,
+    })
+    .select()
+    .single()
+  return { data, error: wrap(error) }
+}
+
+export async function endVisionSession(id, frameCount) {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const patch = { ended_at: new Date().toISOString() }
+  if (Number.isFinite(frameCount)) patch.frame_count = frameCount
+  const { data, error } = await supabase
+    .from('vision_sessions')
+    .update(patch)
+    .eq('id', id)
+    .select()
+    .single()
+  return { data, error: wrap(error) }
+}
+
+/**
+ * Push a batch of observations for a session. Rows are `{ offsetMs, objectCount,
+ * detections, teamNumber? }`. RLS lets a member write only into a session they
+ * own, so the caller must pass the id returned by startVisionSession.
+ */
+export async function pushVisionObservations(sessionId, rows) {
+  if (!isConfigured) return { error: NOT_CONFIGURED }
+  if (!sessionId || !rows?.length) return { error: null }
+  const { error } = await supabase.from('vision_observations').insert(
+    rows.map((r) => ({
+      session_id: sessionId,
+      offset_ms: Math.round(r.offsetMs ?? 0),
+      object_count: r.objectCount ?? 0,
+      detections: r.detections ?? [],
+      team_number: r.teamNumber ?? null,
+    }))
+  )
+  return { error: wrap(error) }
+}
+
+export async function listVisionSessions(eventKey, limit = 50) {
+  if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
+  let q = supabase
+    .from('vision_session_summary')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(limit)
+  if (eventKey) q = q.eq('event_key', eventKey)
+  const { data, error } = await q
+  return { data: data ?? [], error: wrap(error) }
+}
+
+export async function visionFrames(sessionId, limit = 3000) {
+  if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('vision_observations')
+    .select('offset_ms, object_count, detections, team_number, created_at')
+    .eq('session_id', sessionId)
+    .order('offset_ms')
+    .limit(limit)
+  return { data: data ?? [], error: wrap(error) }
+}

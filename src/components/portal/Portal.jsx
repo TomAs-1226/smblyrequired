@@ -10,6 +10,7 @@ import Checklist from './panels/Checklist'
 import Compare from './compare/Compare'
 import TeamDetail from './panels/TeamDetail'
 import PickList from './picklist/PickList'
+import VisionPanel from './vision/VisionPanel'
 import Forms from './forms/Forms'
 import Control from './panels/Control'
 import Files from './panels/Files'
@@ -40,6 +41,11 @@ const PANELS = [
   // Editing is lead+, enforced in RLS: one careless drag during selection is
   // expensive and hard to notice.
   { id: 'picks', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
+  // The master-device vision pipeline: a phone runs an object detector on-device
+  // and streams timestamped counts into scouting. `cpu` icon, not a camera one,
+  // deliberately — the honest framing is "on-device model", not "it sees the
+  // game". Member floor: running it is a scout's job, RLS (0011) is the real gate.
+  { id: 'vision', label: 'Vision', icon: 'cpu', min: 'member', Component: VisionPanel },
   // Authoring the season's questions is a mentor/lead job, not a scout's.
   { id: 'forms', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
   // Leadership sets the active event and the scouting window here; both are
