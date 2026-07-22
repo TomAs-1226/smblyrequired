@@ -102,11 +102,13 @@ async function complete(
   if (!key) return { error: 'OPENAI_API_KEY is not configured on the server.', status: 500 }
 
   const cfg = TASKS[task]
-  // Reasoning models (o-series, GPT-5 "thinking") reject a non-default temperature
-  // with a 400; the instant/chat variants accept it. Only send temperature when
-  // the model id looks like one that takes it, so pointing OPENAI_MODEL at a
-  // reasoning model degrades to its default temperature rather than erroring.
-  const acceptsTemperature = /chat|gpt-4|gpt-3/i.test(cfg.model)
+  // The GPT-5 family DROPPED the `temperature` parameter — sending it (any value)
+  // returns 400 "Unsupported parameter: 'temperature'", chat/instant variants
+  // included. Only gpt-4 / gpt-3.5 still accept it. So temperature goes out only
+  // for those; every gpt-5+ (or o-series) model runs at its fixed default, which
+  // is correct rather than merely tolerated — these are grounded restate-the-
+  // numbers tasks and the honesty prompt, not the sampler, is what keeps them tight.
+  const acceptsTemperature = /gpt-4|gpt-3/i.test(cfg.model)
   let res: Response
   try {
     res = await fetch(OPENAI_URL, {
