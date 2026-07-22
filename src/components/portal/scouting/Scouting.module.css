@@ -147,6 +147,38 @@
   line-height: 1;
 }
 
+/* The count is an editable input now (tap to type). Styled to read as the big
+   number it replaces, but focusable. The spinner arrows are hidden — the +/-
+   buttons are the deliberate control and native steppers are tiny mis-taps. */
+.counterInput {
+  width: 84px;
+  flex: none;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: var(--surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 6px 0;
+  transition: border-color var(--dur-fast) var(--ease-out);
+  -moz-appearance: textfield;
+  appearance: textfield;
+  touch-action: manipulation;
+}
+.counterInput::-webkit-outer-spin-button,
+.counterInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.counterInput:focus {
+  outline: none;
+  border-color: var(--accent-data);
+}
+
 .timerOn {
   color: var(--accent-gold);
   border-color: rgba(245, 184, 46, 0.5);
@@ -538,8 +570,8 @@
   inset: 0;
   transform-origin: left;
   background: var(--accent-data);
-  /* No transition: the fill is redriven every animation frame from real elapsed
-     time, so a CSS transition would fight the rAF updates and lag the truth. */
+  /* No CSS transition: the fill is redriven every interval tick from real
+     elapsed time, so a transition would fight those updates and lag the truth. */
 }
 .timer_endgame .timerFill {
   background: var(--accent-gold);

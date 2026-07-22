@@ -300,6 +300,91 @@ const LEVEL_ORDER: Record<string, number> = { qm: 0, ef: 1, qf: 2, sf: 3, f: 4 }
 // in-memory cache in a function that scales out is best-effort by construction.
 // A two-minute window is short enough that a live score is never badly wrong and
 // long enough to absorb thirty scouts opening the schedule at once.
+// The official numbers for ONE team at ONE event: OPR/DPR/CCWM, ranking, record,
+// and that team's own matches. This is the counterweight to human scouting on
+// the team-detail screen — TBA's component estimates and the field's actual
+// results, next to what your scouts saw. Where they disagree is exactly the
+// conversation a strategy lead wants to have.
+async function actionTeamEventDetail(req: Request, params: Record<string, unknown>, force: boolean) {
+  const eventKey = asEventKey(params.eventKey)
+  const teamNumber = asTeamNumber(params.teamNumber)
+  if (!eventKey) return fail(req, 'eventKey must look like 2026casd.')
+  if (!teamNumber) return fail(req, 'teamNumber must be a positive integer.')
+  const teamKey = `frc${teamNumber}`
+
+  const cacheKey = `ted:${eventKey}:${teamNumber}`
+  if (!force) {
+    const hit = memoGet<unknown>(cacheKey, TTL.matches)
+    if (hit) return ok(req, { ...(hit as object), cached: true })
+  }
+
+  // Fetched together; each degrades to null rather than failing the whole view,
+  // because early in an event OPRs and rankings genuinely do not exist yet and a
+  // team-detail page that errors then is worse than one showing "not ranked yet".
+  const [oprsRes, rankRes, matchesRes] = await Promise.all([
+    tbaGet<{
+      oprs?: Record<string, number>
+      dprs?: Record<string, number>
+      ccwms?: Record<string, number>
+    }>(`/event/${eventKey}/oprs`),
+    tbaGet<{
+      rankings?: Array<{
+        team_key: string
+        rank: number
+        record?: { wins: number; losses: number; ties: number }
+        sort_orders?: number[]
+      }>
+    }>(`/event/${eventKey}/rankings`),
+    tbaGet<TbaMatch[]>(`/team/${teamKey}/event/${eventKey}/matches/simple`),
+  ])
+
+  const rankRow = rankRes.data?.rankings?.find((r) => r.team_key === teamKey) ?? null
+
+  const detail = {
+    team_number: teamNumber,
+    event_key: eventKey,
+    opr: oprsRes.data?.oprs?.[teamKey] ?? null,
+    dpr: oprsRes.data?.dprs?.[teamKey] ?? null,
+    ccwm: oprsRes.data?.ccwms?.[teamKey] ?? null,
+    rank: rankRow?.rank ?? null,
+    total_ranked: rankRes.data?.rankings?.length ?? null,
+    record: rankRow?.record
+      ? `${rankRow.record.wins}-${rankRow.record.losses}-${rankRow.record.ties}`
+      : null,
+    matches: (matchesRes.data ?? [])
+      .map((m) => {
+        const onRed = (m.alliances?.red?.team_keys ?? []).includes(teamKey)
+        const us = onRed ? m.alliances?.red : m.alliances?.blue
+        const them = onRed ? m.alliances?.blue : m.alliances?.red
+        const outcome =
+          m.winning_alliance == null || m.winning_alliance === ''
+            ? null
+            : (onRed ? 'red' : 'blue') === m.winning_alliance
+              ? 'W'
+              : m.winning_alliance === 'tie'
+                ? 'T'
+                : 'L'
+        return {
+          key: m.key,
+          label:
+            (m.comp_level === 'qm' ? 'Qual ' : m.comp_level.toUpperCase() + ' ') + m.match_number,
+          comp_level: m.comp_level,
+          match_number: m.match_number,
+          alliance: onRed ? 'red' : 'blue',
+          us_score: us?.score ?? null,
+          them_score: them?.score ?? null,
+          outcome,
+          actual_at: m.actual_time ? new Date(m.actual_time * 1000).toISOString() : null,
+        }
+      })
+      // Chronological where we can, qual order otherwise.
+      .sort((a, b) => (a.match_number ?? 0) - (b.match_number ?? 0)),
+  }
+
+  memoSet(cacheKey, detail)
+  return ok(req, detail)
+}
+
 async function actionEventMatches(req: Request, params: Record<string, unknown>, force: boolean) {
   const eventKey = asEventKey(params.eventKey)
   if (!eventKey) return fail(req, 'eventKey must look like 2026casd.')
@@ -465,12 +550,14 @@ Deno.serve(async (req) => {
         return await actionEventMatches(req, params, forced)
       case 'team_history':
         return await actionTeamHistory(req, db, params, forced)
+      case 'team_event_detail':
+        return await actionTeamEventDetail(req, params, forced)
       default:
         // The whitelist is the security control, so an unknown action is a hard
         // 400 rather than anything resembling a fallthrough.
         return fail(
           req,
-          'Unknown action. Expected one of: events, event_teams, event_matches, team_history.'
+          'Unknown action. Expected one of: events, event_teams, event_matches, team_history, team_event_detail.'
         )
     }
   } catch (err) {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import Icon from '../../Icon'
 import styles from './Scouting.module.css'
 
@@ -222,15 +222,62 @@ function Counter({ field, value, onChange, disabled }) {
   const min = field.min ?? 0
   const max = field.max ?? 999
 
-  const bump = (d) => {
-    const next = Math.min(max, Math.max(min, n + d))
-    if (next !== n) {
-      onChange(next)
-      // A short haptic tick where supported. In a loud room this is often the
-      // only confirmation the scout actually perceives — they are watching the
-      // field, not the screen.
-      if (navigator.vibrate) navigator.vibrate(8)
-    }
+  // The repeat timer reads the value through a ref, not the render closure: a
+  // held button fires faster than React re-renders, so a closure-captured `n`
+  // would keep adding to a stale base and lose counts. Mirroring the latest
+  // committed value here keeps every tick building on the last.
+  const latest = useRef(n)
+  latest.current = n
+  const timers = useRef([])
+
+  const bump = useCallback(
+    (d) => {
+      const next = Math.min(max, Math.max(min, latest.current + d))
+      if (next !== latest.current) {
+        latest.current = next
+        onChange(next)
+        // A short haptic tick where supported. In a loud room this is often the
+        // only confirmation the scout perceives — eyes on the field, not the phone.
+        if (navigator.vibrate) navigator.vibrate(8)
+      }
+    },
+    [min, max, onChange]
+  )
+
+  // Press-and-hold auto-repeat. One tap = one step. Hold past 400ms and it
+  // repeats, accelerating from 140ms to 60ms so a scout can rack up a big count
+  // without forty taps — but a normal tap never triggers the repeat.
+  const stop = useCallback(() => {
+    timers.current.forEach(clearTimeout)
+    timers.current.forEach(clearInterval)
+    timers.current = []
+  }, [])
+
+  const hold = useCallback(
+    (d) => {
+      bump(d)
+      const startTimeout = setTimeout(() => {
+        let delay = 140
+        const run = () => {
+          bump(d)
+          delay = Math.max(60, delay - 12)
+          const id = setTimeout(run, delay)
+          timers.current.push(id)
+        }
+        run()
+      }, 400)
+      timers.current.push(startTimeout)
+    },
+    [bump]
+  )
+
+  useEffect(() => stop, [stop]) // clear any running repeat on unmount
+
+  const commitTyped = (raw) => {
+    if (raw === '' || raw == null) return onChange(undefined)
+    const parsed = Math.round(Number(raw))
+    if (Number.isNaN(parsed)) return
+    onChange(Math.min(max, Math.max(min, parsed)))
   }
 
   return (
@@ -238,21 +285,47 @@ function Counter({ field, value, onChange, disabled }) {
       <button
         type="button"
         className={styles.counterBtn}
-        onClick={() => bump(-1)}
+        onPointerDown={(e) => {
+          e.preventDefault()
+          if (!disabled) hold(-1)
+        }}
+        onPointerUp={stop}
+        onPointerLeave={stop}
+        onPointerCancel={stop}
         disabled={disabled || n <= min}
-        aria-label={`Decrease ${field.label}`}
+        aria-label={`Decrease ${field.label} (hold to repeat)`}
       >
         <Icon name="close" size={20} />
       </button>
-      <output className={styles.counterValue} aria-live="off">
-        {n}
-      </output>
+
+      {/* The value is a real input: tap it to type a number directly, which a
+          scout wants when catching up a count they fell behind on, rather than
+          pressing + fifteen times. Still shows the live value between taps. */}
+      <input
+        type="number"
+        inputMode="numeric"
+        className={styles.counterInput}
+        value={Number.isFinite(value) ? value : ''}
+        min={min}
+        max={max}
+        disabled={disabled}
+        onChange={(e) => commitTyped(e.target.value)}
+        onFocus={(e) => e.target.select()}
+        aria-label={field.label}
+      />
+
       <button
         type="button"
         className={`${styles.counterBtn} ${styles.counterPlus}`}
-        onClick={() => bump(1)}
+        onPointerDown={(e) => {
+          e.preventDefault()
+          if (!disabled) hold(1)
+        }}
+        onPointerUp={stop}
+        onPointerLeave={stop}
+        onPointerCancel={stop}
         disabled={disabled || n >= max}
-        aria-label={`Increase ${field.label}`}
+        aria-label={`Increase ${field.label} (hold to repeat)`}
       >
         <Icon name="plus" size={22} />
       </button>

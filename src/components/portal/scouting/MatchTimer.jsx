@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+// (kept below: robust interval-based updates, not rAF)
 import Icon from '../../Icon'
 import styles from './Scouting.module.css'
 
@@ -48,36 +49,39 @@ function fmt(sec) {
 export default function MatchTimer() {
   const [startedAt, setStartedAt] = useState(null)
   const [elapsed, setElapsed] = useState(0)
-  const raf = useRef(0)
+  const intervalRef = useRef(0)
   const lastPhase = useRef('pre')
 
-  // Drive updates off rAF while running; stop entirely when idle or finished so
-  // the timer costs nothing when it is not counting.
+  // A steady 100ms interval, NOT requestAnimationFrame. rAF is throttled hard on
+  // mobile — some browsers pause it while the finger is down or the page is not
+  // the very front tab — which is exactly when a scout is using this, and was
+  // why the clock appeared frozen. The interval always fires, and the value it
+  // sets is derived from real wall-clock time (now − start), so it neither
+  // drifts nor skips: a missed tick just means the next one jumps to the correct
+  // time rather than falling behind.
   useEffect(() => {
     if (startedAt == null) return
-    let alive = true
-    const tick = () => {
-      if (!alive) return
+
+    const update = () => {
       const t = (performance.now() - startedAt) / 1000
       setElapsed(t)
 
-      // Haptic pulse on each phase boundary — the scout is watching the field,
-      // not the phone, and the buzz is the actual signal that a phase changed.
+      // Haptic pulse on each phase boundary — the buzz is the real signal that a
+      // phase changed, since the scout's eyes are on the field.
       const p = phaseAt(t).key
       if (p !== lastPhase.current) {
         lastPhase.current = p
-        if (navigator.vibrate) {
-          navigator.vibrate(p === 'endgame' ? [40, 30, 40] : 25)
-        }
+        if (navigator.vibrate) navigator.vibrate(p === 'endgame' ? [40, 30, 40] : 25)
       }
-      if (t >= MATCH_END + 1) return // let it rest one second past the end, then stop
-      raf.current = requestAnimationFrame(tick)
+      // Rest one second past the buzzer, then stop spending cycles.
+      if (t >= MATCH_END + 1) {
+        clearInterval(intervalRef.current)
+      }
     }
-    raf.current = requestAnimationFrame(tick)
-    return () => {
-      alive = false
-      cancelAnimationFrame(raf.current)
-    }
+
+    update() // paint immediately, don't wait 100ms for the first frame
+    intervalRef.current = setInterval(update, 100)
+    return () => clearInterval(intervalRef.current)
   }, [startedAt])
 
   const running = startedAt != null && elapsed < MATCH_END
