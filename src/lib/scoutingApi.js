@@ -269,8 +269,12 @@ export async function listEntries({ eventKey, teamNumber, kind, limit = 200 } = 
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
   let q = supabase
     .from('scout_entries')
+    // Embeds the scout's name so a CSV export and the entry lists read "Alex
+    // Rivera", not a UUID. The join is member+ under the roster read policy,
+    // which every caller of this already is. `scout_name` is flattened onto the
+    // row so consumers don't have to reach through the nested object.
     .select(
-      'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at'
+      'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at, scout:profiles!scout_entries_scout_id_fkey(full_name)'
     )
     .order('recorded_at', { ascending: false })
     .limit(limit)
@@ -278,7 +282,10 @@ export async function listEntries({ eventKey, teamNumber, kind, limit = 200 } = 
   if (teamNumber) q = q.eq('team_number', teamNumber)
   if (kind) q = q.eq('kind', kind)
   const { data, error } = await q
-  return { data: data ?? [], error: wrap(error) }
+  // Flatten the join so callers see a plain `scout_name` string (null when the
+  // scout row was removed — the entry survives, its author is just unknown).
+  const rows = (data ?? []).map((r) => ({ ...r, scout_name: r.scout?.full_name ?? null }))
+  return { data: rows, error: wrap(error) }
 }
 
 // How many pit/strategy passes this scout has left on a team today, via the

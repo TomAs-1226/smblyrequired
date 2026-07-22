@@ -91,7 +91,10 @@ const SCOUT_BASE_COLUMNS = [
   { key: 'kind', header: 'kind' },
   { key: 'match_number', header: 'match_number' },
   { key: 'alliance', header: 'alliance' },
-  { key: 'scout_id', header: 'scout' },
+  // The scout's name, from the profile join listEntries now flattens onto the
+  // row. Falls back to the id if the profile is gone, so the column is never
+  // silently blank.
+  { header: 'scout', value: (row) => row?.scout_name ?? row?.scout_id ?? '' },
   { key: 'recorded_at', header: 'recorded_at' },
 ]
 const SCOUT_BASE_HEADERS = new Set(SCOUT_BASE_COLUMNS.map((col) => col.header))
