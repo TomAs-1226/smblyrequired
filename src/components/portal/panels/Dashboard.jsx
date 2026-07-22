@@ -3,7 +3,7 @@ import Icon from '../../Icon'
 import { useAuth } from '../../../lib/auth'
 import { supabase } from '../../../lib/supabase'
 import { backupHealth, listFiles, formatBytes } from '../../../lib/portalApi'
-import { listEntries } from '../../../lib/scoutingApi'
+import { listEntries, teamStats, listVisionSessions } from '../../../lib/scoutingApi'
 import { navigate } from '../../../lib/router'
 import { Loading, ErrorState, StatTile, Empty } from '../ui'
 import BackupLeg from '../BackupLeg'
@@ -129,38 +129,61 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     setS((p) => ({ ...p, loading: true, error: null }))
     const eventKey = localStorage.getItem('frc5805.event') || null
+    // The signed-in scout's own id, for the personal contribution count below.
+    // Null before the profile resolves; the query is skipped until then, and load
+    // re-runs once it arrives (profile?.id is in the dependency array).
+    const scoutId = profile?.id ?? null
 
-    const [health, recent, counts, coverage, activity, spark] = await Promise.all([
-      canSeeBackups ? backupHealth() : Promise.resolve({ data: [], error: null }),
-      listFiles({ limit: 5 }),
-      // head:true returns the count without transferring the rows. This runs on
-      // every portal visit; there is no reason to pull a thousand entries down
-      // in order to display the number 1000.
-      Promise.all([
-        supabase.from('scout_entries').select('id', { count: 'exact', head: true }),
-        supabase.from('graphs').select('id', { count: 'exact', head: true }),
-        supabase.from('code_archives').select('id', { count: 'exact', head: true }),
-        supabase.from('knowledge_docs').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'pending'),
-      ]),
-      eventKey
-        ? supabase.from('event_scout_coverage').select('*').eq('event_key', eventKey).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase
-        .from('scout_entries')
-        .select('team_number, kind, recorded_at')
-        .order('recorded_at', { ascending: false })
-        .limit(6),
-      // Added for the 14-day activity sparkline: only recorded_at crosses the
-      // wire, capped at 500 rows and bucketed by day in the browser. Separate
-      // from the counts/coverage/activity reads above — those are unchanged.
-      supabase
-        .from('scout_entries')
-        .select('recorded_at')
-        .order('recorded_at', { ascending: false })
-        .limit(500),
-    ])
+    const [health, recent, counts, coverage, activity, spark, leaders, vision, mine] =
+      await Promise.all([
+        canSeeBackups ? backupHealth() : Promise.resolve({ data: [], error: null }),
+        listFiles({ limit: 5 }),
+        // head:true returns the count without transferring the rows. This runs on
+        // every portal visit; there is no reason to pull a thousand entries down
+        // in order to display the number 1000.
+        Promise.all([
+          supabase.from('scout_entries').select('id', { count: 'exact', head: true }),
+          supabase.from('graphs').select('id', { count: 'exact', head: true }),
+          supabase.from('code_archives').select('id', { count: 'exact', head: true }),
+          supabase.from('knowledge_docs').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'pending'),
+        ]),
+        eventKey
+          ? supabase.from('event_scout_coverage').select('*').eq('event_key', eventKey).maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase
+          .from('scout_entries')
+          .select('team_number, kind, recorded_at')
+          .order('recorded_at', { ascending: false })
+          .limit(6),
+        // Added for the 14-day activity sparkline: only recorded_at crosses the
+        // wire, capped at 500 rows and bucketed by day in the browser. Separate
+        // from the counts/coverage/activity reads above — those are unchanged.
+        supabase
+          .from('scout_entries')
+          .select('recorded_at')
+          .order('recorded_at', { ascending: false })
+          .limit(500),
+        // Top-team leaderboard for the active event. team_event_stats is member+
+        // in RLS, so a viewer — or an event with no match rows yet — legitimately
+        // reads nothing, which renders an empty state rather than a crash. Guarded
+        // like coverage; .catch keeps a failure here from blanking the overview.
+        eventKey ? teamStats(eventKey).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+        // Vision capture sessions — the active event's, or the most recent across
+        // every event when none is selected. Only the count is surfaced.
+        listVisionSessions(eventKey || null, 100).catch(() => ({ data: [] })),
+        // This scout's own lifetime entry count — a small, motivating figure.
+        // head-only, and only asked once we know who they are.
+        scoutId
+          ? Promise.resolve(
+              supabase
+                .from('scout_entries')
+                .select('id', { count: 'exact', head: true })
+                .eq('scout_id', scoutId)
+            ).catch(() => ({ count: 0 }))
+          : Promise.resolve({ count: 0 }),
+      ])
 
     const [entries, graphs, archives, docs, members, pending] = counts
     setS({
@@ -180,8 +203,13 @@ export default function Dashboard() {
       coverage: coverage?.data ?? null,
       activity: activity.data ?? [],
       spark: spark.data ?? [],
+      // New overview reads. Each tolerates its own failure by degrading to empty,
+      // matching the per-read null-tolerance the rest of this loader already has.
+      leaders: leaders?.data ?? [],
+      visionCount: (vision?.data ?? []).length,
+      myEntries: mine?.count ?? 0,
     })
-  }, [canSeeBackups])
+  }, [canSeeBackups, profile?.id])
 
   useEffect(() => {
     load()
@@ -198,6 +226,25 @@ export default function Dashboard() {
   const buckets = bucketByDay(s.spark ?? [])
   const sparkTotal = buckets.reduce((sum, b) => sum + b.count, 0)
   const sparkPeak = Math.max(0, ...buckets.map((b) => b.count))
+  const myEntries = s.myEntries ?? 0
+  const visionCount = s.visionCount ?? 0
+
+  // Coverage as a bar: teams_scouted / teams_at_event. Guarded against a missing
+  // row (no event_teams yet) and a zero denominator so the width is always sane.
+  const cov = s.coverage
+  const covPct =
+    cov && cov.teams_at_event > 0
+      ? Math.round((cov.teams_scouted / cov.teams_at_event) * 100)
+      : 0
+
+  // Top five by observed match score. team_event_stats already orders this, but a
+  // null avg_score (a team seen only in the pit so far) is not a leaderboard row,
+  // so drop those before taking the head — and sort defensively in case the
+  // fallback path handed back an unordered list.
+  const leaders = (s.leaders ?? [])
+    .filter((t) => t.avg_score != null && !Number.isNaN(Number(t.avg_score)))
+    .sort((a, b) => Number(b.avg_score) - Number(a.avg_score))
+    .slice(0, 5)
 
   // All entries for the selected event; with none selected, the most recent
   // across every event so the button still does something useful. Both are
@@ -223,6 +270,12 @@ export default function Dashboard() {
           <span className={d.heroEyebrow}>Overview</span>
           <p className={d.heroGreeting}>{first ? `Hello, ${first}.` : 'Welcome back.'}</p>
           <p className={d.heroSub}>Here's where things stand.</p>
+          {profile?.id && (
+            <p className={d.heroContrib}>
+              You've recorded <strong>{myEntries.toLocaleString()}</strong>{' '}
+              {myEntries === 1 ? 'entry' : 'entries'}.
+            </p>
+          )}
         </div>
         <div className={d.heroMeta}>
           {role && (
@@ -271,22 +324,95 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Active event + coverage. The event key frames every number in this
+            block; with none selected, a calm prompt to pick one rather than a
+            row of dashes that reads as broken. */}
+        {s.eventKey ? (
+          <div className={d.coverage}>
+            <div className={d.coverageHead}>
+              <span className={d.coverageLabel}>Active event</span>
+              <span className={d.coverageEvent}>{s.eventKey}</span>
+            </div>
+            {cov ? (
+              <>
+                <div
+                  className={d.progress}
+                  role="progressbar"
+                  aria-valuenow={covPct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${cov.teams_scouted} of ${cov.teams_at_event} teams scouted`}
+                >
+                  <div className={d.progressFill} style={{ width: `${covPct}%` }} />
+                </div>
+                <div className={d.coverageMeta}>
+                  <span>
+                    <strong>{cov.teams_scouted}</strong> of {cov.teams_at_event} teams scouted
+                  </span>
+                  <span className={d.coveragePct}>{covPct}%</span>
+                </div>
+              </>
+            ) : (
+              <p className={d.coverageHint}>
+                No teams loaded for {s.eventKey} yet — sync the roster in Scout.
+              </p>
+            )}
+          </div>
+        ) : (
+          <button type="button" className={d.noEvent} onClick={() => navigate('/portal/scout')}>
+            <Icon name="compass" size={16} />
+            <span>No active event — pick one in Scout.</span>
+            <Icon name="arrowRight" size={15} />
+          </button>
+        )}
+
         <div className={d.figures}>
           <div className={d.figure}>
             <span className={d.figureLabel}>Entries recorded</span>
             <span className={d.figureValue}>{c.entries.toLocaleString()}</span>
           </div>
           <div className={d.figure}>
-            <span className={d.figureLabel}>Teams covered</span>
-            <span className={d.figureValue}>
-              {s.coverage ? `${s.coverage.teams_scouted}/${s.coverage.teams_at_event}` : '—'}
-            </span>
-          </div>
-          <div className={d.figure}>
             <span className={d.figureLabel}>Team members</span>
             <span className={d.figureValue}>{c.members}</span>
           </div>
         </div>
+
+        {/* Top-teams leaderboard — the single most-requested overview view. Only
+            with an event active; empty until a match actually carries a score. */}
+        {s.eventKey && (
+          <div className={d.board}>
+            <div className={d.boardHead}>
+              <span className={d.boardTitle}>
+                <Icon name="trophy" size={14} />
+                Top teams
+              </span>
+              {leaders.length > 0 && <span className={d.boardBy}>by avg score</span>}
+            </div>
+            {leaders.length === 0 ? (
+              <p className={d.boardEmpty}>No match data yet for {s.eventKey}.</p>
+            ) : (
+              <ol className={d.boardList}>
+                {leaders.map((t, i) => {
+                  const matches = t.matches_scouted ?? 0
+                  return (
+                    <li key={t.team_number} className={d.boardRow}>
+                      <span className={d.boardRank}>{i + 1}</span>
+                      <span className={d.boardTeam}>
+                        <span className={d.boardNum}>{t.team_number}</span>
+                        {matches > 0 && (
+                          <span className={d.boardMatches}>
+                            {matches.toLocaleString()} {matches === 1 ? 'match' : 'matches'}
+                          </span>
+                        )}
+                      </span>
+                      <span className={d.boardScore}>{Number(t.avg_score).toFixed(1)}</span>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+          </div>
+        )}
 
         <div className={d.sparkWrap}>
           <div className={d.sparkHead}>
@@ -328,6 +454,7 @@ export default function Dashboard() {
           <StatTile label="Knowledge docs" value={c.docs} />
           <StatTile label="Code archives" value={c.archives} />
           <StatTile label="Graphs" value={c.graphs} />
+          <StatTile label="Vision sessions" value={visionCount} />
         </div>
       </section>
 
@@ -413,6 +540,7 @@ export default function Dashboard() {
             { to: '/portal/checklist', icon: 'check', label: 'Coverage' },
             { to: '/portal/compare', icon: 'bars', label: 'Compare teams' },
             { to: '/portal/picks', icon: 'trophy', label: 'Pick list' },
+            { to: '/portal/vision', icon: 'cpu', label: 'Vision capture' },
             { to: '/portal/graphs', icon: 'share', label: 'Graphs' },
             { to: '/portal/kb', icon: 'book', label: 'Knowledge' },
           ].map((q) => (

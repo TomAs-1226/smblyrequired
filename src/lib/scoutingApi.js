@@ -791,3 +791,20 @@ export async function visionFrames(sessionId, limit = 3000) {
     .limit(limit)
   return { data: data ?? [], error: wrap(error) }
 }
+
+/**
+ * The detection model configured for the vision pipeline (migration 0012), read
+ * off the scout_settings singleton. A null `vision_model_url` means the built-in
+ * generic detector. member+ may read it (an operator's phone has to load the
+ * model to capture); lead+ changes it through `saveScoutSettings`, so there is no
+ * separate writer here.
+ */
+export async function visionModelConfig() {
+  if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
+  const { data, error } = await supabase
+    .from('scout_settings')
+    .select('vision_model_url, vision_model_name, vision_model_labels, vision_model_size')
+    .eq('id', 1)
+    .maybeSingle()
+  return { data, error: wrap(error) }
+}

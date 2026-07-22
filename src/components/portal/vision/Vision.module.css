@@ -674,6 +674,130 @@
   margin-left: 2px;
 }
 
+/* --- Model editor (lead+) ---------------------------------------------------- */
+.modelCard {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.modelCardOpen {
+  border-color: var(--border-accent);
+}
+.modelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-body);
+}
+.modelHead:hover {
+  background: var(--accent-data-wash);
+}
+.modelHeadMain {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.modelHeadMain svg {
+  flex: 0 0 auto;
+  color: var(--accent-data);
+}
+.modelHeadLabel {
+  display: block;
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.modelHeadValue {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.modelBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+}
+.modelHelp {
+  margin: 0;
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.modelHelp code {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--accent-data);
+}
+.modelHelp strong {
+  color: var(--text-body);
+}
+.textarea {
+  padding: var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  resize: vertical;
+  min-height: 44px;
+}
+.textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent-data);
+  box-shadow: 0 0 0 3px var(--accent-data-wash);
+}
+.modelActions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+.modelActions .startBtn {
+  width: auto;
+  flex: 1;
+}
+.modelReset {
+  padding: var(--sp-3) var(--sp-4);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.modelReset:hover:not(:disabled) {
+  color: var(--text-body);
+  border-color: var(--border-accent);
+}
+.modelReset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.modelSaved {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--success);
+}
+
 /* --- Responsive -------------------------------------------------------------- */
 @media (max-width: 560px) {
   .fieldRow {

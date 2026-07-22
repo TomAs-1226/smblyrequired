@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Icon from '../../Icon'
+import { useAuth } from '../../../lib/auth'
 import VisionCapture from './VisionCapture'
+import VisionModel from './VisionModel'
 import VisionSessions from './VisionSessions'
 import styles from './Vision.module.css'
 
@@ -24,10 +26,14 @@ const TABS = [
 ]
 
 export default function VisionPanel() {
+  const { atLeast } = useAuth()
   const [tab, setTab] = useState('capture')
   // Bumped when a capture ends so the Sessions view reloads its list the next
   // time it is shown, without a full page reload.
   const [reloadKey, setReloadKey] = useState(0)
+  // Bumped when a lead changes the model, to remount VisionCapture so it reloads
+  // the detector against the new setting rather than keeping the old one loaded.
+  const [modelKey, setModelKey] = useState(0)
 
   return (
     <div className={styles.panel}>
@@ -62,7 +68,12 @@ export default function VisionPanel() {
           leaving a camera running behind a hidden tab is exactly the bug that
           gets a tool uninstalled. */}
       {tab === 'capture' ? (
-        <VisionCapture onSessionEnd={() => setReloadKey((k) => k + 1)} />
+        <>
+          {/* Lead+ only: which detector the pipeline runs. A member sees the
+              active model in the capture chip but cannot change it. */}
+          {atLeast('lead') && <VisionModel onSaved={() => setModelKey((k) => k + 1)} />}
+          <VisionCapture key={modelKey} onSessionEnd={() => setReloadKey((k) => k + 1)} />
+        </>
       ) : (
         <VisionSessions reloadKey={reloadKey} />
       )}

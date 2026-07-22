@@ -6,93 +6,85 @@ import {
   endVisionSession,
   pushVisionObservations,
   scoutControl,
+  visionModelConfig,
 } from '../../../lib/scoutingApi'
+import { loadDetector } from '../../../lib/visionDetector'
 import portal from '../Portal.module.css'
 import styles from './Vision.module.css'
 
 // =============================================================================
 // VisionCapture — the "master device" running a detector ON THE PHONE.
 //
-// A phone points at the field and, frame by frame, a general-purpose object
-// detector runs LOCALLY in the browser. The video never leaves the device; only
-// the numbers do — a per-instant object count and the boxes that produced it,
-// timestamped so they can be lined up against a match later.
+// A phone points at the field and, frame by frame, an object detector runs
+// LOCALLY in the browser. The video never leaves the device; only the numbers
+// do — a per-instant object count and the boxes that produced it, timestamped so
+// they can be lined up against a match later.
 //
-// WHAT THIS HONESTLY IS. The detector is COCO-SSD: eighty everyday classes, none
-// of which is an FRC robot or a game piece. So today this does NOT "watch a match
-// and score it". It PROVES THE PIPELINE — capture → on-device inference →
-// timestamped stream into Supabase → review — and it collects labelled frames
-// that a purpose-trained model will one day learn from. Every number it writes is
-// stamped with the model that made it (migration 0011), so when that trained
-// model arrives, old rows stay honestly attributed to the generic one.
+// WHICH detector runs is a SETTING now (migration 0012), not a constant. Out of
+// the box it is COCO-SSD, a GENERIC model that counts everyday objects and knows
+// nothing about robots or game pieces — a pipeline stand-in and training-data
+// collector. A lead can point it at a real FRC-trained YOLO model (the format
+// other teams deploy), and then it genuinely tracks that model's classes. Either
+// way every session records the model that made it (see start()), so the numbers
+// stay honestly attributable when the model is swapped.
 //
-// The "focus class" selector is the honest bridge in the meantime: pick 'sports
-// ball' and the count becomes "ball-like objects", the closest COCO stand-in for
-// a game piece. It is a stand-in, labelled as one — not a claim that the model
-// understands the game.
+// The "focus class" selector adapts to the model: for the generic model it is the
+// closest COCO stand-ins (e.g. 'sports ball' for a game piece); for a trained
+// model it is that model's own classes.
 //
-// The camera + lazy-detector machinery is deliberately the same shape as
-// RobotCapture.jsx (read that first). The NEW problem here is a *continuous*
-// loop: a detector that never overlaps itself, a bounded send buffer that
-// survives a dead venue network, a wake lock so the screen does not sleep
-// mid-match, and a cadence that does not melt a mid-range Android.
+// The camera + lazy-detector machinery mirrors RobotCapture.jsx. The NEW problem
+// here is a *continuous* loop: a detector that never overlaps itself, a bounded
+// send buffer that survives a dead venue network, a wake lock so the screen does
+// not sleep mid-match, and a cadence that does not melt a mid-range Android.
 // =============================================================================
 
 // --- Cadence -----------------------------------------------------------------
 // One detection every 500ms — two per second. Fast enough that the overlay reads
 // as live and a ball crossing the frame is caught; slow enough that a phone is
-// not pinned at 100% for a whole competition. lite_mobilenet_v2 infers in
-// ~40-150ms on a phone, so this is a real gap, not a busy-wait. The loop is
-// self-clocking (see runLoop): it schedules the NEXT detection only after the
-// current one resolves, so a slow frame slows the cadence instead of piling up.
+// not pinned at 100% all competition. The loop is self-clocking (see runLoop):
+// it schedules the NEXT detection only after the current one resolves, so a slow
+// frame slows the cadence instead of piling up.
 const DETECT_INTERVAL_MS = 500
 
-// COCO's default score floor is 0.5. Lowered because a field is full of things
-// the model half-recognises and we would rather capture a noisy stream to filter
-// later than silently drop detections a trained model might have wanted.
-const MIN_SCORE = 0.35
-const MAX_DETECTIONS = 20
-
 // Per observation we keep at most this many boxes. The count is the headline; the
-// boxes are evidence and training data, but a full 20 every 500ms is a lot of
-// jsonb over a venue uplink, so we keep the most confident dozen.
+// boxes are evidence + training data, but persisting every box every 500ms is a
+// lot of jsonb over a venue uplink, so we keep the most confident dozen.
 const STORE_BOXES = 12
 
 // --- Send buffer -------------------------------------------------------------
-// Observations accumulate in memory and flush in batches — one INSERT per batch
-// instead of one per frame, which the venue network could never keep up with.
 const FLUSH_INTERVAL_MS = 6000
 const FLUSH_MAX_ROWS = 24 // flush early if a batch fills before the timer
-
-// If the network is down, unsent rows are re-queued rather than lost — but a
-// buffer cannot grow forever on a phone. Past this we drop the OLDEST rows: a
-// live count is worth more than a stale one, and the alternative is an
-// out-of-memory crash that loses everything.
+// A buffer cannot grow forever on a phone. Past this the OLDEST rows drop: a live
+// count is worth more than a stale one, and the alternative is an OOM crash.
 const MAX_BUFFER_ROWS = 4000
 
-// The model, named exactly as it will be stored so every observation is
-// attributable. If this string changes, old rows keep the old string — that is
-// the point of recording it.
-const MODEL_ID = 'coco-ssd@lite_mobilenet_v2'
-const MODEL_NOTE =
-  'Generic COCO detector running on-device. Counts everyday objects, not FRC ' +
-  'game pieces or robots. Pipeline + data-collection placeholder for a trained model.'
-
-const MODEL_LOAD_TIMEOUT_MS = 20000
-
-// The honest "closest COCO class" stand-ins. 'all' counts every detection; the
-// others count only that class so a demo can show a meaningful number today.
-const FOCUS_OPTIONS = [
-  { id: 'all', label: 'All objects', note: 'Every detection, any class' },
-  { id: 'sports ball', label: 'Game pieces (stand-in)', note: "COCO 'sports ball' — closest to a game piece" },
-  { id: 'person', label: 'People', note: 'Drivers, refs, human players' },
-]
+// A YOLO GraphModel over venue wifi can be slow; the timeout only flips the UI to
+// "unavailable", and a load that finishes later still flips it back to ready.
+const MODEL_LOAD_TIMEOUT_MS = 25000
 
 const round2 = (n) => Math.round(n * 100) / 100
 
 // A loose event-key check, same family the server enforces (2026casd). Kept
 // permissive because the operator may be typing a key TBA has not cached yet.
 const looksLikeEventKey = (s) => /^\d{4}[a-z0-9]{1,20}$/.test(String(s ?? '').trim().toLowerCase())
+
+// Focus options follow the loaded model: curated COCO stand-ins for the generic
+// detector, the model's own classes for a trained one.
+function focusOptionsFor(meta) {
+  if (!meta) return [{ id: 'all', label: 'All objects', note: 'Every detection' }]
+  if (meta.generic) {
+    return [
+      { id: 'all', label: 'All objects', note: 'Every detection, any class' },
+      { id: 'sports ball', label: 'Game pieces (stand-in)', note: "COCO 'sports ball' — closest to a game piece" },
+      { id: 'person', label: 'People', note: 'Drivers, refs, human players' },
+    ]
+  }
+  const labels = Array.isArray(meta.labels) ? meta.labels : []
+  return [
+    { id: 'all', label: 'All classes', note: 'Every detection' },
+    ...labels.map((l) => ({ id: l, label: l, note: 'Model class' })),
+  ]
+}
 
 export default function VisionCapture({ onSessionEnd }) {
   const { user } = useAuth()
@@ -105,8 +97,8 @@ export default function VisionCapture({ onSessionEnd }) {
   const wakeLockRef = useRef(null)
 
   // Live-session refs — mutated by the loop without forcing a re-render. State
-  // mirrors of these are pushed on a slow tick (see the stats interval) so the
-  // 2Hz detection loop does not drive React at 2Hz.
+  // mirrors are pushed on a slow tick (see the stats interval) so the 2Hz loop
+  // does not drive React at 2Hz.
   const sessionRef = useRef(null)
   const startedAtRef = useRef(0)
   const bufferRef = useRef([])
@@ -122,6 +114,7 @@ export default function VisionCapture({ onSessionEnd }) {
   const [phase, setPhase] = useState('config') // config | starting | live | stopping
   const [camera, setCamera] = useState({ status: 'idle', message: null })
   const [model, setModel] = useState('loading') // loading | ready | unavailable
+  const [detectorMeta, setDetectorMeta] = useState(null) // { id, name, note, generic, labels }
   const [config, setConfig] = useState({ eventKey: '', matchKey: '', deviceLabel: '', focus: 'all' })
   const [stats, setStats] = useState({ count: 0, frames: 0, sent: 0, buffered: 0, elapsedMs: 0 })
   const [error, setError] = useState(null)
@@ -172,9 +165,9 @@ export default function VisionCapture({ onSessionEnd }) {
     setCamera({ status: 'starting', message: null })
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        // 'ideal', not 'exact': a laptop with only a front camera should still
-        // get a camera rather than an OverconstrainedError. A higher capture
-        // resolution helps the detector resolve small, distant objects.
+        // 'ideal', not 'exact': a laptop with only a front camera should still get
+        // one rather than an OverconstrainedError. Higher capture resolution helps
+        // the detector resolve small, distant objects.
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       })
@@ -208,10 +201,11 @@ export default function VisionCapture({ onSessionEnd }) {
     return stopCamera
   }, [startCamera, stopCamera])
 
-  // --- Detector (lazy, dynamic import — keeps TF out of the entry bundle) -----
-  // IDENTICAL rationale to RobotCapture: this dynamic import() is the ONLY reason
-  // TensorFlow lands in its own async chunk instead of every visitor's first page
-  // load. Do not hoist it to a static import.
+  // --- Detector (lazy, pluggable — see lib/visionDetector.js) -----------------
+  // The detector module does all the dynamic import()ing of TensorFlow, so TF
+  // stays in its own lazy chunk and never touches the public bundle. We just ask
+  // it to load whatever the settings configured — a trained model if a lead set
+  // one, the generic model otherwise (and it falls back to generic on any error).
   useEffect(() => {
     let cancelled = false
     let settled = false
@@ -224,17 +218,25 @@ export default function VisionCapture({ onSessionEnd }) {
 
     ;(async () => {
       try {
-        const [tf, cocoSsd] = await Promise.all([
-          import('@tensorflow/tfjs'),
-          import('@tensorflow-models/coco-ssd'),
-        ])
-        await tf.ready()
-        const net = await cocoSsd.load({ base: 'lite_mobilenet_v2' })
+        const { data: cfg } = await visionModelConfig()
+        const modelConfig = cfg?.vision_model_url
+          ? {
+              url: cfg.vision_model_url,
+              name: cfg.vision_model_name,
+              labels: cfg.vision_model_labels,
+              size: cfg.vision_model_size,
+            }
+          : null
+        const det = await loadDetector(modelConfig)
         if (cancelled) {
-          net.dispose?.()
+          det.dispose?.()
           return
         }
-        detectorRef.current = net
+        detectorRef.current = det
+        setDetectorMeta({ id: det.id, name: det.name, note: det.note, generic: det.generic, labels: det.labels })
+        // A new model has different classes, so reset the focus to a safe default.
+        focusRef.current = 'all'
+        setConfig((c) => ({ ...c, focus: 'all' }))
         settled = true
         setModel('ready')
       } catch (err) {
@@ -272,8 +274,6 @@ export default function VisionCapture({ onSessionEnd }) {
     for (const p of preds) {
       const hit = focus === 'all' || p.class === focus
       const [x, y, w, h] = p.bbox
-      // Focused boxes are solid accent; everything else is a faint hint, so the
-      // operator sees what the count is actually counting.
       ctx.strokeStyle = hit ? 'rgba(126, 224, 168, 0.95)' : 'rgba(180, 200, 220, 0.35)'
       ctx.strokeRect(x, y, w, h)
       if (!hit) continue
@@ -288,8 +288,8 @@ export default function VisionCapture({ onSessionEnd }) {
   }, [])
 
   // --- Sending ---------------------------------------------------------------
-  // Declared before the loop that calls it. Depends on nothing that changes, so
-  // its identity is stable and the loop can close over it safely.
+  // Declared before the loop that calls it; stable identity so the loop can close
+  // over it safely.
   const flush = useCallback(async (final) => {
     const sessionId = sessionRef.current
     const batch = bufferRef.current
@@ -300,8 +300,7 @@ export default function VisionCapture({ onSessionEnd }) {
     if (!aliveRef.current && !final) return
     if (sendErr) {
       // Put the batch back at the FRONT and cap the buffer — a dead network must
-      // not silently eat the stream, but it also must not OOM the phone. Oldest
-      // rows lose first: a stale count matters least.
+      // not silently eat the stream, but it also must not OOM the phone.
       bufferRef.current = batch.concat(bufferRef.current).slice(-MAX_BUFFER_ROWS)
       setNetWarn('Saving is behind — holding observations until the network returns.')
     } else {
@@ -315,10 +314,11 @@ export default function VisionCapture({ onSessionEnd }) {
     const video = videoRef.current
     const det = detectorRef.current
     // No detector yet (still loading) or no frame yet: skip this tick silently.
-    // The loop keeps ticking so detection begins the instant the model is ready.
     if (!video || !video.videoWidth || !det) return
 
-    const preds = await det.detect(video, MAX_DETECTIONS, MIN_SCORE)
+    // The detector returns a unified [{ class, score, bbox:[x,y,w,h] }] in source
+    // pixels, whichever model is behind it.
+    const preds = await det.detect(video)
     const focus = focusRef.current
     drawOverlay(preds, video, focus)
 
@@ -327,8 +327,8 @@ export default function VisionCapture({ onSessionEnd }) {
     framesRef.current += 1
 
     // Store the most confident boxes as evidence + training data. `hit` marks
-    // which ones the focus counted, so a later pass can re-derive the count under
-    // a different focus without re-running the model.
+    // which the focus counted, so a later pass can re-derive the count under a
+    // different focus without re-running the model.
     const boxes = [...preds]
       .sort((a, b) => b.score - a.score)
       .slice(0, STORE_BOXES)
@@ -364,7 +364,7 @@ export default function VisionCapture({ onSessionEnd }) {
     try {
       wakeLockRef.current = (await navigator.wakeLock?.request('screen')) ?? null
     } catch {
-      wakeLockRef.current = null // unsupported or denied — the capture still runs
+      wakeLockRef.current = null
     }
   }, [])
 
@@ -373,8 +373,6 @@ export default function VisionCapture({ onSessionEnd }) {
     wakeLockRef.current = null
   }, [])
 
-  // A screen wake lock is dropped whenever the tab is hidden; re-acquire it when
-  // the operator brings the tab back while a capture is running.
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible' && loopRef.current) acquireWakeLock()
@@ -401,6 +399,10 @@ export default function VisionCapture({ onSessionEnd }) {
       setError('Your session expired. Sign in again before starting a capture.')
       return
     }
+    if (!detectorRef.current || !detectorMeta) {
+      setError('The detection model is still loading. Give it a moment.')
+      return
+    }
     const eventKey = config.eventKey.trim().toLowerCase()
     if (eventKey && !looksLikeEventKey(eventKey)) {
       setError('That event key does not look right (expected something like 2026casd). Clear it to run without an event.')
@@ -411,12 +413,13 @@ export default function VisionCapture({ onSessionEnd }) {
     setNetWarn(null)
     setPhase('starting')
 
+    // The session is attributed to the model that will actually make its numbers.
     const { data, error: startErr } = await startVisionSession({
       eventKey: eventKey || null,
       matchKey: config.matchKey.trim() || null,
       deviceLabel: config.deviceLabel.trim() || null,
-      model: MODEL_ID,
-      modelNote: MODEL_NOTE,
+      model: detectorMeta.id,
+      modelNote: detectorMeta.note,
       userId: user.id,
     })
     if (!aliveRef.current) return
@@ -440,10 +443,8 @@ export default function VisionCapture({ onSessionEnd }) {
     flushTimerRef.current = setInterval(() => flush(false), FLUSH_INTERVAL_MS)
     statsTimerRef.current = setInterval(updateStats, 500)
     setPhase('live')
-  }, [user, config, acquireWakeLock, runLoop, flush, updateStats])
+  }, [user, detectorMeta, config, acquireWakeLock, runLoop, flush, updateStats])
 
-  // Tear the loop down and close the session. Shared by the Stop button and by
-  // unmount, so it must be safe to call when nothing is running.
   const teardown = useCallback(
     async (announce) => {
       loopRef.current = false
@@ -455,8 +456,7 @@ export default function VisionCapture({ onSessionEnd }) {
       statsTimerRef.current = null
 
       const sessionId = sessionRef.current
-      // Final flush BEFORE closing the session, so the last few seconds are not
-      // lost. final=true bypasses the alive guard inside flush.
+      // Final flush BEFORE closing the session, so the last seconds are not lost.
       await flush(true)
       if (sessionId) await endVisionSession(sessionId, framesRef.current)
       sessionRef.current = null
@@ -478,14 +478,10 @@ export default function VisionCapture({ onSessionEnd }) {
     await teardown(true)
   }, [teardown])
 
-  // On unmount: end any live session so it does not dangle open forever. No
-  // setState here — the component is gone.
   useEffect(() => {
     return () => {
       if (loopRef.current || sessionRef.current) teardown(false)
     }
-    // teardown is stable enough for this guard; re-running on its identity would
-    // tear down a live capture on every render, which is the opposite of intent.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -498,18 +494,29 @@ export default function VisionCapture({ onSessionEnd }) {
 
   const live = phase === 'live' || phase === 'stopping'
   const cameraLive = camera.status === 'live'
-  const focusOption = FOCUS_OPTIONS.find((f) => f.id === config.focus) ?? FOCUS_OPTIONS[0]
+  const canStart = cameraLive && model === 'ready' && phase === 'config'
+  const focusOptions = focusOptionsFor(detectorMeta)
+  const focusOption = focusOptions.find((f) => f.id === config.focus) ?? focusOptions[0]
+  const isCustom = detectorMeta && !detectorMeta.generic
 
   return (
     <div className={styles.capture}>
       <p className={styles.honest}>
         <Icon name="cpu" size={16} />
-        <span>
-          <strong>On-device pipeline.</strong> A general detector runs on this phone — video never
-          leaves it, only counts and boxes are saved. It counts everyday objects, <em>not</em> game
-          pieces or robots yet; this is the data pipeline (and training-data collector) for a future
-          FRC-trained model. Pick a focus class below for a meaningful stand-in today.
-        </span>
+        {isCustom ? (
+          <span>
+            <strong>On-device model.</strong> Running <strong>{detectorMeta.name}</strong> locally on
+            this phone — video never leaves the device, only detections are saved. The count reflects
+            this model's own classes; pick one to focus on below.
+          </span>
+        ) : (
+          <span>
+            <strong>On-device pipeline.</strong> A general detector runs on this phone — video never
+            leaves it, only counts and boxes are saved. It counts everyday objects, <em>not</em> game
+            pieces or robots yet. A lead can load a trained FRC model in the Model section above; until
+            then, pick a focus class below for a meaningful stand-in.
+          </span>
+        )}
       </p>
 
       <div className={styles.stage}>
@@ -538,7 +545,6 @@ export default function VisionCapture({ onSessionEnd }) {
           </div>
         )}
 
-        {/* Live count, over the video, big enough to read across a pit. */}
         {live && cameraLive && (
           <div className={styles.hud} aria-hidden="true">
             <span className={styles.hudDot} />
@@ -550,23 +556,25 @@ export default function VisionCapture({ onSessionEnd }) {
         )}
       </div>
 
-      {/* Model status — honest about whether the smart part is actually running. */}
       <p
         className={`${styles.modelChip} ${
           model === 'ready' ? styles.modelReady : model === 'unavailable' ? styles.modelOff : ''
         }`}
       >
         <Icon name={model === 'ready' ? 'check' : model === 'unavailable' ? 'alert' : 'cpu'} size={14} />
-        {model === 'loading' && 'Loading the on-device model…'}
-        {model === 'ready' && `Model ready · ${MODEL_ID}`}
+        {model === 'loading' && 'Loading the detection model…'}
+        {model === 'ready' &&
+          detectorMeta &&
+          `${detectorMeta.generic ? 'Generic model' : 'Trained model'} · ${detectorMeta.name}`}
         {model === 'unavailable' &&
-          'On-device model unavailable on this device/connection — capture will record frames with a count of 0 until it loads.'}
+          'Detection model unavailable on this device/connection — a trained-model URL may be unreachable, or WebGL is blocked. The built-in model is the safe fallback.'}
       </p>
 
       {live ? (
         <LivePanel
           stats={stats}
           focus={config.focus}
+          focusOptions={focusOptions}
           onFocus={setFocus}
           netWarn={netWarn}
           onStop={stop}
@@ -576,9 +584,11 @@ export default function VisionCapture({ onSessionEnd }) {
         <ConfigPanel
           config={config}
           setConfig={setConfig}
+          focusOptions={focusOptions}
           onFocus={setFocus}
-          canStart={cameraLive && phase === 'config'}
+          canStart={canStart}
           starting={phase === 'starting'}
+          modelLoading={model === 'loading'}
           onStart={start}
           error={error}
         />
@@ -589,7 +599,7 @@ export default function VisionCapture({ onSessionEnd }) {
 
 // --- Config (pre-capture) ------------------------------------------------------
 
-function ConfigPanel({ config, setConfig, onFocus, canStart, starting, onStart, error }) {
+function ConfigPanel({ config, setConfig, focusOptions, onFocus, canStart, starting, modelLoading, onStart, error }) {
   const set = (k) => (e) => setConfig((c) => ({ ...c, [k]: e.target.value }))
   return (
     <div className={styles.config}>
@@ -635,7 +645,7 @@ function ConfigPanel({ config, setConfig, onFocus, canStart, starting, onStart, 
       <fieldset className={styles.focusSet}>
         <legend className={styles.fieldLabel}>Count</legend>
         <div className={styles.focusGrid}>
-          {FOCUS_OPTIONS.map((f) => (
+          {focusOptions.map((f) => (
             <button
               key={f.id}
               type="button"
@@ -673,7 +683,9 @@ function ConfigPanel({ config, setConfig, onFocus, canStart, starting, onStart, 
         )}
       </button>
       {!canStart && !starting && (
-        <p className={styles.startWait}>Waiting for the camera before capture can start.</p>
+        <p className={styles.startWait}>
+          {modelLoading ? 'Waiting for the model to load…' : 'Waiting for the camera before capture can start.'}
+        </p>
       )}
     </div>
   )
@@ -681,7 +693,7 @@ function ConfigPanel({ config, setConfig, onFocus, canStart, starting, onStart, 
 
 // --- Live panel ----------------------------------------------------------------
 
-function LivePanel({ stats, focus, onFocus, netWarn, onStop, stopping }) {
+function LivePanel({ stats, focus, focusOptions, onFocus, netWarn, onStop, stopping }) {
   const secs = Math.floor(stats.elapsedMs / 1000)
   const clock = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
   const fps = secs > 0 ? (stats.frames / secs).toFixed(1) : '0.0'
@@ -698,7 +710,7 @@ function LivePanel({ stats, focus, onFocus, netWarn, onStop, stopping }) {
       {/* Focus is switchable mid-capture — the model runs the same, only what the
           count counts changes, and every stored frame keeps all its boxes. */}
       <div className={styles.focusRow}>
-        {FOCUS_OPTIONS.map((f) => (
+        {focusOptions.map((f) => (
           <button
             key={f.id}
             type="button"

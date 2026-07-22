@@ -55,6 +55,19 @@
   font-size: var(--fs-small);
   color: var(--text-muted);
 }
+/* A small, personal, motivating line — your own contribution, sitting under the
+   greeting. The number takes the cyan accent the header's corner wash already
+   uses, so it reads as "yours" without a second colour. */
+.heroContrib {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.heroContrib strong {
+  font-weight: 600;
+  color: var(--accent-data);
+  font-variant-numeric: tabular-nums;
+}
 
 .heroMeta {
   display: flex;
@@ -116,7 +129,7 @@
    so a headline number and a detail tile read as one family. */
 .figures {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-4);
 }
 .figure {
@@ -157,6 +170,206 @@
   color: var(--text-primary);
   /* Keeps the row from reflowing as a counting value changes width. */
   font-variant-numeric: tabular-nums;
+}
+
+/* --- Active event + coverage progress ----------------------------------- */
+/* Sits directly under the card title: the event key that scopes every number
+   in this block, and a real bar for how much of the field has been seen. */
+.coverage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+.coverageHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.coverageLabel {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.coverageEvent {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--accent-data);
+  overflow-wrap: anywhere;
+}
+/* A sunken track with a cyan fill whose width is the coverage percentage. The
+   fill eases when the number changes, but only where motion is welcome — the
+   reduced-motion block at the foot of this file drops the transition. */
+.progress {
+  height: 10px;
+  width: 100%;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: var(--accent-data);
+  transition: width var(--dur-panel) var(--ease-out);
+}
+.coverageMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.coverageMeta strong {
+  font-weight: 600;
+  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+.coveragePct {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--accent-data);
+  font-variant-numeric: tabular-nums;
+}
+.coverageHint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+/* No event selected: a calm, tappable prompt rather than a wall of dashes. */
+.noEvent {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  text-align: left;
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-hairline);
+  border-radius: var(--r-md);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.noEvent span {
+  flex: 1;
+  min-width: 0;
+}
+.noEvent svg {
+  color: var(--text-muted);
+  flex: none;
+}
+.noEvent:active {
+  transform: scale(0.99);
+}
+.noEvent:focus-visible {
+  border-color: var(--accent-data);
+  color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .noEvent:hover {
+    border-color: var(--accent-data);
+    color: var(--text-primary);
+  }
+}
+
+/* --- Top-teams leaderboard ---------------------------------------------- */
+/* Separated from the figures by a hairline, the same way the sparkline is —
+   one more readout in the same instrument, not a new panel. */
+.board {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-hairline);
+}
+.boardHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+.boardTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.boardBy {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.boardEmpty {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  padding: var(--sp-2) 0;
+}
+.boardList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+/* rank | team (+ match count) | score. min-width:0 on the middle column lets a
+   long team line shrink instead of shoving the score off the card at 360px; the
+   match count drops below the number rather than widening the row. */
+.boardRow {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.boardRow:last-child {
+  border-bottom: none;
+}
+.boardRank {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.boardTeam {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.boardNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.boardMatches {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.boardScore {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* --- Activity sparkline ------------------------------------------------- */
@@ -232,13 +445,29 @@
   .heroMeta {
     align-items: flex-start;
   }
-  /* Below three-up the hairline dividers read as stray indents, so drop them
-     and let the grid gap do the separating. */
+  /* At this width the hairline divider between the two figures reads as a stray
+     indent, so drop it and let the grid gap do the separating. */
   .figures {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .figure + .figure {
     padding-left: 0;
     border-left: none;
+  }
+}
+
+/* --- Reduced motion ----------------------------------------------------- */
+/* The two transitions this screen adds — the coverage bar easing to its width,
+   and the no-event prompt's press — are the only motion here. Both go; the
+   colour/border feedback on the prompt stays, because that still communicates. */
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+  .noEvent {
+    transition-property: color, border-color;
+  }
+  .noEvent:active {
+    transform: none;
   }
 }
