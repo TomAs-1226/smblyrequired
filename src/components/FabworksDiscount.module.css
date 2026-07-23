@@ -1,0 +1,170 @@
+/* =============================================================================
+   FabworksDiscount — the title sponsor's 5% code, made obvious on the landing
+   page. Gold-forward (sponsor prestige, scarce elsewhere), with the code as the
+   loudest element. Tokens only; matches the site's telemetry identity.
+   ============================================================================= */
+
+.band {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  padding: clamp(28px, 4vw, 52px);
+  background: var(--surface-raised);
+  border: 1px solid rgba(245, 184, 46, 0.3);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+}
+/* Gold wash anchored to a corner — the prestige signal, kept behind content. */
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(90% 130% at 92% 0%, rgba(245, 184, 46, 0.16), transparent 60%);
+  pointer-events: none;
+}
+
+.copyCol {
+  min-width: 0;
+}
+.heading {
+  font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+  line-height: 1.05;
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+.gold {
+  color: var(--accent-gold);
+}
+/* The code, called out even inside the sentence. */
+.codeInline {
+  font-family: var(--font-mono);
+  color: var(--accent-data);
+  white-space: nowrap;
+}
+.body {
+  color: var(--text-body);
+  max-width: 52ch;
+}
+.body strong {
+  color: var(--text-primary);
+}
+
+/* --- The action column: the code chip + buttons --------------------------- */
+.actionCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* The single most important element here — a big, tap-to-copy code ticket with
+   a dashed "coupon" edge. */
+.codeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: var(--sp-4);
+  background: var(--bg-void);
+  border: 2px dashed var(--border-accent);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.codeBtn:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) and (pointer: fine) {
+  .codeBtn:hover {
+    border-color: var(--accent-data);
+  }
+}
+.codeLabel {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.codeVal {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: var(--accent-data);
+  text-shadow: 0 0 22px var(--accent-data-glow);
+}
+.codeHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.shop {
+  justify-content: center;
+  width: 100%;
+}
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 6px;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.more svg {
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .more:hover {
+    color: var(--accent-data);
+  }
+  .more:hover svg {
+    transform: translateX(3px);
+  }
+}
+.more:focus-visible {
+  color: var(--accent-data);
+}
+
+/* --- Responsive ------------------------------------------------------------ */
+@media (max-width: 760px) {
+  .band {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codeBtn,
+  .more,
+  .more svg {
+    transition-property: color, border-color;
+  }
+  .codeBtn:active {
+    transform: none;
+  }
+}
