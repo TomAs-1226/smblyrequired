@@ -342,20 +342,14 @@ export default function Dashboard() {
     if (!aliveRef.current) return true
 
     const countsOk = counts.some((v) => v !== null)
-    const countsFull = counts.every((v) => v !== null)
     // "Core" = the reads the overview is fundamentally about. leaders/vision/mine
     // are best-effort extras that degrade to empty and never drive staleness or
-    // the retry decision, matching the loader's existing hierarchy.
+    // the retry decision, matching the loader's existing hierarchy. coreOk is
+    // true if ANY core read landed, so !coreOk means the whole refetch came back
+    // empty-handed — the honest "we are not current" (offline / reconnecting)
+    // state, as opposed to one secondary widget quietly missing a single beat.
     const coreOk =
       health.ok || recent.ok || coverage.ok || activity.ok || spark.ok || countsOk
-    const anyCoreFail = !(
-      health.ok &&
-      recent.ok &&
-      coverage.ok &&
-      activity.ok &&
-      spark.ok &&
-      countsFull
-    )
 
     const everLoaded = loadedRef.current
     if (!everLoaded && !coreOk) {
@@ -378,8 +372,9 @@ export default function Dashboard() {
       loaded: true,
       error: null,
       // Stale only means something once there is prior data to be stale against;
-      // on the first populate it is always false.
-      stale: prev.loaded ? anyCoreFail : false,
+      // on the first populate it is always false. !coreOk = the refetch refreshed
+      // nothing, i.e. the data on screen is now a frozen last-good copy.
+      stale: prev.loaded ? !coreOk : false,
       // Only advance the clock when we actually got fresh core data. A refetch
       // that fully failed keeps the old stamp, so "updated Nm ago" keeps honestly
       // counting up instead of resetting to "0s".
