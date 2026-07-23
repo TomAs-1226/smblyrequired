@@ -91,6 +91,136 @@
   color: var(--text-muted);
 }
 
+/* --- Live status cluster ------------------------------------------------- */
+/* Sits at the top of the header's meta column: when the numbers last refreshed,
+   a manual refresh, and the offline-queue trust chip. Right-aligned to match the
+   identity/date beneath it, and allowed to wrap so it never crowds the greeting
+   on a narrow header. Static by default — the only motion is the refresh press
+   and the spinner while a manual refresh is in flight. */
+.liveBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* "updated Ns ago", in the mono data voice the rest of the header uses. A steady
+   dot — green while current, amber once the data on screen is a last-good copy
+   the latest refetch could not replace. It does not pulse: this line is glanced
+   at, not watched. */
+.updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.updatedDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(63, 207, 142, 0.5);
+}
+.updatedDotStale {
+  background: var(--accent-gold);
+  box-shadow: none;
+}
+
+/* A quiet icon-only control — the numbers are the point, not the button. Borrows
+   the rowAction affordance (cyan on hover/focus, a small press) at a smaller
+   size so it tucks into the header without competing with anything. */
+.refreshBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-sm);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.refreshBtn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.refreshBtn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.refreshBtn:focus-visible {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+}
+@media (hover: hover) and (pointer: fine) {
+  .refreshBtn:hover:not(:disabled) {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+    background: var(--accent-data-wash);
+  }
+}
+
+/* --- Offline queue: "nothing is lost" ----------------------------------- */
+/* A calm, reassuring status for scouting saved on this device but not yet on the
+   server. Reads as a raised note, not an alarm: amber accent while waiting to
+   sync, muted while offline. Never red — the data is safe, and colouring a safe
+   state as an error is exactly how you teach people to distrust the indicator. */
+.saveState {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  box-shadow: var(--card-depth);
+}
+.saveStateDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.saveStateText {
+  flex: 1;
+  min-width: 0;
+}
+.saveStateText strong {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+/* Waiting to sync (online): amber, the same "unproven, not failed" note the
+   backup legs use for an unverified claim. */
+.saveStatePending {
+  border-color: rgba(245, 184, 46, 0.3);
+}
+.saveStatePending .saveStateDot {
+  background: var(--accent-gold);
+  box-shadow: 0 0 8px rgba(245, 184, 46, 0.4);
+}
+/* Offline: muted and sunken, so it reads as a resting state rather than an
+   attention-seeking one. */
+.saveStateOffline {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+.saveStateOffline .saveStateDot {
+  background: var(--text-muted);
+}
+
 /* --- Headline scouting card --------------------------------------------- */
 /* The overview's centre of gravity: the three numbers people open this screen
    for, and a 14-day pulse of activity beneath them. Raised like the header, so
@@ -470,6 +600,14 @@
     transition-property: color, border-color;
   }
   .noEvent:active {
+    transform: none;
+  }
+  /* The refresh control keeps its colour/border feedback — that still
+     communicates — but drops the press movement. */
+  .refreshBtn {
+    transition-property: color, border-color, background-color;
+  }
+  .refreshBtn:active:not(:disabled) {
     transform: none;
   }
 }
