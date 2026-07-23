@@ -79,6 +79,13 @@ export default function Footer() {
                 </span>
               ))}
             </p>
+            {/* Site-wide link to the Fabworks discount page: a real (non-hash) URL
+                so crawlers follow it, keyword-rich anchor text to help that page
+                rank, and the code visible on every page of the site. */}
+            <a className={styles.dealLink} href="/fabworks-discount/">
+              Fabworks discount code <strong>FRC5805</strong> — 5% off
+              <Icon name="arrowRight" size={13} className={styles.dealArrow} />
+            </a>
           </div>
 
           {/* (2) Navigate */}

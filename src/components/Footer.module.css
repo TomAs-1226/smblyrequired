@@ -193,6 +193,36 @@
   letter-spacing: 0.02em;
   color: var(--accent-gold);
 }
+/* Site-wide Fabworks discount link — small, but present on every page. */
+.dealLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-body);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.dealLink strong {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-data);
+  margin: 0 2px;
+}
+.dealArrow {
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .dealLink:hover {
+    color: var(--text-primary);
+  }
+  .dealLink:hover .dealArrow {
+    transform: translateX(3px);
+  }
+}
+.dealLink:focus-visible {
+  color: var(--text-primary);
+}
 
 /* ---- Shared column heading --------------------------------------------- */
 .colTitle {
