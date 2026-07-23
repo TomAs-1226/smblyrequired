@@ -90,10 +90,9 @@ export const inKind = [
 ]
 
 // Current partners. type: 'company' | 'family'; level: 'title' | 'major' | 'family'.
-// fabworks & Truffles Clothing are our title sponsors (per our FIRST team record).
+// fabworks is our title sponsor (per our FIRST team record).
 export const currentSponsors = [
   { name: 'fabworks', type: 'company', level: 'title' },
-  { name: 'Truffles Clothing', type: 'company', level: 'title' },
   { name: 'Pacific Realway Consulting', type: 'company', level: 'major' },
   { name: 'The Yu Family', type: 'family', level: 'family' },
   { name: 'The Zhang Family', type: 'family', level: 'family' },
@@ -101,7 +100,7 @@ export const currentSponsors = [
 ]
 
 // Title sponsors get a "Presented by" credit in the hero/footer.
-export const titleSponsors = ['fabworks', 'Truffles Clothing']
+export const titleSponsors = ['fabworks']
 
 // How to become a sponsor (3 steps).
 export const sponsorSteps = [

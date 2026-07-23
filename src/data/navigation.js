@@ -3,6 +3,7 @@
 // Primary nav links (Sponsor is a separate gold CTA; Home is the brand/logo).
 export const navLinks = [
   { path: '/team', label: 'Team' },
+  { path: '/mentors', label: 'Mentors' },
   { path: '/robots', label: 'Robots' },
   { path: '/season', label: 'Season' },
   { path: '/blog', label: 'Blog' },

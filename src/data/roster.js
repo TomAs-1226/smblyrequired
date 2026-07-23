@@ -1,25 +1,30 @@
-// Team 5805 student roster (public roster, smhs.org). `captain` flags the lead.
-// Privacy note: these names are already published on the official school site.
+// Team 5805 student roster. `captain` flags the lead.
+//
+// PRIVACY: the public site shows FIRST NAMES ONLY. Last names (and parenthetical
+// legal/middle names) are deliberately kept out of this file entirely, so they
+// never ship in the public bundle — not just hidden from the render. These are
+// minors; a first name and a grade is all the marketing site needs. `id` gives a
+// stable React key without reusing a name, since first names can repeat.
 export const roster = [
-  { name: 'Ian Pilchen', grade: 'Senior', captain: true },
-  { name: 'Michael (Zhuowen) Wang', grade: 'Senior' },
-  { name: 'Jerry (Ziyi) Chai', grade: 'Senior' },
-  { name: 'Cyra Chung', grade: 'Senior' },
-  { name: 'Rey Freeman', grade: 'Junior' },
-  { name: 'Alexander Anast', grade: 'Junior' },
-  { name: 'Ethan (Siqi) Ding', grade: 'Junior' },
-  { name: 'Jack Forward', grade: 'Junior' },
-  { name: 'Noah Gama', grade: 'Junior' },
-  { name: 'Benjamin Grayce', grade: 'Junior' },
-  { name: 'Justus Lee', grade: 'Junior' },
-  { name: 'Tiger (Siyuan) Li', grade: 'Junior' },
-  { name: 'Richard Mejia', grade: 'Junior' },
-  { name: 'Jeffrey (Shangshi) Yin', grade: 'Junior' },
-  { name: 'Louis (Ruyi) Sheng', grade: 'Junior' },
-  { name: 'Eric Tudorica', grade: 'Junior' },
-  { name: 'Thomas (Baichen) Yu', grade: 'Junior' },
-  { name: 'Andrew Blair', grade: 'Sophomore' },
-  { name: 'Ethan Zhang', grade: 'Sophomore' },
+  { id: 1, name: 'Ian', grade: 'Senior', captain: true },
+  { id: 2, name: 'Michael', grade: 'Senior' },
+  { id: 3, name: 'Jerry', grade: 'Senior' },
+  { id: 4, name: 'Cyra', grade: 'Senior' },
+  { id: 5, name: 'Rey', grade: 'Junior' },
+  { id: 6, name: 'Alexander', grade: 'Junior' },
+  { id: 7, name: 'Ethan', grade: 'Junior' },
+  { id: 8, name: 'Jack', grade: 'Junior' },
+  { id: 9, name: 'Noah', grade: 'Junior' },
+  { id: 10, name: 'Benjamin', grade: 'Junior' },
+  { id: 11, name: 'Justus', grade: 'Junior' },
+  { id: 12, name: 'Tiger', grade: 'Junior' },
+  { id: 13, name: 'Richard', grade: 'Junior' },
+  { id: 14, name: 'Jeffrey', grade: 'Junior' },
+  { id: 15, name: 'Louis', grade: 'Junior' },
+  { id: 16, name: 'Eric', grade: 'Junior' },
+  { id: 17, name: 'Thomas', grade: 'Junior' },
+  { id: 18, name: 'Andrew', grade: 'Sophomore' },
+  { id: 19, name: 'Ethan', grade: 'Sophomore' },
 ]
 
 export const rosterCount = roster.length

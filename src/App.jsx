@@ -14,6 +14,7 @@ import MobileStickyCTA from './components/MobileStickyCTA'
 
 import HomePage from './pages/HomePage'
 import TeamPage from './pages/TeamPage'
+import MentorsPage from './pages/MentorsPage'
 import RobotsPage from './pages/RobotsPage'
 import SeasonPage from './pages/SeasonPage'
 import SponsorPage from './pages/SponsorPage'
@@ -35,6 +36,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 const ROUTES = {
   '/': HomePage,
   '/team': TeamPage,
+  '/mentors': MentorsPage,
   '/robots': RobotsPage,
   '/season': SeasonPage,
   '/sponsor': SponsorPage,

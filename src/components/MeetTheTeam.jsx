@@ -11,18 +11,18 @@ import styles from './MeetTheTeam.module.css'
 // Display order for grade groups (most senior first).
 const GRADE_ORDER = ['Senior', 'Junior', 'Sophomore', 'Freshman']
 
-// Two-letter initials from a name, ignoring any parenthetical legal/middle name
-// e.g. "Michael (Zhuowen) Wang" -> "MW", "Cyra Chung" -> "CC".
+// Avatar initials. The public roster is first-names-only, so a lone name gives
+// its first two letters ("Ian" -> "IA", "Cyra" -> "CY"); a two-word name (a
+// mentor) still gives first+last initials. Never reveals a student's last name.
 function initialsOf(name) {
   const words = name
     .replace(/\([^)]*\)/g, ' ')
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-  if (words.length === 0) return '5805'.slice(0, 2)
-  const first = words[0][0]
-  const last = words.length > 1 ? words[words.length - 1][0] : ''
-  return (first + last).toUpperCase()
+  if (words.length === 0) return '58'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
 }
 
 const captain = roster.find((p) => p.captain)
@@ -132,7 +132,7 @@ export default function MeetTheTeam() {
             </header>
             <Reveal className={styles.groupGrid} stagger={0.05} y={18}>
               {group.people.map((p) => (
-                <Person key={p.name} name={p.name} grade="" />
+                <Person key={p.id} name={p.name} grade="" />
               ))}
             </Reveal>
           </section>

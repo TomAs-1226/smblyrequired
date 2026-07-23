@@ -28,10 +28,11 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(20px, 3vw, 48px);
   padding: var(--sp-6) clamp(24px, 4vw, 56px);
-  background: var(--surface-1);
+  background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-top: 2px solid var(--border-accent);
   border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
 }
 .statCell {
   position: relative;
@@ -201,6 +202,9 @@
   border-radius: var(--r-md);
   color: var(--text-body);
   overflow: hidden;
+  /* A subtle lit top-edge + shadow at rest (kept solid-bg so the hover→surface-2
+     fade stays smooth); hover still lifts to the stronger elev-2 below. */
+  box-shadow: var(--card-depth);
   transition: transform var(--dur-ui) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
