@@ -12,7 +12,13 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --void:#050505; --ink:#f4f5f7; --dim:#8d8f96; --faint:#5a5d66;
-  --gold:#f0b323; --hair:rgba(255,255,255,.08); --hair-strong:rgba(255,255,255,.14);
+  /* Sampled from the crest in public/photos/logo.png — 21,243 blue pixels and
+     6,200 gold. The brand gold is an ANTIQUE gold, not the amber the site had
+     been using (#f0b323), and the blue is a deep royal rather than navy. */
+  --brand-blue:#144781; --brand-gold:#cbb87b;
+  --blue-lift:#2f74c8;          /* the crest blue opened up enough to read on black */
+  --gold:#d9c68a;               /* brand gold, a touch brighter for small UI text */
+  --hair:rgba(255,255,255,.08); --hair-strong:rgba(255,255,255,.14);
   --display:"Clash Display",sans-serif; --body:"Plus Jakarta Sans",sans-serif;
   --ease:cubic-bezier(.32,.72,0,1);
   --dof:16px;   /* depth of field, driven by scroll */
@@ -49,7 +55,10 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
 
 /* The robot owns its own column and never sits under the copy, so no scrim is
    needed — which is also why there is no stray tint anywhere on the page. */
-.col{position:absolute;top:0;right:0;width:var(--col);height:100%;pointer-events:auto}
+/* Full width: the robot is framed by the camera, not by a CSS column, so it can
+   begin dead centre under the wordmark and only then slide across. A fixed
+   column meant it was off-centre from the first frame and never moved. */
+.col{position:absolute;inset:0;pointer-events:auto}
 /* Focus pull is a filter on the canvas, not a backdrop-filter on a layer over
    it. A backdrop layer blurs whatever sits behind its own box, so wherever that
    box ended — the foot of the stage — there was a visible seam and a patch of
@@ -71,16 +80,30 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
 .titlecard{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;
   will-change:transform,opacity;pointer-events:none}
 .titlecard .pre{font-size:.74rem;font-weight:600;letter-spacing:.42em;text-transform:uppercase;
-  color:#b9bdc6;margin-bottom:.45rem;padding-left:.42em}
-.titlecard .num{font-family:var(--display);font-weight:700;font-size:min(26vw,21rem);line-height:.8;
-  letter-spacing:-.045em;background:linear-gradient(176deg,#fff 8%,#c7ccd4 48%,#6f747d 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 18px 50px rgba(0,0,0,.72))}
-.titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1rem,2vw,1.7rem);
-  color:#cfd3da;margin-top:.3rem}
+  color:var(--brand-gold);margin-bottom:.5rem;padding-left:.42em}
 
+/* The crest is a blue letterform with a gold outline. The wordmark follows the
+   same logic rather than inventing a third treatment: a blue body opened up
+   enough to hold against black, carrying a gold edge. Two stacked layers,
+   because HTML text has no paint-order — the back one draws the stroke, the
+   front one the fill, so the gold never cuts into the numerals. */
+.num{position:relative;display:block;font-family:var(--display);font-weight:700;
+  font-size:min(26vw,21rem);line-height:.82;letter-spacing:-.045em}
+.num span{display:block}
+.num .edge{-webkit-text-stroke:.09em var(--brand-gold);color:transparent;
+  filter:drop-shadow(0 20px 46px rgba(0,0,0,.8))}
+.num .fill{position:absolute;inset:0;
+  background:linear-gradient(174deg,#6fa8ea 4%,var(--blue-lift) 42%,var(--brand-blue) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1rem,2vw,1.7rem);
+  color:#e6e9ee;margin-top:.55rem;letter-spacing:.01em}
+
+/* The copy keeps to the half the robot has vacated. --copy is set from the
+   same scroll value that slides the robot, so the two can never close on each
+   other and the text never clips into the machine. */
 .panel{position:relative;z-index:6;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
-  padding-left:clamp(24px,6vw,96px);padding-right:calc(var(--col) + 2vw)}
+  padding-left:clamp(24px,6vw,96px);padding-right:calc(100% - var(--copy,46%));
+  opacity:var(--copy-in,1);transition:opacity .5s var(--ease)}
 .panel .box{width:100%;max-width:30rem;pointer-events:auto}
 .panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3.1vw,2.9rem);line-height:1.03;
   letter-spacing:-.03em;margin-bottom:16px}
@@ -112,7 +135,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
 @media(max-width:1024px){
   .stage{position:relative;height:62vh}
   .col{position:absolute;inset:0;width:100%}
-  .titlecard .num{font-size:min(30vw,10rem)}
+  .num{font-size:min(30vw,10rem)}
   .callout{display:none}
   .panel{min-height:auto;padding:56px clamp(20px,5vw,40px)}
   .panel .box{max-width:none}
@@ -137,7 +160,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
     <div class="col">
       <canvas id="stage"></canvas>
       <div id="overlay">
-        <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/></svg>
+        <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/><line id="l-core"/></svg>
         <div class="callout" id="c-drive"><div class="t">Drivetrain</div>
           <div class="d">Four independently steered swerve modules.</div></div>
         <div class="callout" id="c-shooter"><div class="t">Shooter</div>
@@ -146,11 +169,14 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
           <div class="d">Slapdown, extending 300&nbsp;mm past the frame.</div></div>
         <div class="callout" id="c-hood"><div class="t">Hood</div>
           <div class="d">Variable angle — flattens or arcs the shot.</div></div>
+        <div class="callout" id="c-core"><div class="t">SystemCore</div>
+          <div class="d">FIRST's new control system — this is the generation
+            that replaces the roboRIO.</div></div>
       </div>
     </div>
     <div class="titlecard" id="title">
       <span class="pre">FIRST Robotics Competition</span>
-      <span class="num">5805</span>
+      <span class="num"><span class="edge">5805</span><span class="fill">5805</span></span>
       <span class="post">SMbly&nbsp;Required</span>
     </div>
   </div>
@@ -274,6 +300,7 @@ const LAYERS=[
 ];
 const moving=[], anchors={}, spin=[];
 const smooth=t=>t*t*(3-2*t);
+const narrow=()=>matchMedia('(max-width:1024px)').matches;
 let ready=false;
 
 new GLTFLoader().load('/models/robot.glb',(gltf)=>{
@@ -300,6 +327,10 @@ new GLTFLoader().load('/models/robot.glb',(gltf)=>{
   if(g('assembly-shooter')) mark(g('assembly-shooter'),[-0.26,0.46,0],'shooter');
   if(g('intake'))           mark(g('intake'),[0.16,0.02,0],'intake');
   if(g('hood'))             mark(g('hood'),[-0.04,0.05,0],'hood');
+  /* The control system sits on the belly pan, inside assembly-floor — the bake
+     merges electronics into their parent assembly rather than naming them, so
+     this anchors to the pan itself rather than to a node called SystemCore. */
+  if(g('assembly-floor'))   mark(g('assembly-floor'),[-0.02,0.10,0.10],'core');
 
   ready=true; resize();
 },undefined,e=>console.error(e));
@@ -324,7 +355,7 @@ function readScroll(){const r=spine.getBoundingClientRect();
   target=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));}
 addEventListener('scroll',readScroll,{passive:true}); readScroll();
 
-const CO=['drive','shooter','intake','hood'].map(k=>({k,
+const CO=['drive','shooter','intake','hood','core'].map(k=>({k,
   el:document.getElementById('c-'+k),line:document.getElementById('l-'+k)}));
 const v=new THREE.Vector3();
 function layout(show){
@@ -338,7 +369,7 @@ function layout(show){
     el.classList.toggle('on',ok); line.style.opacity=ok?1:0;
     if(!ok)continue;
     const lw=el.offsetWidth||196, lh=el.offsetHeight||60;
-    const lx=Math.min(w-lw-20, Math.max(x+84, w*0.60));
+    const lx=Math.min(w-lw-20, Math.max(x+84, w*0.56));
     let ly=Math.max(28,Math.min(h-lh-28,y-lh/2));
     for(const t of taken) if(Math.abs(t-ly)<lh+14) ly=t+lh+14;
     ly=Math.max(28,Math.min(h-lh-28,ly)); taken.push(ly);
@@ -372,8 +403,23 @@ function frame(dt){
   if(!dragging){ spinUser+=spinVel; spinVel*=0.92; }
   rig.rotation.y = -0.55 + p*1.9 + spinUser + (reduced?0:performance.now()/120000);
 
+  /* The robot holds dead centre under the wordmark, then slides right as the
+     title clears and hands the left half to the copy. Translating the rig
+     rather than swinging the camera keeps the perspective square — a camera
+     panned off-axis skews a machine that should read as drawn. */
   const spread=smooth(e);
-  camera.position.set(0, 0.56 + spread*0.46, 2.45 + spread*2.05);
+  const dist = 2.45 + spread*2.05;
+
+  /* The offset is in metres but the copy's gap is in screen space, so it has to
+     scale with camera distance — otherwise the robot drifts back to centre
+     exactly when it pulls away for the teardown, which is when the copy is on
+     screen and has least room to give. */
+  const aside = narrow() ? 0 : smooth(Math.min(1,Math.max(0,(p-0.09)/0.13)));
+  rig.position.x = aside * 0.62 * (dist/2.45);
+  document.documentElement.style.setProperty('--copy', `${(46*aside).toFixed(1)}%`);
+  document.documentElement.style.setProperty('--copy-in', aside.toFixed(3));
+
+  camera.position.set(0, 0.56 + spread*0.46, dist);
   camera.lookAt(0, 0.04 + spread*0.46, 0);
 
   layout(e>0.5);
