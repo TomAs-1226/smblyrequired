@@ -78,7 +78,7 @@
   padding: var(--sp-4) var(--sp-4) var(--sp-5);
   /* graduated lift ascending bronze -> title */
   margin-top: calc((4 - var(--step)) * 14px);
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out);
 }
@@ -266,7 +266,7 @@
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   transition: border-color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+    background var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .plate:hover {

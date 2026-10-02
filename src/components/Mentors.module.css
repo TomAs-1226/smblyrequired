@@ -97,7 +97,7 @@
   border-radius: var(--r-md);
   box-shadow: var(--card-depth);
   transition: border-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-ui) var(--ease-out), box-shadow var(--dur-ui) var(--ease-out);
+    transform var(--spring-fast-dur) var(--spring-fast), box-shadow var(--dur-ui) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover {

@@ -69,7 +69,7 @@
   border-radius: var(--r-md);
   margin-bottom: var(--sp-3);
   box-shadow: var(--elev-1);
-  transition: transform var(--dur-ui) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast), box-shadow var(--dur-fast) var(--ease-out);
 }
 .logo {
   height: 46px;
@@ -145,7 +145,7 @@
 }
 .siteIcon {
   opacity: 0.7;
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .siteLink:hover {
@@ -210,7 +210,7 @@
   margin: 0 2px;
 }
 .dealArrow {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .dealLink:hover {
@@ -249,7 +249,7 @@
   font-size: 1.05rem;
   letter-spacing: 0.01em;
   color: var(--text-body);
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 .navLink::before {
   content: '';
@@ -261,7 +261,7 @@
   background: var(--accent-gold);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .navLink:hover {
@@ -287,7 +287,10 @@
 /* Touch has no hover to inherit from, so the press stands alone. */
 .navLink:active {
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* ---- (3) Connect -------------------------------------------------------- */
@@ -365,7 +368,7 @@
 }
 .socialIcon {
   opacity: 0.65;
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .social:hover {

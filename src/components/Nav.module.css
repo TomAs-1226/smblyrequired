@@ -78,7 +78,7 @@
   width: auto;
   flex: none;
   display: block;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 /* Gated: touch devices synthesise :hover on tap and then latch it, which left
    the crest permanently rotated after anyone tapped the logo. */
@@ -162,7 +162,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .link:hover {
@@ -362,7 +362,7 @@
   color: var(--text-primary);
   text-decoration: none;
   line-height: 1;
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 .overlayNum {
   font-size: 0.85rem;
@@ -386,7 +386,10 @@
 .overlayLink:active {
   color: var(--accent-data);
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 .overlayCta {

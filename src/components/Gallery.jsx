@@ -8,6 +8,7 @@ import SplitHeading from './SplitHeading'
 import Icon from './Icon'
 import { gallery, galleryNote, galleryPlaceholders } from '../data/gallery'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
+import { useDragGesture } from '../hooks/useDragGesture'
 import styles from './Gallery.module.css'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
@@ -43,6 +44,7 @@ export default function Gallery() {
   const [boxIndex, setBoxIndex] = useState(null)
   const isOpen = boxIndex !== null
   const overlayRef = useRef(null)
+  const dialogRef = useRef(null)
   const closeBtnRef = useRef(null)
   const lastFocused = useRef(null)
 
@@ -63,6 +65,18 @@ export default function Gallery() {
   )
 
   const current = isOpen ? visible[boxIndex] : null
+
+  // Drag the photo itself: down to dismiss, sideways to change photo. The
+  // buttons and Escape still do both, so this is an addition to the controls
+  // rather than a replacement — a pointer-only gesture must never be the only
+  // way to reach something.
+  useDragGesture({
+    ref: dialogRef,
+    enabled: isOpen,
+    onDismiss: closeBox,
+    onStep: step,
+    horizontal: visible.length > 1,
+  })
 
   // Lock body scroll + restore focus + key handlers while open
   useEffect(() => {
@@ -295,7 +309,11 @@ export default function Gallery() {
             <Icon name="arrowRight" size={26} />
           </button>
 
-          <figure className={styles.lbDialog} onClick={(e) => e.stopPropagation()}>
+          <figure
+            ref={dialogRef}
+            className={styles.lbDialog}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className={styles.lbStage}>
               <img
                 key={current.src}
@@ -303,6 +321,7 @@ export default function Gallery() {
                 src={current.src}
                 alt={current.caption}
                 decoding="async"
+                draggable="false"
               />
             </div>
             <figcaption className={styles.lbCap}>

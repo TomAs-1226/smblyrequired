@@ -60,7 +60,7 @@
 }
 .sourceIcon {
   flex: none;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .sourceLink:hover {
@@ -270,7 +270,7 @@
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-pill);
-  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .match:hover {

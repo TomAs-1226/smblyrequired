@@ -487,7 +487,7 @@
   }
 }
 .watchIcon {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .watch:hover .watchIcon {

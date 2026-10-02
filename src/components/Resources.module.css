@@ -39,7 +39,7 @@
   color: var(--text-body);
   text-decoration: none;
   overflow: hidden;
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 }
@@ -56,7 +56,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
@@ -80,7 +80,10 @@
 }
 .card:active {
   transform: scale(0.98);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 .cardIcon {
@@ -95,7 +98,7 @@
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
   flex: none;
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover .cardIcon {
@@ -138,7 +141,7 @@
 }
 .cardCta :global(.arrow) {
   flex: none;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover .cardCta {

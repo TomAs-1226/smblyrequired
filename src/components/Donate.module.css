@@ -115,7 +115,7 @@
   border: 1px solid var(--border-hairline);
   border-top: 1px solid var(--border-strong);
   border-radius: var(--r-md);
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 /* Cyan progress rule on hover — the house tell. Wiped in with scaleX rather
@@ -130,7 +130,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
@@ -155,7 +155,7 @@
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
   flex: none;
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover .cardIcon {
@@ -191,7 +191,7 @@
   transition: transform var(--dur-press) var(--ease-out);
 }
 .cardLink .arrow {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .cardLink:hover .arrow {
@@ -480,7 +480,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .step:hover::before {

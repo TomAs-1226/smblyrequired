@@ -8,7 +8,7 @@
   background: linear-gradient(0deg, var(--bg-void) 35%, transparent);
   display: flex;
   transform: translateY(120%);
-  transition: transform var(--dur-overlay) var(--ease-out);
+  transition: transform var(--spring-drawer-dur) var(--spring-drawer);
   pointer-events: none;
 }
 .dock .btn {

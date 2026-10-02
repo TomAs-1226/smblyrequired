@@ -142,7 +142,7 @@
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .linkArrow {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .featureLink:hover {
@@ -205,7 +205,7 @@
   /* A subtle lit top-edge + shadow at rest (kept solid-bg so the hover→surface-2
      fade stays smooth); hover still lifts to the stronger elev-2 below. */
   box-shadow: var(--card-depth);
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
 }
@@ -221,7 +221,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 /* cyan corner tick (bottom-right), revealed on hover */
 .card::after {
@@ -235,7 +235,7 @@
   border-bottom: 1px solid var(--accent-data);
   opacity: 0;
   transform: translate(4px, 4px);
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
@@ -267,7 +267,10 @@
 }
 .card:active {
   transform: scale(0.98);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* Lead tile gets a faint blueprint wash + accent left rule for hierarchy */
@@ -290,7 +293,7 @@
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid var(--border-accent);
   flex: none;
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover .cardIcon {
@@ -348,7 +351,7 @@
   border: 1px solid var(--border-hairline);
   transition: color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
-    transform var(--dur-ui) var(--ease-out);
+    transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .card:hover .cardGo {

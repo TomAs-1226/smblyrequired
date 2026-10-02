@@ -49,7 +49,7 @@
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
-    transform var(--dur-ui) var(--ease-out);
+    transform var(--spring-fast-dur) var(--spring-fast);
 }
 .chipDot {
   width: 6px;
@@ -82,7 +82,10 @@
 }
 .chip:active {
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 .chipActive {
   color: var(--text-on-cyan);
@@ -128,7 +131,7 @@
   isolation: isolate;
   box-shadow: var(--elev-1);
   transition: border-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 
 /* Size spans honored from data: 'wide' = 2 cols, 'tall' = 2 rows */
@@ -182,7 +185,7 @@
   height: 100%;
   object-fit: cover;
   filter: saturate(0.95) contrast(1.04) brightness(0.98);
-  transition: transform var(--dur-ui) var(--ease-out), filter var(--dur-fast) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast), filter var(--dur-fast) var(--ease-out);
 }
 
 /* Navy scrim — blends the photo's hard edges into the panel and grounds the
@@ -219,7 +222,7 @@
   backdrop-filter: blur(4px);
   opacity: 0;
   transform: translateY(-4px) scale(0.92);
-  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 
 /* --- Caption: data-tag + text, slides up on hover/focus --- */
@@ -233,7 +236,7 @@
   padding: clamp(14px, 1.4vw, 20px);
   transform: translateY(14px);
   opacity: 0;
-  transition: transform var(--dur-ui) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast), opacity var(--dur-fast) var(--ease-out);
 }
 .capTag {
   /* mono data-tag — render on the dark scrim, gold dot stays as-is */
@@ -315,7 +318,7 @@
   box-shadow: var(--glow-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
   pointer-events: none;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -421,6 +424,21 @@
   width: min(1100px, 100%);
   max-height: 100%;
   margin: 0;
+  /* The photo is draggable: down dismisses, sideways changes photo.
+     `touch-action: none` is what makes that possible on a touchscreen — without
+     it the browser claims the gesture for scrolling and our pointermove stream
+     stops the moment it decides, mid-drag. Body scroll is already locked while
+     the lightbox is open, so nothing is lost by taking it. */
+  touch-action: none;
+  cursor: grab;
+}
+
+/* Only while a pointer can actually grab it. On touch there is no cursor, and
+   on a keyboard the buttons are the affordance. */
+@media (hover: hover) and (pointer: fine) {
+  .lbDialog:active {
+    cursor: grabbing;
+  }
 }
 
 /* The image sits in a hairline-framed well on a sunken spotlight stage so it
@@ -443,6 +461,10 @@
 
 .lbImg {
   display: block;
+  /* A drag that starts on the image must not begin a text/image selection —
+     that hands the pointer to the browser and the gesture dies on the spot. */
+  user-select: none;
+  -webkit-user-drag: none;
   max-width: 100%;
   max-height: calc(100vh - 230px);
   width: auto;
@@ -506,7 +528,7 @@
    the press scale — otherwise :active would cancel the rotation mid-gesture.
    The X is 90°-symmetric, so the resting result is identical either way. */
 .lbClose svg {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .lbClose:hover {
@@ -544,7 +566,7 @@
   border-radius: 50%;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast),
     opacity var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -590,7 +612,10 @@
    slide for the duration of the press is imperceptible next to the scale. */
 .lbNav:active {
   transform: scale(0.92);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* =========================================================================

@@ -21,7 +21,7 @@
 /* Point the arrow icon left for "back" */
 .backArrow {
   transform: scaleX(-1);
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .back:hover {
@@ -136,7 +136,7 @@
   border-radius: var(--r-md);
   color: inherit;
   text-decoration: none;
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .navNext {
@@ -161,7 +161,10 @@
 }
 .navCard:active {
   transform: scale(0.98);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 .navDir {
   display: inline-flex;
@@ -177,11 +180,11 @@
 .navArrowPrev {
   transform: scaleX(-1);
   color: var(--accent-data);
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 .navArrowNext {
   color: var(--accent-data);
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .navCard:hover .navArrowPrev {

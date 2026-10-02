@@ -182,7 +182,7 @@
 .photo,
 .shadow,
 .spot {
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     filter var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -299,7 +299,7 @@
   display: inline-block;
   color: inherit;
   text-decoration: none;
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .nameLink:hover {
@@ -311,7 +311,10 @@
 }
 .nameLink:active {
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* "Full details →" affordance in each text column. */
@@ -328,11 +331,11 @@
   color: var(--accent-data);
   /* No `gap` transition: animating gap reflows the label + icon on every
      hover. The arrow's own translateX below produces the same read for free. */
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 .detailLink :global(.arrow) {
   flex: none;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .detailLink:hover {
@@ -350,7 +353,10 @@
 }
 .detailLink:active {
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* Pulsing cyan "Current robot" badge */

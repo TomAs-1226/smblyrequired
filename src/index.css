@@ -128,6 +128,48 @@
   --dur-ambient: 800ms; /* scroll reveals + marketing only — NOT interactive */
 
   --stagger-step: 45ms; /* between list items; short enough to not feel slow */
+
+  /* --- Springs --------------------------------------------------------
+     Real spring curves, sampled to CSS `linear()` by the Detent engine and
+     accurate to within 0.002 of the physics. Each one is a sourced platform
+     constant, not a hand-tuned guess — the id after it is the Detent preset.
+
+     WHEN TO USE A SPRING, AND WHEN NOT TO. A spring is for SPATIAL motion:
+     something moving, growing, or settling in place. Colour, opacity, border
+     and shadow stay on the bezier duration tokens above — a spring's tail is
+     invisible on a colour change and only makes it feel slow.
+
+     The "under 300ms" rule above still governs anything that happens on every
+     click. A spring's listed duration is its SETTLING time, not its perceived
+     one: --spring-pop reads as ~250ms even though it finishes at 510ms,
+     because the last third is a sub-pixel tail. Springs longer than
+     --spring-ui are therefore reserved for surfaces you drag or that cover
+     the page, where that tail is the whole point. :active stays on
+     --dur-press; a 232ms press does not feel instantaneous.
+
+     Pair each easing with its matching duration — they are one unit. */
+  --spring-fast: linear(0, 0.0059 1.3%, 0.0222 2.6%, 0.0511 4.1%, 0.091 5.7%, 0.1786 8.6%, 0.3944 15%, 0.4935 18.1%, 0.5888 21.4%, 0.6719 24.7%, 0.7405 27.9%, 0.7993 31.2%, 0.8485 34.6%, 0.8896 38.2%, 0.9257 42.4%, 0.9531 46.9%, 0.9737 52%, 0.9878 57.8%, 0.996 64.2%, 1.0003 72.1%, 1);
+  --spring-fast-dur: 232ms; /* m3-standard-fast-spatial — stiffness 1400, ratio 0.9 */
+
+  --spring-ui: linear(0, 0.0059 1.3%, 0.0222 2.6%, 0.0511 4.1%, 0.091 5.7%, 0.1786 8.6%, 0.3944 15%, 0.4935 18.1%, 0.5888 21.4%, 0.6719 24.7%, 0.7405 27.9%, 0.7993 31.2%, 0.8485 34.6%, 0.8896 38.2%, 0.9257 42.4%, 0.9531 46.9%, 0.9737 52%, 0.9878 57.8%, 0.996 64.2%, 1.0003 72.1%, 1);
+  --spring-ui-dur: 328ms; /* m3-standard-default-spatial — stiffness 700, ratio 0.9 */
+
+  /* The only one with overshoot. Bounce 0.15 is inside the <=0.3 ceiling for
+     UI; use it where something APPEARS, never where something merely moves. */
+  --spring-pop: linear(0, 0.0057 1.2%, 0.023 2.5%, 0.0521 3.9%, 0.0953 5.5%, 0.1362 6.8%, 0.1878 8.3%, 0.4129 14.4%, 0.5178 17.4%, 0.6153 20.5%, 0.7 23.6%, 0.7713 26.7%, 0.8298 29.8%, 0.8794 33.1%, 0.9186 36.5%, 0.9499 40.2%, 0.9738 44.3%, 0.9905 48.9%, 1.0008 54.2%, 1.0063 65.4%, 1);
+  --spring-pop-dur: 510ms; /* duration 0.35 / bounce 0.15 — our tuning, Apple .snappy shape */
+
+  --spring-drawer: linear(0, 0.0052 1.1%, 0.0193 2.2%, 0.045 3.5%, 0.0809 4.9%, 0.1585 7.4%, 0.3667 13.4%, 0.4649 16.4%, 0.559 19.6%, 0.6407 22.8%, 0.712 26.1%, 0.7726 29.5%, 0.823 33%, 0.8662 36.8%, 0.904 41.2%, 0.9337 46%, 0.9567 51.4%, 0.9739 57.7%, 0.9851 64.6%, 0.9926 73%, 1);
+  --spring-drawer-dur: 609ms; /* apple-wwdc18-drawer-settle — response 0.4, damping 1.0 */
+
+  /* Springing back after a drag goes past a limit. Overshoots ~9.5%. */
+  --spring-rubber: linear(0, 0.0022 0.6%, 0.0084 1.2%, 0.032 2.4%, 0.0714 3.7%, 0.1267 5.1%, 0.1821 6.3%, 0.2479 7.6%, 0.5324 12.8%, 0.6515 15.1%, 0.763 17.5%, 0.8547 19.8%, 0.8928 20.9%, 0.9302 22.1%, 0.9898 24.4%, 1.0357 26.8%, 1.0679 29.3%, 1.0825 31.1%, 1.0917 33.1%, 1.0948 35.1%, 1.0924 37.4%, 1.0793 41.2%, 1.0349 50%, 1.0162 54.4%, 1.0018 59.3%, 0.9936 64.5%, 0.9912 72.4%, 1);
+  --spring-rubber-dur: 531ms; /* apple-wwdc18-rubberband-release — response 0.3, damping 0.6 */
+
+  /* Scroll reveals only. No overshoot: a reveal carries no momentum, so a
+     bounce here would be decoration pretending to be physics. */
+  --spring-reveal: linear(0, 0.0052 1.1%, 0.0193 2.2%, 0.045 3.5%, 0.0809 4.9%, 0.1585 7.4%, 0.3667 13.4%, 0.4649 16.4%, 0.559 19.6%, 0.6407 22.8%, 0.712 26.1%, 0.7726 29.5%, 0.823 33%, 0.8662 36.8%, 0.904 41.2%, 0.9337 46%, 0.9567 51.4%, 0.9739 57.7%, 0.9851 64.6%, 0.9926 73%, 1);
+  --spring-reveal-dur: 761ms; /* apple-swiftui-smooth — duration 0.5, bounce 0 */
 }
 
 /* --- Reset --- */

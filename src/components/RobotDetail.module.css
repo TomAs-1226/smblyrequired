@@ -18,10 +18,10 @@
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: clamp(28px, 5vw, 56px);
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 .back span {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .back:hover {
@@ -39,7 +39,10 @@
 }
 .back:active {
   transform: scale(0.97);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 
 /* --- Hero layout: media + identity --- */
@@ -154,7 +157,7 @@
   filter: saturate(0.95) contrast(1.04) brightness(0.98)
     drop-shadow(0 26px 30px rgba(6, 19, 37, 0.55));
   transform-origin: center bottom;
-  transition: transform var(--dur-ui) var(--ease-out), filter var(--dur-fast) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast), filter var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .frame:hover .photo {
@@ -179,7 +182,7 @@
   background: radial-gradient(closest-side, rgba(6, 19, 37, 0.78), transparent 78%);
   filter: blur(8px);
   pointer-events: none;
-  transition: transform var(--dur-ui) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast), opacity var(--dur-fast) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .frame:hover .shadow {
@@ -422,7 +425,7 @@
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
   color: var(--text-body);
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 .pagerNext {
@@ -445,7 +448,10 @@
    so the card reads as pushed back into the page. */
 .pagerLink:active {
   transform: scale(0.98);
-  transition-duration: var(--dur-press);
+  /* Press beats the spring: pointer-down must register instantly, and a
+     232ms spring on the way IN reads as lag. Release still springs back,
+     because the base rule above owns that direction. */
+  transition: transform var(--dur-press) var(--ease-out);
 }
 .pagerDir {
   display: inline-flex;
@@ -461,7 +467,7 @@
 .pagerArrow,
 .pagerArrowBack {
   flex: none;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 .pagerArrowBack {
   transform: scaleX(-1);

@@ -62,7 +62,7 @@
   border: 1px solid var(--border-hairline);
   border-top: 1px solid var(--border-strong);
   border-radius: var(--r-md);
-  transition: transform var(--dur-ui) var(--ease-out),
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 /* Cyan top-rule wipe — the house hover signature. Sized to its full 52px and
@@ -77,7 +77,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .tile:hover {
@@ -112,7 +112,7 @@
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
   transition: background var(--dur-fast) var(--ease-out),
-    transform var(--dur-ui) var(--ease-out);
+    transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .tile:hover .tileIcon {

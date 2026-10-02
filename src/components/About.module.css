@@ -157,7 +157,7 @@
   background: var(--accent-data);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 .pillarIcon {
   display: inline-flex;
@@ -170,7 +170,7 @@
   background: rgba(56, 189, 248, 0.08);
   border: 1px solid var(--border-accent);
   margin-bottom: var(--sp-4);
-  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-ui) var(--ease-out);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .pillar:hover::before {

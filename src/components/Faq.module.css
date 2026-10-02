@@ -66,7 +66,7 @@
   box-shadow: var(--glow-data);
   transform: scaleY(0);
   transform-origin: top;
-  transition: transform var(--dur-panel) var(--ease-out);
+  transition: transform var(--spring-ui-dur) var(--spring-ui);
 }
 .itemOpen::before {
   transform: scaleY(1);
@@ -162,7 +162,7 @@
   color: var(--text-muted);
   border: 1px solid var(--border-strong);
   transform: rotate(180deg);
-  transition: transform var(--dur-panel) var(--ease-out),
+  transition: transform var(--spring-ui-dur) var(--spring-ui),
     color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out);
 }

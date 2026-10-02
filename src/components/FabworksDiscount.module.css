@@ -136,7 +136,7 @@
   transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .more svg {
-  transition: transform var(--dur-ui) var(--ease-out);
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
   .more:hover {
