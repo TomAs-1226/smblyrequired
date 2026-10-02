@@ -124,7 +124,7 @@ export default function Impact() {
         {/* ---- Header: eyebrow + dramatic heading + record note ---- */}
         <div className={styles.head}>
           <div className={styles.headLede}>
-            <Eyebrow num="05">Track record</Eyebrow>
+            <Eyebrow>Track record</Eyebrow>
             <SplitHeading as="h2" className={styles.heading}>
               Winning since rookie year.
             </SplitHeading>
@@ -175,7 +175,6 @@ export default function Impact() {
                       className={[
                         styles.row,
                         a.flagship && styles.rowFlagship,
-                        a.flagship && 'hud-frame',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -230,7 +229,7 @@ export default function Impact() {
       </Section>
 
       {/* ---- Full-bleed proof band: the real 2025 Ventura win ---- */}
-      <div className={`${styles.proof} hud-frame`}>
+      <div className={styles.proof}>
         <div className={styles.proofImgWrap}>
           <img
             ref={proof}

@@ -32,7 +32,7 @@ export default function Subteams() {
           {subteams.map((s, i) => (
             <article className={styles.tile} key={s.name}>
               <span className={styles.index} aria-hidden="true">
-                {String(i + 1).padStart(2, '0')}
+                {i + 1}
               </span>
               <span className={styles.tileIcon}>
                 <Icon name={s.icon} size={26} />

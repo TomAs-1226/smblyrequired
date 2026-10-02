@@ -119,7 +119,7 @@ function Row({ robot, index, total }) {
     >
       <div className={styles.mediaCol}>
         {image ? (
-          <figure className={`hud-frame ${styles.frame}`}>
+          <figure className={styles.frame}>
             {/* Staged well: spotlight + blueprint backdrop, subject grounded
                 with a soft reflection so it sits in space, never pasted. */}
             <div className={styles.stage}>
@@ -138,7 +138,7 @@ function Row({ robot, index, total }) {
             </div>
           </figure>
         ) : (
-          <figure className={`hud-frame ${styles.frame} ${styles.plateFrame}`}>
+          <figure className={`${styles.frame} ${styles.plateFrame}`}>
             <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
               <span className={styles.spot} />
               <span className={styles.grid} />
@@ -210,7 +210,7 @@ function Row({ robot, index, total }) {
         </a>
 
         <span className={styles.index} aria-hidden="true">
-          {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+          {index + 1} / {total}
         </span>
       </div>
     </article>

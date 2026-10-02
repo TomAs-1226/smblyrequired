@@ -163,7 +163,13 @@ export default function Nav() {
         <div className={`container ${styles.bar}`}>
           {/* Brand lockup — interlocked SM crest + typographic wordmark */}
           <a href="#/" className={styles.brand} onClick={close} aria-label={`${team.name} — home`}>
-            <img src="photos/logo-crest.png" alt="" className={styles.crest} width="34" height="34" />
+            <img
+              src="photos/logo-crest.png"
+              alt=""
+              className={styles.crest}
+              width="29"
+              height="34"
+            />
             <span className={styles.wordmark}>
               <span className={styles.brandKicker}>FRC {team.number}</span>
               <span className={styles.brandName}>{team.name}</span>
@@ -249,7 +255,7 @@ export default function Nav() {
             {navLinks.map((l, i) => (
               <li key={l.path} style={{ '--i': i }}>
                 <a href={`#${l.path}`} className={styles.overlayLink} onClick={close}>
-                  <span className={styles.overlayNum}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className={styles.overlayNum}>{i + 1}</span>
                   {l.label}
                 </a>
               </li>

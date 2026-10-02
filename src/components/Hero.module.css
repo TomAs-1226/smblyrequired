@@ -123,43 +123,6 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Floating game-piece accents (subtle, decorative) */
-.ball {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 34% 30%,
-    var(--accent-gold-hi),
-    var(--accent-gold) 58%,
-    #c98a10 100%
-  );
-  opacity: 0.5;
-  box-shadow: 0 0 18px rgba(245, 184, 46, 0.28);
-  will-change: transform;
-  pointer-events: none;
-}
-.ball1 {
-  width: 14px;
-  height: 14px;
-  top: 30%;
-  right: 16%;
-  opacity: 0.6;
-}
-.ball2 {
-  width: 9px;
-  height: 9px;
-  top: 58%;
-  right: 8%;
-  opacity: 0.4;
-}
-.ball3 {
-  width: 20px;
-  height: 20px;
-  top: 70%;
-  right: 30%;
-  opacity: 0.3;
-}
-
 /* ---- Copy --------------------------------------------------------------- */
 .inner {
   position: relative;
@@ -368,9 +331,6 @@
     flex: 1 1 auto;
   }
   .scrollCue {
-    display: none;
-  }
-  .ball3 {
     display: none;
   }
 }

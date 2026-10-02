@@ -196,7 +196,7 @@
   box-shadow: 0 0 12px rgba(245, 184, 46, 0.5);
 }
 
-/* Flagship rows: extra emphasis (hud-frame is added in JSX) */
+/* Flagship rows: extra emphasis */
 .rowFlagship {
   padding: clamp(22px, 3vw, 34px) clamp(20px, 2.5vw, 32px);
   padding-left: clamp(34px, 3.5vw, 48px);

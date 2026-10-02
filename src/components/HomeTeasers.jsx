@@ -90,7 +90,7 @@ export default function HomeTeasers() {
           --------------------------------------------------------------------- */}
       <Section rule={false} tight>
         <Reveal className={styles.featureWrap} y={36}>
-          <article className={`hud-frame ${styles.feature}`}>
+          <article className={styles.feature}>
             <div className={styles.featureMedia}>
               <img
                 ref={photo}
@@ -141,8 +141,8 @@ export default function HomeTeasers() {
         <div className={styles.exploreHead}>
           <Eyebrow>Explore the program</Eyebrow>
           <p className="lead">
-            Six ways into 5805 — from the students and the robots to the open-source
-            tools we build for the whole FIRST community.
+            {pageTeasers.length} ways into 5805 — from the students and the robots to the
+            open-source tools we build for the whole FIRST community.
           </p>
         </div>
 

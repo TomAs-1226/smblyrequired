@@ -57,7 +57,7 @@ export default function WhySponsor() {
       <div ref={ref} className={styles.grid}>
         {/* LEFT — cost as hero stat + investment copy */}
         <div className={styles.lede}>
-          <Eyebrow num="03">Why sponsor us</Eyebrow>
+          <Eyebrow>Why sponsor us</Eyebrow>
 
           <SplitHeading as="h2" className={styles.heading}>
             Competing costs <span className={styles.cost}>{seasonCost}</span> a year.

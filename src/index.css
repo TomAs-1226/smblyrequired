@@ -552,53 +552,31 @@ button {
 
 /* --- Field-telemetry detailing (the house identity) --- */
 
-/* Monospace data tag, e.g. "REBUILT // 2026" or "33.48°N 117.55°W" */
+/* Small meta label — a robot's game and year, a sponsor tier, a date.
+   This used to be a monospace, uppercase, letter-spaced chip with a glowing
+   square bullet, and it appeared about forty times. Monospace on text that is
+   not code, and a glow on a label that reports nothing live, is decoration
+   dressed up as instrumentation: it signals "technical" without carrying any
+   information the plain words don't already. Read forty times down one page it
+   stops reading as precision and starts reading as a template.
+
+   What is left is a label: the body typeface, one step down, quiet colour. It
+   earns no attention it does not deserve, which is the whole job of a caption.
+   (Genuinely monospaced things — code samples on the Catalyst page, telemetry
+   in the portal — still set --font-mono directly and are untouched.) */
 .data-tag {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
   color: var(--text-muted);
 }
-.data-tag::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-}
-.data-tag--gold::before {
-  background: var(--accent-gold);
-  box-shadow: none;
-}
 
-/* Corner-ticked frame — wrap a relatively-positioned element and add this. */
-.hud-frame {
-  position: relative;
-}
-.hud-frame::before,
-.hud-frame::after {
-  content: '';
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--border-accent);
-  pointer-events: none;
-}
-.hud-frame::before {
-  top: 0;
-  left: 0;
-  border-right: 0;
-  border-bottom: 0;
-}
-.hud-frame::after {
-  bottom: 0;
-  right: 0;
-  border-left: 0;
-  border-top: 0;
+/* Kept as a hook so the gold variant still resolves; the distinction it used to
+   draw (a gold bullet vs a cyan one) is now carried by the words themselves. */
+.data-tag--gold {
+  color: var(--text-dim);
 }
 
 /* Faint blueprint grid backdrop for a section (decorative). */

@@ -66,7 +66,7 @@ export default function BlogIndex() {
 function FeaturedCard({ post }) {
   const { label, iso } = formatDate(post.date)
   return (
-    <a className={`${styles.feature} hud-frame`} href={`#/blog/${post.slug}`}>
+    <a className={styles.feature} href={`#/blog/${post.slug}`}>
       <header className={styles.featureMeta}>
         <time className="data-tag data-tag--gold" dateTime={iso}>
           {label}

@@ -29,23 +29,6 @@
   flex-direction: column;
   gap: var(--sp-4);
 }
-.manifest {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.manifestTick {
-  width: 6px;
-  height: 6px;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  flex: none;
-}
 
 /* --- Roster manifest stat rail (right) --- */
 .statRail {
@@ -262,10 +245,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.personGrade {
-  font-size: var(--fs-label);
-  color: var(--text-muted);
 }
 .personDim .personName {
   color: var(--text-body);

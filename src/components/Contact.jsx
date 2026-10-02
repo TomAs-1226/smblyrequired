@@ -79,7 +79,7 @@ export default function Contact() {
     <Section id="contact" className={styles.section}>
       <div ref={root} className={styles.inner}>
       <div className={styles.head}>
-        <Eyebrow num="06">Get involved</Eyebrow>
+        <Eyebrow>Get involved</Eyebrow>
         <SplitHeading as="h2" className={styles.heading}>
           Let&rsquo;s build something
           <br />

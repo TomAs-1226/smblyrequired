@@ -26,7 +26,7 @@ function FaqItem({ item, index, open, onToggle, baseId }) {
           onClick={onToggle}
         >
           <span className={styles.qIndex} aria-hidden="true">
-            {String(index + 1).padStart(2, '0')}
+            {index + 1}
           </span>
           <span className={styles.qText}>{item.q}</span>
           <span className={`${styles.qTag} tag`}>{item.tag}</span>
@@ -69,7 +69,7 @@ export default function Faq() {
           <p className={`lead ${styles.note}`}>{faqNote}</p>
           <p className={styles.count} aria-hidden="true">
             <span className={styles.countTick} />
-            {String(faqs.length).padStart(2, '0')} entries
+            {faqs.length} entries
           </p>
         </header>
 

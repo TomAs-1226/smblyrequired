@@ -106,7 +106,7 @@ export default function Donate() {
         {/* --- The board: four editorial, non-identical "ways to give" ----- */}
         <div className={styles.board}>
           {/* (1) PRIMARY — one-time or recurring gift. The single gold CTA. */}
-          <article className={`${styles.card} ${styles.cardGive} hud-frame`}>
+          <article className={`${styles.card} ${styles.cardGive}`}>
             <div className={styles.cardTop}>
               <span className={`${styles.cardIcon} ${styles.cardIconGold}`}>
                 <Icon name="heart" size={26} />
@@ -246,7 +246,7 @@ export default function Donate() {
             {sponsorSteps.map((step) => (
               <div key={step.n} className={styles.step}>
                 <span className={styles.stepNum}>
-                  {String(step.n).padStart(2, '0')}
+                  {step.n}
                 </span>
                 <h4 className={styles.stepName}>{step.title}</h4>
                 <p className={styles.stepBody}>{step.body}</p>

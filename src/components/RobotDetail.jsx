@@ -86,7 +86,7 @@ export default function RobotDetail({ slug }) {
         {/* --- Media: real photo (never cropped) or typographic plate --- */}
         <div className={styles.mediaCol} ref={mediaRef}>
           {image ? (
-            <figure className={`hud-frame ${styles.frame} ${champion ? styles.isChampion : ''}`}>
+            <figure className={`${styles.frame} ${champion ? styles.isChampion : ''}`}>
               {/* Staged well: spotlight + blueprint backdrop, subject grounded
                   with a soft reflection so it reads as a staged shot. */}
               <div className={styles.stage}>
@@ -108,7 +108,7 @@ export default function RobotDetail({ slug }) {
               </figcaption>
             </figure>
           ) : (
-            <figure className={`hud-frame ${styles.frame} ${styles.plateFrame}`}>
+            <figure className={`${styles.frame} ${styles.plateFrame}`}>
               <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
                 <span className={styles.spot} />
                 <span className={styles.grid} />

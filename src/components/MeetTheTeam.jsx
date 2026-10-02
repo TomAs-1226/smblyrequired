@@ -32,9 +32,9 @@ const crew = roster.filter((p) => !p.captain)
 // Stat rail facts. These replace the old per-grade breakdown and are derived,
 // not hand-maintained, so they cannot drift from the data.
 const facts = [
-  { n: String(rosterCount).padStart(2, '0'), label: 'Students' },
-  { n: String(subteams.length).padStart(2, '0'), label: 'Subteams' },
-  { n: String(mentors.length).padStart(2, '0'), label: 'Mentors' },
+  { n: rosterCount, label: 'Students' },
+  { n: subteams.length, label: 'Subteams' },
+  { n: mentors.length, label: 'Mentors' },
 ]
 
 function Person({ name }) {
@@ -67,10 +67,6 @@ export default function MeetTheTeam() {
               machinists, programmers, and the business crew who keep the season running.
               Student-led, mentor-guided, every season from scratch.
             </p>
-            <p className={styles.manifest}>
-              <span className={styles.manifestTick} aria-hidden="true" />
-              {`Roster 5805 // ${rosterCount} active`}
-            </p>
           </Reveal>
         </div>
 
@@ -93,7 +89,7 @@ export default function MeetTheTeam() {
       {/* Featured captain — renders only when a student carries `captain: true` */}
       {captain && (
         <Reveal className={styles.captainWrap} y={32}>
-          <article className={`${styles.captainCard} hud-frame`}>
+          <article className={styles.captainCard}>
             <span className={styles.captainAvatar} aria-hidden="true">
               {initialsOf(captain.name)}
             </span>
@@ -119,7 +115,7 @@ export default function MeetTheTeam() {
           <header className={styles.groupHead}>
             <span className={styles.groupName}>Students</span>
             <span className={styles.groupRule} aria-hidden="true" />
-            <span className={styles.groupCount}>{String(crew.length).padStart(2, '0')}</span>
+            <span className={styles.groupCount}>{crew.length}</span>
           </header>
           <Reveal className={styles.groupGrid} stagger={0.04} y={18}>
             {crew.map((p) => (

@@ -39,12 +39,6 @@
 .gold {
   color: var(--accent-gold);
 }
-/* The code, called out even inside the sentence. */
-.codeInline {
-  font-family: var(--font-mono);
-  color: var(--accent-data);
-  white-space: nowrap;
-}
 .body {
   color: var(--text-body);
   max-width: 52ch;

@@ -53,7 +53,7 @@ export default function About() {
   return (
     <div ref={root}>
       <Section id="team">
-        <Eyebrow num="01">The team</Eyebrow>
+        <Eyebrow>The team</Eyebrow>
 
         {/* Top: asymmetric 7 / 5 split — mission narrative left, KPI rail right */}
         <div className={styles.top}>

@@ -56,7 +56,7 @@ export default function Tiers() {
       <div ref={root}>
       <header className={styles.head}>
         <div>
-          <Eyebrow num="04">Partnership</Eyebrow>
+          <Eyebrow>Partnership</Eyebrow>
           <SplitHeading as="h2" className={styles.title}>
             Choose your level.
           </SplitHeading>
@@ -137,7 +137,7 @@ export default function Tiers() {
           {titleCos.map((s) => (
             <div
               key={s.name}
-              className={`${styles.plate} ${styles.plateTitle} hud-frame`}
+              className={`${styles.plate} ${styles.plateTitle}`}
             >
               <span className={styles.plateFlag}>Title Sponsor</span>
               <span className={styles.plateName}>{s.name}</span>
@@ -174,7 +174,7 @@ export default function Tiers() {
           {sponsorSteps.map((step) => (
             <div key={step.n} className={styles.step}>
               <span className={styles.stepNum}>
-                {String(step.n).padStart(2, '0')}
+                {step.n}
               </span>
               <h4 className={styles.stepName}>{step.title}</h4>
               <p className={styles.stepBody}>{step.body}</p>

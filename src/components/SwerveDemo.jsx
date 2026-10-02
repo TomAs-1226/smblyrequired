@@ -351,7 +351,7 @@ export default function SwerveDemo() {
 
         {/* Right: interactive canvas in a HUD frame */}
         <Reveal className={styles.stageWrap} y={28} duration={0.9}>
-          <div className={`hud-frame ${styles.stageFrame}`}>
+          <div className={styles.stageFrame}>
             <div className={styles.stageHead}>
               <span className={styles.stageDot} aria-hidden="true" />
               <span className={styles.stageTitle}>SWERVE&nbsp;//&nbsp;LIVE</span>

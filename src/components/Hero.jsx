@@ -131,14 +131,10 @@ export default function Hero() {
         {/* Faint film grain for atmosphere (very low opacity). */}
         <div className={styles.grain} />
 
-        {/* Subtle drifting game-piece accents */}
-        <span className={`${styles.ball} ${styles.ball1}`} />
-        <span className={`${styles.ball} ${styles.ball2}`} />
-        <span className={`${styles.ball} ${styles.ball3}`} />
       </div>
 
       <div className={`container ${styles.inner}`}>
-        <Eyebrow num="00">{team.shortName} · {team.program}</Eyebrow>
+        <Eyebrow>{team.shortName} · {team.program}</Eyebrow>
 
         <SplitHeading
           as="h1"
@@ -156,14 +152,11 @@ export default function Hero() {
           <p className={`lead ${styles.lead}`}>{team.lead}</p>
 
           <div className={styles.ctas}>
-            <MagneticButton as="a" href="#/sponsor" className="btn btn--gold">
+            <MagneticButton as="a" href="#/sponsor" className="btn btn--gold" data-primary-cta="">
               Sponsor the team
               <Icon name="arrowRight" className="arrow" size={18} />
             </MagneticButton>
-            <a href="#/season" className="btn btn--cyan">
-              Our record
-            </a>
-            <a href="#/team" className="btn btn--ghost">
+            <a href="#/join" className="btn btn--ghost">
               Join the team
             </a>
           </div>

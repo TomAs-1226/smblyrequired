@@ -68,7 +68,7 @@ export default function SeasonTracker() {
       </div>
 
       {!hasEvents ? (
-        <div className={`${styles.empty} hud-frame`}>
+        <div className={styles.empty}>
           <span className={styles.emptyTick} aria-hidden="true" />
           <p className={styles.emptyText}>
             Season data updates at build time — check back during competition.

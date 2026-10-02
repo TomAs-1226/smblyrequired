@@ -31,8 +31,7 @@ export default function FabworksDiscount() {
         <div className={styles.copyCol}>
           <Eyebrow>Our sponsor · Fabworks</Eyebrow>
           <h2 className={styles.heading}>
-            Get <span className={styles.gold}>5% off Fabworks</span> with code{' '}
-            <span className={styles.codeInline}>FRC5805</span>
+            Get <span className={styles.gold}>5% off Fabworks</span> with code FRC5805
           </h2>
           <p className={styles.body}>
             <strong>Fabworks</strong> — instant-quote, laser-cut &amp; bent sheet-metal parts — proudly

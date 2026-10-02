@@ -265,7 +265,7 @@ export default function Gallery() {
             Array.from({ length: galleryPlaceholders }).map((_, i) => (
               <div
                 key={`ph-${i}`}
-                className={`hud-frame ${styles.tile} ${styles.placeholder}`}
+                className={`${styles.tile} ${styles.placeholder}`}
                 aria-hidden="true"
               >
                 <span className={styles.placeholderMark}>
@@ -328,7 +328,7 @@ export default function Gallery() {
               <span className={`data-tag ${styles.lbTag}`}>{current.tag}</span>
               <span className={styles.lbText}>{current.caption}</span>
               <span className={styles.lbCount}>
-                {String(boxIndex + 1).padStart(2, '0')} / {String(visible.length).padStart(2, '0')}
+                {boxIndex + 1} / {visible.length}
               </span>
             </figcaption>
           </figure>

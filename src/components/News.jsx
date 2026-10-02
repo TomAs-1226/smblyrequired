@@ -62,7 +62,7 @@ export default function News() {
 function FeaturedItem({ entry }) {
   const { label, iso } = formatDate(entry.date)
   return (
-    <article className={`${styles.feature} hud-frame`}>
+    <article className={styles.feature}>
       <header className={styles.featureMeta}>
         <time className="data-tag data-tag--gold" dateTime={iso}>
           {label}

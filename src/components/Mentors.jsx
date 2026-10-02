@@ -49,7 +49,7 @@ export default function Mentors() {
 
       {lead && (
         <Reveal className={styles.featuredWrap} y={30}>
-          <article className={`${styles.featured} hud-frame`}>
+          <article className={styles.featured}>
             <span className={styles.featuredAvatar} aria-hidden="true">
               {initials(lead.name)}
             </span>
@@ -82,7 +82,7 @@ export default function Mentors() {
       )}
 
       <Reveal className={styles.ctaWrap} y={20}>
-        <div className={`${styles.cta} hud-frame`}>
+        <div className={styles.cta}>
           <div className={styles.ctaText}>
             <h3 className={styles.ctaTitle}>Mentor with us</h3>
             <p className={styles.ctaBody}>

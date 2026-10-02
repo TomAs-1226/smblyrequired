@@ -104,7 +104,7 @@ export default function Catalyst() {
 
       {/* --- Signature: editor panel (left, wide) + reduction metric (right) --- */}
       <div className={styles.signature}>
-        <div className={`hud-frame ${styles.editor}`} ref={panel}>
+        <div className={styles.editor} ref={panel}>
           <div className={styles.editorBar}>
             <span className={styles.dots} aria-hidden="true">
               <i /><i /><i />
@@ -117,7 +117,7 @@ export default function Catalyst() {
               {code.map((line, i) => (
                 <span className={styles.codeLine} key={i}>
                   <span className={styles.gutter} aria-hidden="true">
-                    {String(i + 1).padStart(2, '0')}
+                    {i + 1}
                   </span>
                   <span className={styles.codeText}>
                     {line.length === 0 ? (
@@ -167,7 +167,7 @@ export default function Catalyst() {
                 <Icon name={f.icon} size={i === 0 ? 30 : 22} />
               </span>
               <span className={styles.featureNum} aria-hidden="true">
-                {String(i + 1).padStart(2, '0')}
+                {i + 1}
               </span>
               <h3 className={styles.featureTitle}>{f.title}</h3>
               <p className={styles.featureBody}>{f.body}</p>
