@@ -22,7 +22,7 @@
   --display:"Clash Display",sans-serif; --body:"Plus Jakarta Sans",sans-serif;
   --ease:cubic-bezier(.32,.72,0,1);
   --dof:16px;   /* depth of field, driven by scroll */
-  --col:54%;    /* the robot's column */
+  --frame:1500px;  /* the page's measure — nothing spreads wider than this */
 }
 body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:hidden;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -39,6 +39,9 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
   backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--hair-strong);
   box-shadow:0 20px 50px -20px rgba(0,0,0,.9)}
 .nav .mark{font-family:var(--display);font-weight:700;font-size:.9rem;margin-right:14px}
+/* Not an inline style: an inline `display` outranks the media query below,
+   which is why the nav kept all five links on a phone and overflowed. */
+.nav .links{display:flex;gap:2px}
 .nav a{font-size:.82rem;font-weight:500;color:var(--dim);text-decoration:none;padding:9px 13px;border-radius:999px;
   transition:color .45s var(--ease),background .45s var(--ease)}
 .nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
@@ -55,10 +58,11 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
 
 /* The robot owns its own column and never sits under the copy, so no scrim is
    needed — which is also why there is no stray tint anywhere on the page. */
-/* Full width: the robot is framed by the camera, not by a CSS column, so it can
-   begin dead centre under the wordmark and only then slide across. A fixed
-   column meant it was off-centre from the first frame and never moved. */
-.col{position:absolute;inset:0;pointer-events:auto}
+/* Everything lives inside one capped, centred measure. Full-bleed was what put
+   a quarter of a 1900px screen of dead black between the copy and the robot:
+   the two were pinned to opposite edges of a viewport that kept growing. */
+.col{position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:min(100%,var(--frame));height:100%;pointer-events:auto}
 /* Focus pull is a filter on the canvas, not a backdrop-filter on a layer over
    it. A backdrop layer blurs whatever sits behind its own box, so wherever that
    box ended — the foot of the stage — there was a visible seam and a patch of
@@ -102,9 +106,10 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
    same scroll value that slides the robot, so the two can never close on each
    other and the text never clips into the machine. */
 .panel{position:relative;z-index:6;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
-  padding-left:clamp(24px,6vw,96px);padding-right:calc(100% - var(--copy,46%));
+  width:min(100%,var(--frame));margin:0 auto;padding:0 clamp(20px,3vw,48px);
   opacity:var(--copy-in,1);transition:opacity .5s var(--ease)}
-.panel .box{width:100%;max-width:30rem;pointer-events:auto}
+.panel .box{width:min(30rem,var(--copy,46%))}
+.panel .box{pointer-events:auto}
 .panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3.1vw,2.9rem);line-height:1.03;
   letter-spacing:-.03em;margin-bottom:16px}
 .panel p{color:var(--dim);line-height:1.68;font-size:1.02rem;text-wrap:pretty}
@@ -126,21 +131,35 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .fact span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:8px}
 
-.after{position:relative;z-index:6;max-width:1460px;margin:0 auto;padding:150px clamp(24px,5vw,56px) 190px}
+/* The callouts, as plain content. Shown only on narrow screens, but they are
+   real markup either way, so the facts exist without WebGL. */
+.specs .spec{border-left:2px solid var(--brand-blue);padding:2px 0 2px 14px}
+.specs .spec b{display:block;font-family:var(--display);font-weight:600;font-size:1rem}
+.specs .spec span{display:block;font-size:.84rem;color:var(--dim);line-height:1.55;margin-top:3px}
+
+.after{position:relative;z-index:6;max-width:var(--frame);margin:0 auto;padding:150px clamp(24px,5vw,56px) 190px}
 .after h2{font-family:var(--display);font-weight:600;font-size:clamp(2rem,3.3vw,3rem);letter-spacing:-.03em;max-width:20ch}
 .after p{color:var(--dim);max-width:52ch;margin-top:16px;line-height:1.68}
 
 /* Narrow: stack rather than overlap. The two-column scroll story needs width;
    below that the robot takes a band of its own and the copy simply flows. */
+/* Below 1024 the two-column scroll story has nowhere to go. The robot takes a
+   band of its own, the copy flows beneath it, and the callouts become an
+   ordinary list — the same facts, no projection maths, no overlap. */
 @media(max-width:1024px){
-  .stage{position:relative;height:62vh}
-  .col{position:absolute;inset:0;width:100%}
-  .num{font-size:min(30vw,10rem)}
+  .stage{position:sticky;top:0;height:54svh}
+  .col{position:absolute;inset:0;width:100%;transform:none;left:0}
+  .num{font-size:min(28vw,8rem)}
+  .titlecard .pre{font-size:.6rem;letter-spacing:.3em}
+  .titlecard .post{font-size:1rem}
   .callout{display:none}
-  .panel{min-height:auto;padding:56px clamp(20px,5vw,40px)}
-  .panel .box{max-width:none}
-  .after{padding:90px 20px 120px}
+  .panel{min-height:auto;padding:44px 20px}
+  .panel .box{width:100%}
+  .panel h2{font-size:clamp(1.7rem,6.4vw,2.2rem)}
+  .specs{display:grid;gap:10px;margin-top:26px}
+  .after{padding:80px 20px 110px}
 }
+@media(min-width:1025px){ .specs{display:none} }
 @media(prefers-reduced-motion:reduce){ .stage{position:relative;height:62vh} }
 </style>
 </head>
@@ -149,7 +168,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
 
 <nav class="nav">
   <span class="mark">5805</span>
-  <span class="links" style="display:flex;gap:2px">
+  <span class="links">
     <a href="#">Team</a><a href="#">Robots</a><a href="#">Season</a><a href="#">Join</a>
   </span>
   <a class="cta" href="#">Sponsor<i>&#8599;</i></a>
@@ -213,6 +232,35 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
       <p>Most students cross between them before the season ends. No experience
         required — we teach you on the robot that is going to competition.</p>
       <div class="row"><a class="btn" href="#">Join the team<i>&#8599;</i></a></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="box">
+      <span class="kicker">Electrical &amp; programming</span>
+      <h2>The half you<br>can't see.</h2>
+      <p>Under the belly pan sits the loom, the power distribution and
+        SystemCore — FIRST's new control system. Students wire every connection
+        and write every line that runs on it.</p>
+      <div class="specs">
+        <div class="spec"><b>Drivetrain</b><span>Four independently steered swerve modules.</span></div>
+        <div class="spec"><b>Shooter</b><span>A 552&nbsp;mm flywheel spun by four Kraken X60s.</span></div>
+        <div class="spec"><b>Intake</b><span>Slapdown, extending 300&nbsp;mm past the frame.</span></div>
+        <div class="spec"><b>Hood</b><span>Variable angle — flattens or arcs the shot.</span></div>
+        <div class="spec"><b>SystemCore</b><span>The control system that replaces the roboRIO.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="box">
+      <span class="kicker">Open source</span>
+      <h2>We wrote the<br>library <em>too</em>.</h2>
+      <p>FRC Catalyst is our own Java library — pre-built mechanism blocks,
+        vision fusion and logging. Built here, used by teams that are not us.</p>
+      <div class="row">
+        <a class="btn" href="#/catalyst">Explore Catalyst<i>&#8599;</i></a>
+      </div>
     </div>
   </section>
 
@@ -299,6 +347,7 @@ const LAYERS=[
   { pick:n=>n==='hood',             dir:[0,1,0], d:1.08, at:0.58 },
 ];
 const moving=[], anchors={}, spin=[];
+let robotRoot=null;
 const smooth=t=>t*t*(3-2*t);
 const narrow=()=>matchMedia('(max-width:1024px)').matches;
 let ready=false;
@@ -312,6 +361,7 @@ new GLTFLoader().load('/models/robot.glb',(gltf)=>{
   const box=new THREE.Box3().setFromObject(robot), c=box.getCenter(new THREE.Vector3());
   robot.position.set(-c.x,-box.min.y,-c.z);
   const pivot=new THREE.Group(); pivot.add(robot); pivot.position.y=-0.3; rig.add(pivot);
+  robotRoot=robot;
 
   robot.traverse(o=>{
     if(o===robot||!o.name) return;
@@ -358,23 +408,48 @@ addEventListener('scroll',readScroll,{passive:true}); readScroll();
 const CO=['drive','shooter','intake','hood','core'].map(k=>({k,
   el:document.getElementById('c-'+k),line:document.getElementById('l-'+k)}));
 const v=new THREE.Vector3();
+/* Labels are placed from the robot's own projected bounding box, not from a
+   fraction of the viewport. That is why they were sitting on the machine: a
+   label pinned to 56% of the screen lands wherever the robot happens to be.
+   Now the box is measured every frame and the labels go beside it — the side
+   with room, flipping together so they read as one column. */
+const bbox=new THREE.Box3(), corner=new THREE.Vector3();
+function screenBounds(w,h){
+  if(!robotRoot) return null;
+  bbox.setFromObject(robotRoot);
+  let minX=1e9,maxX=-1e9;
+  for(let i=0;i<8;i++){
+    corner.set(i&1?bbox.max.x:bbox.min.x, i&2?bbox.max.y:bbox.min.y, i&4?bbox.max.z:bbox.min.z);
+    corner.project(camera);
+    const x=(corner.x*0.5+0.5)*w;
+    if(x<minX)minX=x; if(x>maxX)maxX=x;
+  }
+  return {minX,maxX};
+}
 function layout(show){
   const w=canvas.clientWidth,h=canvas.clientHeight,taken=[];
+  const b=screenBounds(w,h);
+  const lw=206, gap=26;
+  /* Prefer the side the copy is not on; fall back to whichever actually fits. */
+  let right = b ? (b.maxX + gap + lw <= w) : true;
+  if(b && !right && b.minX - gap - lw < 0) right = true;
   for(const {k,el,line} of CO){
     const a=anchors[k];
-    if(!a||!show){el.classList.remove('on');line.style.opacity=0;continue;}
+    if(!a||!show||!b){el.classList.remove('on');line.style.opacity=0;continue;}
     a.getWorldPosition(v); v.project(camera);
     const x=(v.x*0.5+0.5)*w, y=(-v.y*0.5+0.5)*h;
-    const ok=v.z<1&&x>-40&&x<w+40&&y>30&&y<h-30;
+    const ok=v.z<1&&y>20&&y<h-20;
     el.classList.toggle('on',ok); line.style.opacity=ok?1:0;
     if(!ok)continue;
-    const lw=el.offsetWidth||196, lh=el.offsetHeight||60;
-    const lx=Math.min(w-lw-20, Math.max(x+84, w*0.56));
-    let ly=Math.max(28,Math.min(h-lh-28,y-lh/2));
-    for(const t of taken) if(Math.abs(t-ly)<lh+14) ly=t+lh+14;
-    ly=Math.max(28,Math.min(h-lh-28,ly)); taken.push(ly);
+    const lh=el.offsetHeight||62;
+    const lx = right ? Math.min(w-lw-8, b.maxX+gap) : Math.max(8, b.minX-gap-lw);
+    let ly=Math.max(20,Math.min(h-lh-20,y-lh/2));
+    for(const t of taken) if(Math.abs(t-ly)<lh+12) ly=t+lh+12;
+    ly=Math.max(20,Math.min(h-lh-20,ly)); taken.push(ly);
+    el.style.width=lw+'px';
     el.style.transform=`translate(${lx}px,${ly}px)`;
-    line.setAttribute('x1',lx-8);line.setAttribute('y1',ly+lh/2);
+    const ex = right ? lx-6 : lx+lw+6;
+    line.setAttribute('x1',ex);line.setAttribute('y1',ly+lh/2);
     line.setAttribute('x2',x);line.setAttribute('y2',y);
   }
 }
@@ -408,7 +483,11 @@ function frame(dt){
      rather than swinging the camera keeps the perspective square — a camera
      panned off-axis skews a machine that should read as drawn. */
   const spread=smooth(e);
-  const dist = 2.45 + spread*2.05;
+  /* After the teardown closes, the camera pushes in on the belly pan for the
+     electrical/programming beat — the one subsystem you cannot see from across
+     a room, so it gets the only close-up. */
+  const zoom = smooth(Math.min(1,Math.max(0,(p-0.80)/0.12))) * (1-smooth(Math.min(1,Math.max(0,(p-0.94)/0.06))));
+  const dist = (2.45 + spread*2.05) * (1 - zoom*0.45);
 
   /* The offset is in metres but the copy's gap is in screen space, so it has to
      scale with camera distance — otherwise the robot drifts back to centre
@@ -419,8 +498,8 @@ function frame(dt){
   document.documentElement.style.setProperty('--copy', `${(46*aside).toFixed(1)}%`);
   document.documentElement.style.setProperty('--copy-in', aside.toFixed(3));
 
-  camera.position.set(0, 0.56 + spread*0.46, dist);
-  camera.lookAt(0, 0.04 + spread*0.46, 0);
+  camera.position.set(0, 0.56 + spread*0.46 - zoom*0.34, dist);
+  camera.lookAt(0, 0.04 + spread*0.46 - zoom*0.30, 0);
 
   layout(e>0.5);
   renderer.render(scene,camera);
