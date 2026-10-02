@@ -3,7 +3,6 @@ import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import StatNumeral from './StatNumeral'
 import Reveal from './Reveal'
@@ -124,7 +123,6 @@ export default function Impact() {
         {/* ---- Header: eyebrow + dramatic heading + record note ---- */}
         <div className={styles.head}>
           <div className={styles.headLede}>
-            <Eyebrow>Track record</Eyebrow>
             <SplitHeading as="h2" className={styles.heading}>
               Winning since rookie year.
             </SplitHeading>

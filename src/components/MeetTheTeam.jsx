@@ -1,5 +1,4 @@
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import StatNumeral from './StatNumeral'
 import Reveal from './Reveal'
@@ -53,7 +52,6 @@ function Person({ name }) {
 export default function MeetTheTeam() {
   return (
     <Section id="team-roster">
-      <Eyebrow>The crew</Eyebrow>
 
       {/* Header: asymmetric narrative left + roster manifest stat rail right */}
       <div className={styles.head}>

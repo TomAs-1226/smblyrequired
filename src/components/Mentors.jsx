@@ -1,5 +1,4 @@
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Reveal from './Reveal'
 import MagneticButton from './MagneticButton'
@@ -32,7 +31,6 @@ export default function Mentors() {
 
   return (
     <Section id="mentors">
-      <Eyebrow>Guided by</Eyebrow>
 
       <div className={styles.head}>
         <SplitHeading as="h2" className={styles.heading}>

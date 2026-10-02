@@ -35,7 +35,7 @@ export default function News() {
 
       <div className={styles.head}>
         <SplitHeading as="h2" className={styles.heading}>
-          From the shop and the field.
+          What the team has been up to.
         </SplitHeading>
         <p className={`lead ${styles.note}`}>{newsNote}</p>
       </div>

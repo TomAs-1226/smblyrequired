@@ -1,5 +1,4 @@
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import MagneticButton from './MagneticButton'
 import Reveal from './Reveal'
@@ -13,7 +12,6 @@ export default function Subteams() {
       {/* Asymmetric: sticky intro spine (left) + crafted subteam grid (right) */}
       <div className={styles.layout}>
         <div className={styles.intro}>
-          <Eyebrow>Join the team</Eyebrow>
           <SplitHeading as="h2" className={styles.heading}>
             Find your lane.
           </SplitHeading>

@@ -3,7 +3,6 @@ import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import StatNumeral from './StatNumeral'
 import Reveal from './Reveal'
@@ -53,7 +52,6 @@ export default function About() {
   return (
     <div ref={root}>
       <Section id="team">
-        <Eyebrow>The team</Eyebrow>
 
         {/* Top: asymmetric 7 / 5 split — mission narrative left, KPI rail right */}
         <div className={styles.top}>

@@ -37,7 +37,6 @@ export default function Join() {
       <Section id="join" rule={false}>
         <div className={styles.hero}>
           <div className={styles.heroMain}>
-            <Eyebrow>Join the team</Eyebrow>
             <SplitHeading as="h1" className={styles.heroHeading}>
               Come build with us.
             </SplitHeading>

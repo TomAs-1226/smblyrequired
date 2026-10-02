@@ -1,6 +1,5 @@
 import { useState, useId } from 'react'
 import Section from './Section'
-import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Reveal from './Reveal'
 import Icon from './Icon'
@@ -62,7 +61,6 @@ export default function Faq() {
       <div className={styles.layout}>
         {/* Left rail: editorial spine — sticky on wide viewports */}
         <header className={styles.aside}>
-          <Eyebrow>FAQ</Eyebrow>
           <SplitHeading as="h2" className={styles.heading}>
             Questions, answered.
           </SplitHeading>
