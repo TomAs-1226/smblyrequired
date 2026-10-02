@@ -1,5 +1,6 @@
 import Hero from '../components/Hero'
 import FabworksDiscount from '../components/FabworksDiscount'
+import SponsorWall from '../components/SponsorWall'
 import HomeTeasers from '../components/HomeTeasers'
 
 // Landing page — full-screen hero, the title sponsor's discount (obvious, high
@@ -9,6 +10,7 @@ export default function HomePage() {
     <>
       <Hero />
       <FabworksDiscount />
+      <SponsorWall />
       <HomeTeasers />
     </>
   )

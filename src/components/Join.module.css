@@ -1,0 +1,548 @@
+/* =========================================================================
+   Join — "JOIN THE TEAM"
+   Five beats for prospective students and parents: invitation + fact panel,
+   subteam grid, student-run split, the season as three phases, and a contact
+   band. Left-anchored editorial, telemetry detailing. Tokens only.
+   Almost nothing here is pressable — buttons are the global .btn — so the
+   only hover/press states are on the contact links at the bottom.
+   ========================================================================= */
+
+/* --- Shared headings --- */
+.heading {
+  font-size: var(--fs-h1);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 12ch;
+  margin-top: var(--sp-4);
+}
+.sectionHead {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+.sectionLede {
+  min-width: 0;
+}
+.sectionNote {
+  max-width: 48ch;
+  padding-bottom: var(--sp-2);
+}
+
+/* -------------------------------------------------------------------------
+   1 — THE INVITATION
+   ------------------------------------------------------------------------- */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+  padding-top: var(--sp-4);
+}
+.heroMain {
+  min-width: 0;
+}
+.heroHeading {
+  font-size: var(--fs-display);
+  line-height: 0.92;
+  letter-spacing: -0.025em;
+  max-width: 9ch;
+  margin-top: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.heroBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-5);
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.heroNote {
+  max-width: 54ch;
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--accent-data);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* Fact panel: a telemetry spec sheet */
+.facts {
+  min-width: 0;
+  padding: clamp(24px, 3vw, 40px);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--border-accent);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+}
+.factsTag {
+  margin-bottom: var(--sp-4);
+}
+.factList {
+  display: flex;
+  flex-direction: column;
+}
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.fact dt {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fact dd {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+/* -------------------------------------------------------------------------
+   2 — THE SUBTEAMS
+   ------------------------------------------------------------------------- */
+.lanes {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.lane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-5) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+}
+/* The cyan top rule is permanent here — the tiles are not links, so it is a
+   label, not a hover signature. */
+.lane::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 52px;
+  height: 2px;
+  background: var(--accent-data);
+}
+.laneIndex {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.laneIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--sp-4);
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border: 1px solid var(--border-accent);
+}
+.laneName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin-bottom: var(--sp-2);
+}
+.laneBody {
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text-body);
+  max-width: 38ch;
+}
+
+/* -------------------------------------------------------------------------
+   3 — STUDENT-RUN
+   ------------------------------------------------------------------------- */
+.run {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: start;
+}
+.runMain {
+  min-width: 0;
+}
+.runBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin-top: var(--sp-5);
+}
+.runStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 64px);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border-hairline);
+}
+.runStat :global(.stat-numeral__n) {
+  font-size: clamp(2.75rem, 6vw, 5rem);
+}
+
+.mentors {
+  min-width: 0;
+  padding: clamp(24px, 3vw, 40px);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--border-accent);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+}
+.mentorsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+}
+.mentorList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-4);
+}
+.mentor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.mentorName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+.mentorRole {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.mentorsNote {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--text-body);
+}
+
+/* -------------------------------------------------------------------------
+   4 — THE SEASON RHYTHM
+   ------------------------------------------------------------------------- */
+.phases {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.phase {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(24px, 2.6vw, 36px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+}
+.phaseTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+.phaseIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border: 1px solid var(--border-accent);
+}
+.phaseStep {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.phaseName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.phaseTag {
+  margin-top: var(--sp-2);
+}
+.phaseBody {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--text-body);
+}
+
+/* event / robot rail inside a phase */
+.rail {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-4);
+}
+.railRow {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.railMonth {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--accent-data);
+}
+.railMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.railName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.railDates {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.railResult {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+/* -------------------------------------------------------------------------
+   5 — GET IN TOUCH
+   ------------------------------------------------------------------------- */
+.cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: end;
+  padding: clamp(40px, 6vw, 96px) clamp(28px, 5vw, 80px);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-lg);
+}
+.ctaField {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(90% 130% at 92% 0%, color-mix(in srgb, var(--accent-gold) 14%, transparent), transparent 60%);
+  pointer-events: none;
+}
+.ctaMain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.ctaKicker {
+  display: inline-flex;
+}
+.ctaHeading {
+  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+  letter-spacing: -0.015em;
+}
+.ctaLede {
+  max-width: 54ch;
+  font-size: var(--fs-body-lg);
+  line-height: 1.6;
+  color: var(--text-body);
+}
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+.channels {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.channel {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: start;
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.channelIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-sm);
+  color: var(--accent-data);
+  background: var(--accent-data-wash);
+  border: 1px solid var(--border-accent);
+}
+.channelBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.channelLabel {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.channelText {
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--text-body);
+}
+/* inline-block: transform does not apply to a plain inline <a> (gotcha #6) */
+.channelLink {
+  display: inline-block;
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--accent-data);
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .channelLink:hover {
+    color: var(--accent-gold);
+  }
+}
+.channelLink:focus-visible {
+  color: var(--accent-gold);
+}
+.channelLink:active {
+  transform: scale(0.97);
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 1040px) {
+  .lanes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .sectionHead,
+  .run,
+  .cta {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    align-items: start;
+  }
+  .heading,
+  .heroHeading {
+    max-width: none;
+  }
+  .run {
+    gap: var(--sp-6);
+  }
+  /* three phases never split 2 + 1 — they go straight to a single column */
+  .phases {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .lanes,
+  .phases {
+    grid-template-columns: 1fr;
+  }
+  .runStats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+  }
+  .heroActions,
+  .ctaActions {
+    width: 100%;
+  }
+  .heroActions :global(.btn),
+  .ctaActions :global(.btn) {
+    flex: 1 1 auto;
+  }
+  .railRow {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .railResult {
+    grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .channelLink {
+    transition: none;
+  }
+}

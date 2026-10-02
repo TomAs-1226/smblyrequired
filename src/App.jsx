@@ -21,6 +21,7 @@ import SponsorPage from './pages/SponsorPage'
 import CatalystPage from './pages/CatalystPage'
 import GalleryPage from './pages/GalleryPage'
 import ContactPage from './pages/ContactPage'
+import JoinPage from './pages/JoinPage'
 import NotFound from './pages/NotFound'
 import RobotDetail from './components/RobotDetail'
 import BlogIndex from './components/BlogIndex'
@@ -36,6 +37,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 const ROUTES = {
   '/': HomePage,
   '/team': TeamPage,
+  '/join': JoinPage,
   '/mentors': MentorsPage,
   '/robots': RobotsPage,
   '/season': SeasonPage,

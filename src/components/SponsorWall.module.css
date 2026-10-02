@@ -1,0 +1,244 @@
+/* =========================================================================
+   SponsorWall — OUR PARTNERS
+   Three tiers, ranked by scale: a title plate that owns the full width, major
+   partners in a two-up row, family supporters set small underneath. No logo
+   files exist, so rank is carried by type size and position alone. Nothing on
+   the wall is pressable except the closing link.
+   ========================================================================= */
+
+/* --- Header --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+}
+.headLede {
+  min-width: 0;
+}
+.heading {
+  font-size: var(--fs-h1);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+  margin-top: var(--sp-4);
+}
+.headNote {
+  max-width: 48ch;
+  padding-bottom: var(--sp-2);
+}
+
+/* --- The wall --- */
+.wall {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 5vw, 56px);
+  margin-top: clamp(44px, 7vw, 80px);
+}
+
+/* Tier label: gold rule + tracked caps, same voice as the Eyebrow */
+.tierLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+.tierRule {
+  width: 24px;
+  height: 2px;
+  background: var(--accent-gold);
+  flex: none;
+}
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* --- Title plate: biggest, full width, the one place gold gets a field --- */
+.title {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 80px);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid var(--accent-gold);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-depth);
+}
+.titleField {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(90% 130% at 92% 0%, color-mix(in srgb, var(--accent-gold) 14%, transparent), transparent 60%);
+  pointer-events: none;
+}
+.titleList {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-5) clamp(32px, 6vw, 96px);
+}
+.titleItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.presented {
+  line-height: 1;
+}
+.titleName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  /* the sponsor's own casing is kept — no text-transform */
+  font-size: clamp(3.25rem, 11vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* --- Major sponsors --- */
+.majorList {
+  list-style: none;
+  display: grid;
+  /* auto-fit: one major sponsor takes the full row, two sit side by side */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.majorItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: clamp(24px, 3vw, 40px);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-top: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-depth);
+}
+.majorName {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+.kind {
+  margin-top: auto;
+}
+
+/* --- Family supporters: smallest, quietest --- */
+.familyList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 0 clamp(16px, 2vw, 28px);
+}
+.familyItem {
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border-hairline);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fs-body-lg);
+  letter-spacing: 0.01em;
+  color: var(--text-body);
+}
+
+/* --- Closing note + quiet link --- */
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-4) var(--sp-6);
+  margin-top: clamp(40px, 6vw, 72px);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border-hairline);
+}
+.closeNote {
+  max-width: 62ch;
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.closeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-data);
+  border-bottom: 1px solid var(--border-accent);
+  padding-bottom: 4px;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.closeArrow {
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
+}
+@media (hover: hover) and (pointer: fine) {
+  .closeLink:hover {
+    color: var(--accent-gold);
+    border-color: var(--accent-gold);
+  }
+  .closeLink:hover .closeArrow {
+    transform: translateX(4px);
+  }
+}
+.closeLink:focus-visible {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+.closeLink:focus-visible .closeArrow {
+  transform: translateX(4px);
+}
+.closeLink:active {
+  transform: scale(0.97);
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    align-items: start;
+  }
+  .heading {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .close {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closeLink,
+  .closeArrow {
+    transition: none;
+  }
+}

@@ -8,6 +8,7 @@ import styles from './Footer.module.css'
 // Section anchors mirrored from the page nav (a couple are still being built).
 const NAV = [
   { href: '#/team', label: 'Team' },
+  { href: '#/join', label: 'Join' },
   { href: '#/robots', label: 'Robots' },
   { href: '#/season', label: 'Season' },
   { href: '#/blog', label: 'Blog' },

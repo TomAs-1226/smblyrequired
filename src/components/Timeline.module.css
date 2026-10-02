@@ -1,0 +1,265 @@
+/* =========================================================================
+   Timeline — TEAM HISTORY
+   Oldest-first story. A year numeral on the left (sticky on desktop), a
+   vertical rail of icon markers on the right. Gold marks earned hardware only;
+   robots are cyan; origin/founding are neutral. Only the robot entries are
+   links, so only they carry hover / focus / press states.
+   ========================================================================= */
+
+/* --- Header --- */
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: end;
+  margin-top: var(--sp-5);
+}
+.headLede {
+  min-width: 0;
+}
+.heading {
+  font-size: var(--fs-h1);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 12ch;
+  margin-top: var(--sp-4);
+}
+.headNote {
+  max-width: 52ch;
+  padding-bottom: var(--sp-2);
+}
+.note {
+  margin-top: var(--sp-4);
+  padding-left: var(--sp-3);
+  border-left: 2px solid var(--accent-data);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* --- Track: one <li> per year --- */
+.track {
+  list-style: none;
+  margin-top: clamp(44px, 7vw, 88px);
+}
+.year {
+  display: grid;
+  grid-template-columns: clamp(120px, 16vw, 220px) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 64px);
+  padding: clamp(28px, 4vw, 52px) 0;
+  border-top: 1px solid var(--border-hairline);
+}
+.year:last-child {
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.yearCol {
+  align-self: start;
+  position: sticky;
+  top: calc(var(--nav-h) + var(--sp-4));
+}
+.yearNum {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Entries: a rail of markers --- */
+.entries {
+  position: relative;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+/* the rail itself runs through the centre of the markers */
+.entries::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 17px;
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: var(--sp-3);
+  align-items: start;
+}
+
+.marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-base);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+}
+.markerCyan {
+  color: var(--accent-data);
+  border-color: var(--border-accent);
+  box-shadow: var(--glow-data);
+}
+.markerGold {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+  box-shadow: var(--glow-gold);
+}
+.markerMuted {
+  color: var(--text-body);
+}
+
+/* --- Entry body --- */
+.body {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: inherit;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.detail {
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--text-body);
+  max-width: 56ch;
+}
+.detailGold {
+  color: var(--accent-gold);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+/* Flagship results get a faint gold wash, like the honors list above. */
+.bodyFlagship {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-gold) 7%, transparent), transparent 70%);
+  border-color: var(--border-hairline);
+}
+
+/* --- Robot entries are links --- */
+.bodyLink {
+  background: var(--surface-1);
+  border-color: var(--border-hairline);
+  align-items: center;
+  transition: transform var(--spring-fast-dur) var(--spring-fast),
+    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  border: 1px solid var(--border-hairline);
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--spring-fast-dur) var(--spring-fast);
+}
+@media (hover: hover) and (pointer: fine) {
+  .bodyLink:hover {
+    transform: translateY(-3px);
+    background: var(--surface-2);
+    border-color: var(--border-accent);
+  }
+  .bodyLink:hover .go {
+    color: var(--accent-data);
+    border-color: var(--accent-data);
+    transform: translateX(3px);
+  }
+}
+.bodyLink:focus-visible {
+  transform: translateY(-3px);
+  background: var(--surface-2);
+  border-color: var(--border-accent);
+}
+.bodyLink:focus-visible .go {
+  color: var(--accent-data);
+  border-color: var(--accent-data);
+  transform: translateX(3px);
+}
+.bodyLink:active {
+  transform: scale(0.98);
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+/* =========================================================================
+   Responsive
+   ========================================================================= */
+@media (max-width: 900px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: var(--sp-5);
+    align-items: start;
+  }
+  .heading {
+    max-width: none;
+  }
+  .year {
+    grid-template-columns: clamp(96px, 22vw, 140px) minmax(0, 1fr);
+    gap: var(--sp-4);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Year stacks above its entries; nothing to stick beside any more. */
+  .year {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+  .yearCol {
+    position: static;
+  }
+  .body {
+    padding-inline: var(--sp-2);
+  }
+  .entry {
+    gap: var(--sp-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bodyLink,
+  .go {
+    transition: none;
+  }
+}
