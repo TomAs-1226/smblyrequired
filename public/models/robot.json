@@ -1,0 +1,1305 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-02T23:29:47.824Z",
+  "source": {
+    "file": "Assembly 1.gltf",
+    "generator": "ONSHAPE BY PTC INC, 1.220",
+    "bytes": 105698711,
+    "modified": "2026-09-17T03:02:07.832Z",
+    "nodes": 1438,
+    "meshes": 215,
+    "triangles": 1650828,
+    "robotCode": "5805-offseason2026-code (Hood.java, Deploy.java, TunerConstants.java, docs/PORT_SPEC.md)"
+  },
+  "units": "metres, degrees",
+  "frame": {
+    "axes": "x forward, y up, z right (a WPILib (x, y) is (x, -z)); origin on the floor (bottom of the wheel treads) under the centre of the four swerve modules' steering axes",
+    "cad": {
+      "forward": [
+        0,
+        -1,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "right": [
+        -1,
+        0,
+        0
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "matrix": [
+        0,
+        0,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "evidence": [
+      {
+        "evidence": "Intake assembly (the deploy slides it out 'in front of the robot', Deploy.java) lies toward +x",
+        "cosine": 1
+      },
+      {
+        "evidence": "Drive/Floor parts named Front vs Back",
+        "cosine": 1
+      },
+      {
+        "evidence": "Shooter assembly lies toward -x (PORT_SPEC: 'the robot shoots out its BACK')",
+        "cosine": 1
+      },
+      {
+        "evidence": "computed shot exit direction points toward -x",
+        "value": [
+          -0.2174,
+          0.9761,
+          0
+        ]
+      },
+      {
+        "evidence": "hood pivot vs Team 581's SHOOTER_HOOD_PIVOT_POINT (-11.35 in, 18.85 in up)",
+        "measured": [
+          -0.2858,
+          0.4826
+        ],
+        "reference": [
+          -0.2883,
+          0.4788
+        ]
+      },
+      {
+        "evidence": "module spacing along x / along z vs TunerConstants 22 in / 23.5 in",
+        "measured": [
+          0.5588,
+          0.5969
+        ],
+        "reference": [
+          0.5588,
+          0.5969
+        ]
+      }
+    ],
+    "how": "up is the common axis of the modules' bearing and motor cylinders, pointing away from the wheels; the floor is the lowest point of the four treads; forward is the side of the module rectangle facing the deploying intake, and every other clue agrees.",
+    "confidence": "high"
+  },
+  "model": {
+    "file": "robot.glb",
+    "bytes": 9817812,
+    "triangles": 456726,
+    "budget": 600000,
+    "simplifyErrorMm": 0.1,
+    "creaseDeg": 35,
+    "quantization": "KHR_mesh_quantization: int16 positions, int8 normals, dequantized by each '<node>-geometry' child node",
+    "restPose": "hood at the CAD pose (its retracted stop), intake retracted (Deploy length 0), modules and rollers as in the CAD",
+    "materials": [
+      {
+        "name": "aluminium",
+        "cadColour": "#a5a5a5"
+      },
+      {
+        "name": "poly",
+        "cadColour": "#eaeaea"
+      },
+      {
+        "name": "black",
+        "cadColour": "#404040"
+      },
+      {
+        "name": "aluminium",
+        "cadColour": "#0057b8"
+      },
+      {
+        "name": "print",
+        "cadColour": "#e4bd68"
+      },
+      {
+        "name": "motor",
+        "cadColour": "#373737"
+      },
+      {
+        "name": "aluminium",
+        "cadColour": "#ded3b5"
+      },
+      {
+        "name": "tread",
+        "cadColour": "#cfdbe5"
+      },
+      {
+        "name": "belt",
+        "cadColour": "#43484d"
+      },
+      {
+        "name": "print",
+        "cadColour": "#373737"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#e6e6e6"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#404040"
+      },
+      {
+        "name": "print",
+        "cadColour": "#43484d"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#c90202"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#2d2d2d"
+      },
+      {
+        "name": "tread",
+        "cadColour": "#ff0000"
+      },
+      {
+        "name": "steel",
+        "cadColour": "#b3b3b3"
+      },
+      {
+        "name": "motor",
+        "cadColour": "#cccccc"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#787880"
+      },
+      {
+        "name": "electronics",
+        "cadColour": "#191919"
+      },
+      {
+        "name": "steel",
+        "cadColour": "#373737"
+      },
+      {
+        "name": "other",
+        "cadColour": "#e1927a"
+      }
+    ],
+    "nodes": "robot > static, hood (> roller-hood-*), intake (> roller-intake-*), roller-*, module-* (> wheel-*). Every named node has an identity rotation and scale at rest."
+  },
+  "bounds": {
+    "min": [
+      -0.3431,
+      0.0002,
+      -0.3706
+    ],
+    "max": [
+      0.348,
+      0.5557,
+      0.3709
+    ]
+  },
+  "triangles": 456726,
+  "framePerimeter": {
+    "length": 0.6858,
+    "width": 0.7239,
+    "bottom": 0.0317,
+    "top": 0.0825,
+    "how": "outer box of the Drive assembly's frame tubes (2 x 1 in rails)",
+    "confidence": "high"
+  },
+  "bumpers": {
+    "mounts": [
+      {
+        "position": [
+          -0.3302,
+          0.0911,
+          -0.108
+        ],
+        "side": "back"
+      },
+      {
+        "position": [
+          -0.3302,
+          0.0911,
+          0.108
+        ],
+        "side": "back"
+      },
+      {
+        "position": [
+          0.3302,
+          0.0911,
+          -0.1333
+        ],
+        "side": "front"
+      },
+      {
+        "position": [
+          0.3302,
+          0.0911,
+          0.1333
+        ],
+        "side": "front"
+      },
+      {
+        "position": [
+          0,
+          0.0911,
+          -0.3492
+        ],
+        "side": "left"
+      },
+      {
+        "position": [
+          0.0381,
+          0.0911,
+          -0.3492
+        ],
+        "side": "left"
+      },
+      {
+        "position": [
+          0,
+          0.0911,
+          0.3492
+        ],
+        "side": "right"
+      },
+      {
+        "position": [
+          0.0381,
+          0.0911,
+          0.3492
+        ],
+        "side": "right"
+      }
+    ],
+    "thickness": 0.0825,
+    "length": 0.8509,
+    "width": 0.889,
+    "bottom": 0.019,
+    "height": 0.127,
+    "assumed": [
+      "the CAD has no bumpers; the eight WCP cone mounts sit on top of the frame rails (front, back and both sides), so bumpers hang on all four sides and cover the rails",
+      "height 5 in (typical FRC bumper), thickness 3.25 in (3/4 in backing + 2.5 in pool noodle), fabric ignored",
+      "bottom 0.75 in above the floor: it must be below the rail bottom (1.26 in) to cover it, and the top (5.75 in) must stay under the intake's lowest roller as it retracts over the front bumper (0.163 m there)",
+      "MapleSimSwerve uses 35 x 35 in, marked 'TODO(5805): measure'"
+    ],
+    "how": "mount positions from the Cone Bumper Mount parts; outline = frame perimeter + thickness",
+    "confidence": "medium for the outline, low for the vertical placement"
+  },
+  "modules": [
+    {
+      "name": "fl",
+      "position": [
+        0.2794,
+        0,
+        -0.2985
+      ],
+      "steerNode": "module-fl",
+      "wheelNode": "wheel-fl",
+      "wheelRadius": 0.0508,
+      "wheelWidth": 0.0508,
+      "wheelCenter": [
+        0.2798,
+        0.0508,
+        -0.2989
+      ],
+      "wheelAxis": [
+        0.7115,
+        0,
+        -0.7027
+      ],
+      "cadSteerAngle": -45.36,
+      "tunerConstants": {
+        "x": 0.2794,
+        "y": 0.2984,
+        "differenceMm": 0
+      },
+      "how": "steering axis: the vertical cylindrical faces (bearing, steering gear, housing) that share one line within 3 cm of the wheel; wheel: the lowest horizontal cylinder in the module (the tread), its radius and width fitted to the face. The steer node turns about +y (positive = counter-clockwise seen from above, WPILib's direction); the wheel node turns about wheelAxis in the steer node's frame, positive driving the robot toward the heading cadSteerAngle.",
+      "confidence": "high"
+    },
+    {
+      "name": "fr",
+      "position": [
+        0.2794,
+        0,
+        0.2985
+      ],
+      "steerNode": "module-fr",
+      "wheelNode": "wheel-fr",
+      "wheelRadius": 0.0508,
+      "wheelWidth": 0.0508,
+      "wheelCenter": [
+        0.2798,
+        0.0508,
+        0.2989
+      ],
+      "wheelAxis": [
+        -0.7027,
+        0,
+        -0.7115
+      ],
+      "cadSteerAngle": 44.64,
+      "tunerConstants": {
+        "x": 0.2794,
+        "y": -0.2984,
+        "differenceMm": 0
+      },
+      "how": "steering axis: the vertical cylindrical faces (bearing, steering gear, housing) that share one line within 3 cm of the wheel; wheel: the lowest horizontal cylinder in the module (the tread), its radius and width fitted to the face. The steer node turns about +y (positive = counter-clockwise seen from above, WPILib's direction); the wheel node turns about wheelAxis in the steer node's frame, positive driving the robot toward the heading cadSteerAngle.",
+      "confidence": "high"
+    },
+    {
+      "name": "bl",
+      "position": [
+        -0.2794,
+        0,
+        -0.2985
+      ],
+      "steerNode": "module-bl",
+      "wheelNode": "wheel-bl",
+      "wheelRadius": 0.0508,
+      "wheelWidth": 0.0508,
+      "wheelCenter": [
+        -0.2798,
+        0.0508,
+        -0.2989
+      ],
+      "wheelAxis": [
+        -0.7027,
+        0,
+        -0.7115
+      ],
+      "cadSteerAngle": 44.64,
+      "tunerConstants": {
+        "x": -0.2794,
+        "y": 0.2984,
+        "differenceMm": 0
+      },
+      "how": "steering axis: the vertical cylindrical faces (bearing, steering gear, housing) that share one line within 3 cm of the wheel; wheel: the lowest horizontal cylinder in the module (the tread), its radius and width fitted to the face. The steer node turns about +y (positive = counter-clockwise seen from above, WPILib's direction); the wheel node turns about wheelAxis in the steer node's frame, positive driving the robot toward the heading cadSteerAngle.",
+      "confidence": "high"
+    },
+    {
+      "name": "br",
+      "position": [
+        -0.2794,
+        0,
+        0.2985
+      ],
+      "steerNode": "module-br",
+      "wheelNode": "wheel-br",
+      "wheelRadius": 0.0508,
+      "wheelWidth": 0.0508,
+      "wheelCenter": [
+        -0.2798,
+        0.0508,
+        0.2989
+      ],
+      "wheelAxis": [
+        0.7115,
+        0,
+        -0.7027
+      ],
+      "cadSteerAngle": -45.36,
+      "tunerConstants": {
+        "x": -0.2794,
+        "y": -0.2984,
+        "differenceMm": 0
+      },
+      "how": "steering axis: the vertical cylindrical faces (bearing, steering gear, housing) that share one line within 3 cm of the wheel; wheel: the lowest horizontal cylinder in the module (the tread), its radius and width fitted to the face. The steer node turns about +y (positive = counter-clockwise seen from above, WPILib's direction); the wheel node turns about wheelAxis in the steer node's frame, positive driving the robot toward the heading cadSteerAngle.",
+      "confidence": "high"
+    }
+  ],
+  "hood": {
+    "node": "hood",
+    "pivot": [
+      -0.2858,
+      0.4826,
+      0
+    ],
+    "axis": [
+      0,
+      0,
+      1
+    ],
+    "positiveRotation": "raises Hood.java's angle: turns the hood's front end up and flattens the shot",
+    "retracted": {
+      "direction": "negative rotation about axis: the hood's front end (the two top rollers) moves down toward the fixed feeder rollers; Hood.java homes there at -1 V and calls it 11 deg",
+      "awayFromStop": "positive rotation about axis"
+    },
+    "cadAngle": 11,
+    "cadAngleRange": [
+      11,
+      12.5
+    ],
+    "stop": 11,
+    "min": 13,
+    "max": 45,
+    "physicalMax": 50.1,
+    "angleToRotation": "rotation about axis (radians) = (hoodAngleDeg - cadAngle) * PI / 180, applied to the hood node's rest orientation",
+    "rack": {
+      "teethSpanDeg": [
+        -58.8596,
+        -10.7292
+      ],
+      "tipRadius": 0.198,
+      "pinion": {
+        "part": "10t Aluminum Spur Gear (10 DP, 1/2\" Hex Bore)",
+        "angleDeg": -18.6031,
+        "distance": 0.2083
+      },
+      "travelFromCadDeg": [
+        -6.705,
+        39.0878
+      ]
+    },
+    "rollerClearanceFromCadDeg": {
+      "retract": -1.5000000000000007,
+      "extend": null
+    },
+    "reference581": {
+      "pivot": [
+        -0.2883,
+        0.4788
+      ],
+      "differenceMm": 4.6
+    },
+    "how": "pivot: the hood brackets' bearing bore that is coaxial with the 4 in flywheel (the 95T belt from the flywheel shaft to the hood's jackshaft keeps its length only about this axis). Members: the four hood bracket parts plus every part pinned through their other holes (both top rollers, the jackshaft gear and pulley, tie rods, belts between them). Stop: the rack's teeth allow 6.7 deg of retraction from the CAD pose but the lower top roller would touch a fixed feeder roller after 1.50 deg, so the CAD is modelled within that of the retracted hard stop and cadAngle is taken as Hood.java's 11 deg; no separate stop part exists in the CAD.",
+    "confidence": "high for pivot and axis, medium-high for cadAngle (within 1.5 deg)"
+  },
+  "intake": {
+    "node": "intake",
+    "axis": [
+      0.9954,
+      -0.0956,
+      0
+    ],
+    "inclineDeg": 5.49,
+    "origin": [
+      0.0345,
+      0.3381,
+      0
+    ],
+    "units": "position along axis in metres = Deploy length in inches * 0.0254",
+    "lengthToPosition": "node.position = origin + axis * (lengthInches * 0.0254)",
+    "travel": 0.2997,
+    "hardStop": 0.3023,
+    "stow": 0.127,
+    "cadPosition": 0.3023,
+    "cadState": "deployed (against the outer hard stop)",
+    "restPosition": 0,
+    "stopContacts": [
+      {
+        "moving": "Intake Right Hardstop Print",
+        "fixed": "Intake Left Outside Slider Block Print",
+        "side": "outer"
+      },
+      {
+        "moving": "Intake Right Hardstop Print",
+        "fixed": "Intake Left Inside Slider Block Print",
+        "side": "outer"
+      },
+      {
+        "moving": "Intake Left Hardstop Print",
+        "fixed": "Intake Right Outside Slider Block Print",
+        "side": "outer"
+      },
+      {
+        "moving": "Intake Left Hardstop Print",
+        "fixed": "Intake Right Inside Slider Block Print",
+        "side": "outer"
+      }
+    ],
+    "reference581": {
+      "deployAngleDeg": 6.55
+    },
+    "how": "axis: the long straight edges of the two 7075 gear racks, square to the robot's sides. Travel: Deploy.java measures inches from the inner hard stop (0) to the outer hard stop (11.9), MAX_LENGTH 11.8, STOW 5.0. CAD position: the rack's hardstop print sits flush against the slider block's back face (same station to 0.1 mm), which only happens at the outer stop. Members: everything in the Intake assembly except Intake Gearboxes (motors, slider blocks, pinions stay fixed).",
+    "confidence": "high"
+  },
+  "rollers": [
+    {
+      "node": "roller-flywheel",
+      "role": "shooter-flywheel",
+      "parent": "robot",
+      "center": [
+        -0.2858,
+        0.4826,
+        -0.0063
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0508,
+      "length": 0.5525,
+      "cad": "#1 4\" Roller Assembly",
+      "how": "the largest shooter roller; the hood pivots on its axis. Positive spin moves its surface up past the ball toward the exit.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-flywheel-inertia",
+      "role": "shooter-inertia-flywheel",
+      "parent": "robot",
+      "center": [
+        -0.289,
+        0.4117,
+        0.3461
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0507,
+      "length": 0.0127,
+      "cad": "4\" Stainless Steel Flywheel (1/2\" Triangle Bore)",
+      "drivenBy": {
+        "from": "roller-flywheel",
+        "ratio": 3
+      },
+      "how": "a stainless flywheel on its own shaft outside the side plate, belted to the shooter flywheel, so it turns the same way; its axis is signed like the flywheel's.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-intake-1",
+      "role": "intake",
+      "parent": "intake",
+      "center": [
+        0.2828,
+        0.2112,
+        0
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0381,
+      "length": 0.5525,
+      "cad": "3\" OD x 2.875\" ID x 21.75\" L",
+      "how": "a roller on the deploying intake (1 is lowest). Positive spin moves its underside backward, pulling a ball in.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-intake-2",
+      "role": "intake",
+      "parent": "intake",
+      "center": [
+        0.2345,
+        0.2681,
+        0
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0254,
+      "length": 0.5588,
+      "cad": "2\" OD x 1.875\" ID x 22\" L",
+      "how": "a roller on the deploying intake (1 is lowest). Positive spin moves its underside backward, pulling a ball in.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-hood-upper",
+      "role": "shooter-top-roller",
+      "parent": "hood",
+      "center": [
+        -0.0837,
+        0.5276,
+        0.0018
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0254,
+      "length": 0.5525,
+      "cad": "#3 2\" Roller Assembly",
+      "drivenBy": {
+        "from": "roller-flywheel",
+        "ratio": 1.6364
+      },
+      "how": "pinned through the hood brackets, so it rides on the hood; the ball is squeezed between it and the flywheel. Positive spin moves its ball-side surface toward the exit.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-hood-lower",
+      "role": "shooter-top-roller",
+      "parent": "hood",
+      "center": [
+        -0.0795,
+        0.4652,
+        0.0018
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0254,
+      "length": 0.5525,
+      "cad": "#2 2\" Roller Assembly",
+      "drivenBy": {
+        "from": "roller-flywheel",
+        "ratio": 1.6364
+      },
+      "how": "pinned through the hood brackets, so it rides on the hood; the ball is squeezed between it and the flywheel. Positive spin moves its ball-side surface toward the exit.",
+      "confidence": "high"
+    },
+    {
+      "node": "roller-feeder-1",
+      "role": "feeder",
+      "parent": "robot",
+      "center": [
+        -0.1118,
+        0.2832,
+        0
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0191,
+      "length": 0.5525,
+      "cad": "#6 1.5\" Roller Assembly",
+      "how": "a fixed shooter roller in the vertical stack below the hood rollers (1 is lowest); Feeder.java is 'the last stage that pushes fuel into the shooter wheels'. The ball rises on the stack's flywheel side (it has to, to meet the flywheel), so positive spin carries it up there.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-feeder-3",
+      "role": "feeder",
+      "parent": "robot",
+      "center": [
+        -0.0884,
+        0.4162,
+        -0.0024
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0191,
+      "length": 0.5525,
+      "cad": "#4 1.5\" Roller Assembly",
+      "how": "a fixed shooter roller in the vertical stack below the hood rollers (1 is lowest); Feeder.java is 'the last stage that pushes fuel into the shooter wheels'. The ball rises on the stack's flywheel side (it has to, to meet the flywheel), so positive spin carries it up there.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-feeder-2",
+      "role": "feeder",
+      "parent": "robot",
+      "center": [
+        -0.1001,
+        0.3497,
+        0.0002
+      ],
+      "axis": [
+        0,
+        0,
+        -1
+      ],
+      "radius": 0.0191,
+      "length": 0.5525,
+      "cad": "#5 1.5\" Roller",
+      "how": "a fixed shooter roller in the vertical stack below the hood rollers (1 is lowest); Feeder.java is 'the last stage that pushes fuel into the shooter wheels'. The ball rises on the stack's flywheel side (it has to, to meet the flywheel), so positive spin carries it up there.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-2",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.1996,
+        0.3763,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-7",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.0465,
+        0.2362,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-6",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.075,
+        0.2667,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-3",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.1717,
+        0.3452,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-8",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.018,
+        0.2057,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-4",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.1376,
+        0.3212,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-5",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.1035,
+        0.2972,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.508,
+      "cad": "1\" OD x 0.875\" ID x 20\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-10",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        -0.0391,
+        0.1448,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.5016,
+      "cad": "1\" OD x 0.875\" ID x 19.75\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-11",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        -0.0676,
+        0.1143,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.5016,
+      "cad": "1\" OD x 0.875\" ID x 19.75\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-1",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        0.2394,
+        0.3633,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.5016,
+      "cad": "1\" OD x 0.875\" ID x 19.75\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    },
+    {
+      "node": "roller-conveyor-9",
+      "role": "conveyor",
+      "parent": "robot",
+      "center": [
+        -0.0106,
+        0.1753,
+        -0.0008
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "radius": 0.0127,
+      "length": 0.5016,
+      "cad": "1\" OD x 0.875\" ID x 19.75\" L",
+      "how": "a roller of the sloped hopper floor (1 is frontmost); Conveyor.java 'carries fuel from the hopper toward the tower and feeder'. Positive spin moves balls lying on it down the slope toward the feeder.",
+      "confidence": "medium"
+    }
+  ],
+  "rollerSpin": "axis sign: positive rotation (right-handed) moves the roller's ball-contact surface along the ball's path (in through the intake, down the floor, up the feeder and out of the shooter). Rollers carry drivenBy when a belt or gear train ties them to the flywheel; ratio is signed against these axes.",
+  "hopper": {
+    "ball": {
+      "diameter": 0.15,
+      "name": "FUEL"
+    },
+    "boxes": [
+      {
+        "min": [
+          -0.0693,
+          0.2039,
+          -0.365
+        ],
+        "max": [
+          0.066,
+          0.5524,
+          0.365
+        ],
+        "movesWith": "static"
+      },
+      {
+        "min": [
+          0.066,
+          0.3237,
+          -0.365
+        ],
+        "max": [
+          0.2013,
+          0.5524,
+          0.365
+        ],
+        "movesWith": "static"
+      },
+      {
+        "min": [
+          0.2013,
+          0.4175,
+          -0.365
+        ],
+        "max": [
+          0.3365,
+          0.5524,
+          0.365
+        ],
+        "movesWith": "static"
+      },
+      {
+        "min": [
+          0.3365,
+          0.2648,
+          -0.3421
+        ],
+        "max": [
+          0.6436,
+          0.4947,
+          0.3421
+        ],
+        "movesWith": "intake",
+        "atIntakeExtension": 0.2997
+      }
+    ],
+    "section": {
+      "back": -0.0693,
+      "front": 0.3365,
+      "top": 0.5524,
+      "halfWidth": 0.365,
+      "floor": {
+        "through": [
+          0.2394,
+          0.4175
+        ],
+        "slopeDeg": 41.55,
+        "levelBeyondX": 0.2394
+      }
+    },
+    "capacity": {
+      "stowed": 6,
+      "deployed": 13,
+      "byVolume": {
+        "stowed": 25,
+        "deployed": 42
+      }
+    },
+    "ballCentres": {
+      "stowed": [
+        [
+          0.0368,
+          0.3606,
+          -0.2377
+        ],
+        [
+          0.0368,
+          0.3606,
+          -0.0256
+        ],
+        [
+          0.0368,
+          0.3606,
+          0.1865
+        ],
+        [
+          0.1428,
+          0.4667,
+          -0.2377
+        ],
+        [
+          0.1428,
+          0.4667,
+          -0.0256
+        ],
+        [
+          0.1428,
+          0.4667,
+          0.1865
+        ]
+      ],
+      "deployed": [
+        [
+          0.0368,
+          0.3606,
+          -0.2377
+        ],
+        [
+          0.0368,
+          0.3606,
+          -0.0256
+        ],
+        [
+          0.0368,
+          0.3606,
+          0.1865
+        ],
+        [
+          0.355,
+          0.3606,
+          -0.1317
+        ],
+        [
+          0.355,
+          0.3606,
+          0.0805
+        ],
+        [
+          0.461,
+          0.3606,
+          -0.2377
+        ],
+        [
+          0.461,
+          0.3606,
+          -0.0256
+        ],
+        [
+          0.461,
+          0.3606,
+          0.1865
+        ],
+        [
+          0.5671,
+          0.3606,
+          -0.1317
+        ],
+        [
+          0.5671,
+          0.3606,
+          0.0805
+        ],
+        [
+          0.1428,
+          0.4667,
+          -0.2377
+        ],
+        [
+          0.1428,
+          0.4667,
+          -0.0256
+        ],
+        [
+          0.1428,
+          0.4667,
+          0.1865
+        ]
+      ],
+      "order": "lowest first, so the first N are where N balls settle"
+    },
+    "how": "walls: inner faces of the hopper's side polycarbonate; top: underside of the top polycarbonate; back: front of the feeder rollers; floor: the tops of the conveyor rollers, a 44 deg slope down toward the feeder; front: the hopper walls' front edge and, when deployed, the intake's front and side polycarbonate above its rollers. Boxes are slabs with the floor at each slab's middle, so their high end dips a little into the floor; ballCentres and capacity come from the best face-centred-cubic packing of 150 mm balls inside the real sloped section, with every candidate centre then checked for clearance against the triangles of the parts that could be in the way - the section describes the volume, not the robot, and uprights and side plates stand inside it; byVolume is 64% random packing of the boxes' volume and is an upper bound that ignores everything standing in the hopper.",
+    "confidence": "medium for the stowed section; low for the deployed extension, whose floor (the intake rollers' tops) is a guess"
+  },
+  "shooter": {
+    "flywheel": {
+      "node": "roller-flywheel",
+      "center": [
+        -0.2858,
+        0.4826,
+        -0.0063
+      ],
+      "radius": 0.0508,
+      "length": 0.5525,
+      "axis": [
+        0,
+        0,
+        1
+      ]
+    },
+    "exit": {
+      "point": [
+        -0.1723,
+        0.5079,
+        0
+      ],
+      "height": 0.5079,
+      "direction": [
+        -0.2174,
+        0.9761,
+        0
+      ],
+      "elevationDeg": 77.44,
+      "atHoodAngle": 11,
+      "impliedHoodAngle": 12.56,
+      "elevationAt": {
+        "13": 75.44,
+        "30": 58.44,
+        "45": 43.44
+      },
+      "width": 0.5525,
+      "parent": "hood",
+      "how": "the ball is pinched between the flywheel and the upper hood roller (gap 130.8 mm for a 150 mm ball) and leaves square to the line between their axes, which lies 12.56 deg above horizontal; the point is the ball's centre at release, on the robot's centreline (balls leave anywhere across the 552 mm roller width). The exit turns with the hood, so elevation = 77.44 - (hoodAngle - 11).",
+      "confidence": "medium: contact geometry is exact, but a squeezed foam ball leaves with some spin and wrap, so the real launch can differ by a few degrees"
+    }
+  },
+  "intakeMouth": {
+    "center": [
+      0.6192,
+      0.075,
+      0
+    ],
+    "width": 0.5525,
+    "height": 0.1445,
+    "parent": "intake",
+    "atIntakeExtension": 0.2997,
+    "how": "at Deploy MAX_LENGTH: the front of the lowest intake roller at ball-centre height; width is that roller's length; height is the clearance under the roller (a FUEL ball is 150 mm, so it is squeezed a little)",
+    "confidence": "medium"
+  },
+  "cleanup": {
+    "minPartSizeM": 0.004,
+    "dropped": {
+      "spacer / standoff": {
+        "instances": 164,
+        "triangles": 64164,
+        "examples": [
+          "3/8\" Hex 0.1875\" Spacer Print",
+          "0.4375\" Floor Spacer Print",
+          "1\" Floor Spacer Print",
+          "ROUND Spacer 0.25 in",
+          "#10 Aluminum Spacer (1-1/2\" L, 3/8\" OD)",
+          "ROUND Spacer 0.75 in"
+        ]
+      },
+      "hidden insert": {
+        "instances": 37,
+        "triangles": 43652,
+        "examples": [
+          "1/2\" to 3/8\" Hex Adapter Print",
+          "1/2\" Hex Bore Round Roller Hub (7/8\" OD, 1/2\" WD)",
+          "Aluminum Tube Plug (2\" x 2\" x 1/8\" Tube)",
+          "3D-Print Adapter (1/2\" Hex Bore, VEX/WCP Profile)"
+        ]
+      },
+      "bearing": {
+        "instances": 60,
+        "triangles": 49320,
+        "examples": [
+          "3/8\" Rounded Hex (10.25mm) ID Bearing (0.875\" OD, 0.281\" WD, Shielded, Flanged)",
+          "0.188\" ID Bearing (0.5\" OD, 0.196\" WD, Shielded)",
+          "0.375\" ID Bearing (0.875\" OD, 0.281\" WD, Shielded, Flanged)",
+          "0.5\" ID Bearing (1.125\" OD, 0.313\" WD, Shielded, Flanged)",
+          "2934T6_954 Bearing Bronze Flanged Sleeve Bearing",
+          "1/2\" Rounded Hex (13.75mm) ID Bearing (1.125\" OD, 0.313\" WD, Shielded, Flanged)"
+        ]
+      },
+      "fastener": {
+        "instances": 56,
+        "triangles": 55188,
+        "examples": [
+          "1/4-20 Tube Connecting Nut (0.625\" ID Tube)",
+          "#10-32 Thin Nylon-Insert Locknut",
+          "#10-32 x 1-1/2\" L BHCS (Steel, Black Oxide)",
+          "Intake Ramp Washer Print",
+          "Hopper Intake Slot Washer Print",
+          "#10-32 x 3\" L SHCS (Steel, Black Oxide)"
+        ]
+      },
+      "nut strip (inside tube)": {
+        "instances": 16,
+        "triangles": 12080,
+        "examples": [
+          "Nut Strip (1/2\" Square ,1.5\"  , #10-32 Tapped, Alternating .5\" Hole Spacing)",
+          "Nut Strip (1/2\" Square ,2.75\"  , #10-32 Tapped, Alternating .5\" Hole Spacing)",
+          "Nut Strip (1/2\" Square ,0.75\"  , #10-32 Tapped, Alternating .5\" Hole Spacing)",
+          "Nut Strip (1/2\" Square ,1\"  , #10-32 Tapped, Alternating .5\" Hole Spacing)",
+          "Nut Strip (1/2\" Square ,1.25\"  , #10-32 Tapped, Alternating .5\" Hole Spacing)"
+        ]
+      },
+      "hidden strip": {
+        "instances": 10,
+        "triangles": 120,
+        "examples": [
+          "0.5\" x 4.5\" 1/8\" Teflon PTFE 8735K13",
+          "0.875\" x 1.315\" 1/8\" Teflon PTFE 8735K13"
+        ]
+      },
+      "short shaft (inside gearbox)": {
+        "instances": 5,
+        "triangles": 960,
+        "examples": [
+          "1/2\" ThunderHex (1.75 in)"
+        ]
+      },
+      "grommet / zip tie": {
+        "instances": 32,
+        "triangles": 88704,
+        "examples": [
+          "5269T611_Locking Grommets"
+        ]
+      },
+      "bumper mount (recorded in manifest)": {
+        "instances": 8,
+        "triangles": 2880,
+        "examples": [
+          "Cone Bumper Mount"
+        ]
+      }
+    },
+    "bySubassembly": {
+      "Floor": {
+        "cadTriangles": 221504,
+        "modelTriangles": 54464
+      },
+      "Intake": {
+        "cadTriangles": 332396,
+        "modelTriangles": 83466
+      },
+      "Hopper": {
+        "cadTriangles": 56126,
+        "modelTriangles": 22020
+      },
+      "Drive": {
+        "cadTriangles": 644690,
+        "modelTriangles": 186604
+      },
+      "Shooter": {
+        "cadTriangles": 396112,
+        "modelTriangles": 110172
+      }
+    }
+  }
+}
