@@ -5,11 +5,9 @@ import StatNumeral from './StatNumeral'
 import Reveal from './Reveal'
 import Icon from './Icon'
 import { roster, rosterCount } from '../data/roster'
+import { subteams } from '../data/subteams'
 import { mentors } from '../data/team'
 import styles from './MeetTheTeam.module.css'
-
-// Display order for grade groups (most senior first).
-const GRADE_ORDER = ['Senior', 'Junior', 'Sophomore', 'Freshman']
 
 // Avatar initials. The public roster is first-names-only, so a lone name gives
 // its first two letters ("Ian" -> "IA", "Cyra" -> "CY"); a two-word name (a
@@ -25,30 +23,28 @@ function initialsOf(name) {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase()
 }
 
+// The roster carries no grades (see src/data/roster.js for why), so the list is
+// flat. `captain` is still honoured if a student is ever flagged as one — the
+// featured card below re-appears the moment that field comes back.
 const captain = roster.find((p) => p.captain)
 const crew = roster.filter((p) => !p.captain)
 
-// Count per grade across the *full* roster (captain included) for the stat tags.
-const gradeCounts = roster.reduce((acc, p) => {
-  acc[p.grade] = (acc[p.grade] || 0) + 1
-  return acc
-}, {})
+// Stat rail facts. These replace the old per-grade breakdown and are derived,
+// not hand-maintained, so they cannot drift from the data.
+const facts = [
+  { n: String(rosterCount).padStart(2, '0'), label: 'Students' },
+  { n: String(subteams.length).padStart(2, '0'), label: 'Subteams' },
+  { n: String(mentors.length).padStart(2, '0'), label: 'Mentors' },
+]
 
-// Group the non-captain crew by grade, in seniority order.
-const groups = GRADE_ORDER.map((grade) => ({
-  grade,
-  people: crew.filter((p) => p.grade === grade),
-})).filter((g) => g.people.length > 0)
-
-function Person({ name, grade, dim = false }) {
+function Person({ name }) {
   return (
-    <div className={`${styles.person}${dim ? ` ${styles.personDim}` : ''}`}>
+    <div className={styles.person}>
       <span className={styles.avatar} aria-hidden="true">
         {initialsOf(name)}
       </span>
       <span className={styles.personText}>
         <span className={styles.personName}>{name}</span>
-        {grade && <span className={styles.personGrade}>{grade}</span>}
       </span>
     </div>
   )
@@ -84,19 +80,17 @@ export default function MeetTheTeam() {
             <StatNumeral to={rosterCount} label="Students on the team" />
           </div>
           <ul className={styles.breakdown}>
-            {GRADE_ORDER.filter((g) => gradeCounts[g]).map((g) => (
-              <li className={styles.breakdownItem} key={g}>
-                <span className={styles.breakdownN}>
-                  {String(gradeCounts[g]).padStart(2, '0')}
-                </span>
-                <span className={styles.breakdownL}>{g}s</span>
+            {facts.map((f) => (
+              <li className={styles.breakdownItem} key={f.label}>
+                <span className={styles.breakdownN}>{f.n}</span>
+                <span className={styles.breakdownL}>{f.label}</span>
               </li>
             ))}
           </ul>
         </Reveal>
       </div>
 
-      {/* Featured captain */}
+      {/* Featured captain — renders only when a student carries `captain: true` */}
       {captain && (
         <Reveal className={styles.captainWrap} y={32}>
           <article className={`${styles.captainCard} hud-frame`}>
@@ -109,7 +103,7 @@ export default function MeetTheTeam() {
                 Team Captain
               </span>
               <h3 className={styles.captainName}>{captain.name}</h3>
-              <span className="data-tag data-tag--gold">{captain.grade} // Lead</span>
+              <span className="data-tag data-tag--gold">Lead</span>
             </div>
             <p className={styles.captainNote}>
               Sets the build schedule, runs the shop, and drives the team through every
@@ -119,24 +113,20 @@ export default function MeetTheTeam() {
         </Reveal>
       )}
 
-      {/* Full roster, grouped by grade — dense, multi-column, editorial */}
+      {/* Full roster — one flat, dense, multi-column grid */}
       <div className={styles.roster}>
-        {groups.map((group) => (
-          <section className={styles.group} key={group.grade} aria-label={`${group.grade}s`}>
-            <header className={styles.groupHead}>
-              <span className={styles.groupName}>{group.grade}s</span>
-              <span className={styles.groupRule} aria-hidden="true" />
-              <span className={styles.groupCount}>
-                {String(group.people.length).padStart(2, '0')}
-              </span>
-            </header>
-            <Reveal className={styles.groupGrid} stagger={0.05} y={18}>
-              {group.people.map((p) => (
-                <Person key={p.id} name={p.name} grade="" />
-              ))}
-            </Reveal>
-          </section>
-        ))}
+        <section className={styles.group} aria-label="Student roster">
+          <header className={styles.groupHead}>
+            <span className={styles.groupName}>Students</span>
+            <span className={styles.groupRule} aria-hidden="true" />
+            <span className={styles.groupCount}>{String(crew.length).padStart(2, '0')}</span>
+          </header>
+          <Reveal className={styles.groupGrid} stagger={0.04} y={18}>
+            {crew.map((p) => (
+              <Person key={p.id} name={p.name} />
+            ))}
+          </Reveal>
+        </section>
       </div>
 
       {/* Compact mentors strip */}

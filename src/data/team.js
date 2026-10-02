@@ -1,5 +1,7 @@
 // Single source of truth for team identity + copy. Edit here to update the site.
 
+import { rosterCount } from './roster'
+
 export const team = {
   number: 5805,
   name: 'SMbly Required',
@@ -50,7 +52,7 @@ export const mentors = [
 // Headline stats. `to` numeric values count up; strings render as-is.
 export const stats = [
   { to: 2016, label: 'Founded' },
-  { to: 19, label: 'Students on the team' },
+  { to: rosterCount, label: 'Students on the team' },
   { to: 10, suffix: '+', label: 'Seasons competing' },
   { to: 100, suffix: '%', label: 'Student-built robot' },
 ]

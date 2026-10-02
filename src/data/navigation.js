@@ -1,5 +1,8 @@
 // Central route map — used by the Nav and the Home landing teasers.
 
+import { rosterCount } from './roster'
+import { subteams } from './subteams'
+
 // Primary nav links (Sponsor is a separate gold CTA; Home is the brand/logo).
 export const navLinks = [
   { path: '/team', label: 'Team' },
@@ -14,7 +17,7 @@ export const navLinks = [
 
 // Teaser cards for the landing page (richer blurbs + icons).
 export const pageTeasers = [
-  { path: '/team', label: 'The Team', icon: 'user', blurb: 'Who we are, our six subteams, and the 19 students behind 5805.' },
+  { path: '/team', label: 'The Team', icon: 'user', blurb: `Who we are, our ${subteams.length} subteams, and the ${rosterCount} students behind 5805.` },
   { path: '/robots', label: 'The Robots', icon: 'cog', blurb: 'Genesis to Numbers — our championship lineage, plus how swerve drive works.' },
   { path: '/season', label: 'Season & Record', icon: 'trophy', blurb: 'Every banner since rookie year and the latest from the shop.' },
   { path: '/sponsor', label: 'Sponsor Us', icon: 'heart', blurb: 'Why partner with us, the tiers, and the 2026 sponsorship packet.' },
