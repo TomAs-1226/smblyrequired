@@ -15,14 +15,18 @@
   --gold:#f0b323; --hair:rgba(255,255,255,.08); --hair-strong:rgba(255,255,255,.14);
   --display:"Clash Display",sans-serif; --body:"Plus Jakarta Sans",sans-serif;
   --ease:cubic-bezier(.32,.72,0,1);
+  --dof:16px;   /* depth of field, driven by scroll */
+  --col:54%;    /* the robot's column */
 }
 body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:hidden;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* One ambient wash for the whole page. Nothing else paints a background — a
+   second dark panel over this is exactly what read as a grey rectangle. */
 .aura{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(1100px 720px at 50% 42%, rgba(240,179,35,.07), transparent 64%),
-             radial-gradient(900px 600px at 22% 76%, rgba(40,96,190,.13), transparent 66%)}
+  background:radial-gradient(1200px 780px at 68% 44%, rgba(240,179,35,.07), transparent 64%),
+             radial-gradient(900px 620px at 16% 78%, rgba(40,96,190,.12), transparent 66%)}
 
 .nav{position:fixed;z-index:40;top:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;
   gap:6px;padding:7px 7px 7px 20px;border-radius:999px;background:rgba(12,12,14,.6);
@@ -38,44 +42,46 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
   font-style:normal;font-size:.72rem;transition:transform .5s var(--ease)}
 .nav .cta:hover i{transform:translate(2px,-1px)}
 .nav .cta:active{transform:scale(.97)}
-@media(max-width:860px){.nav .links{display:none}}
+@media(max-width:900px){.nav .links{display:none}}
 
-/* ── the spine ─────────────────────────────────────────── */
 .spine{position:relative;z-index:1}
-.stage{position:sticky;top:0;height:100dvh;width:100%;overflow:hidden}
+.stage{position:sticky;top:0;height:100dvh;width:100%;overflow:hidden;pointer-events:none}
 
-/* The title sits IN FRONT. Behind the canvas the robot sliced the number at
-   whatever arbitrary point its silhouette fell and it read as wallpaper; in
-   front it is a deliberate title card that lifts away to reveal the machine. */
-.titlecard{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;
-  will-change:transform,opacity;pointer-events:none}
-.titlecard .pre{font-size:.76rem;font-weight:600;letter-spacing:.42em;text-transform:uppercase;
-  color:var(--faint);margin-bottom:.4rem;padding-left:.42em}
-.titlecard .num{font-family:var(--display);font-weight:700;font-size:min(30vw,25rem);line-height:.8;
-  letter-spacing:-.045em;background:linear-gradient(176deg,#fff 6%,#9aa0ad 52%,#4c5059 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent}
-.titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1.1rem,2.3vw,2rem);
-  letter-spacing:.01em;color:var(--dim);margin-top:.2rem}
+/* The robot owns its own column and never sits under the copy, so no scrim is
+   needed — which is also why there is no stray tint anywhere on the page. */
+.col{position:absolute;top:0;right:0;width:var(--col);height:100%;pointer-events:auto}
+/* Focus pull is a filter on the canvas, not a backdrop-filter on a layer over
+   it. A backdrop layer blurs whatever sits behind its own box, so wherever that
+   box ended — the foot of the stage — there was a visible seam and a patch of
+   slightly different black. Filtering the canvas blurs only the robot, has no
+   edge to show, and costs less. */
+#stage{display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;
+  filter:blur(var(--dof));will-change:filter}
+#stage.dragging{cursor:grabbing}
 
-#stage{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%}
-#overlay{position:absolute;inset:0;z-index:3;pointer-events:none}
+#overlay{position:absolute;inset:0;z-index:4;pointer-events:none}
 #hair{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 #hair line{stroke:rgba(255,255,255,.26);stroke-width:1}
-
 .callout{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;
-  transition:opacity .55s var(--ease);width:210px}
+  transition:opacity .55s var(--ease);width:196px}
 .callout.on{opacity:1}
-.callout .t{font-family:var(--display);font-weight:600;font-size:1rem;letter-spacing:-.015em}
-.callout .d{font-size:.76rem;color:var(--dim);line-height:1.5;margin-top:5px}
+.callout .t{font-family:var(--display);font-weight:600;font-size:.98rem;letter-spacing:-.015em}
+.callout .d{font-size:.75rem;color:var(--dim);line-height:1.5;margin-top:5px}
 
-/* copy panels scroll past the stage; they sit in the outer columns only */
-.panel{position:relative;z-index:4;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
-  max-width:1460px;margin:0 auto;padding:0 clamp(20px,4vw,72px)}
-.panel.right{justify-content:flex-end}
-.panel .box{width:min(26rem,42vw);pointer-events:auto;position:relative}
-.panel .box::before{content:"";position:absolute;inset:-56px -120px -56px -80px;z-index:-1;
-  background:radial-gradient(118% 84% at 24% 50%, rgba(5,5,6,.95) 0%, rgba(5,5,6,.74) 46%, transparent 76%)}
-.panel.right .box::before{background:radial-gradient(118% 84% at 76% 50%, rgba(5,5,6,.95) 0%, rgba(5,5,6,.74) 46%, transparent 76%)}
+.titlecard{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;
+  will-change:transform,opacity;pointer-events:none}
+.titlecard .pre{font-size:.74rem;font-weight:600;letter-spacing:.42em;text-transform:uppercase;
+  color:#b9bdc6;margin-bottom:.45rem;padding-left:.42em}
+.titlecard .num{font-family:var(--display);font-weight:700;font-size:min(26vw,21rem);line-height:.8;
+  letter-spacing:-.045em;background:linear-gradient(176deg,#fff 8%,#c7ccd4 48%,#6f747d 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 18px 50px rgba(0,0,0,.72))}
+.titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1rem,2vw,1.7rem);
+  color:#cfd3da;margin-top:.3rem}
+
+.panel{position:relative;z-index:6;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
+  padding-left:clamp(24px,6vw,96px);padding-right:calc(var(--col) + 2vw)}
+.panel .box{width:100%;max-width:30rem;pointer-events:auto}
 .panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3.1vw,2.9rem);line-height:1.03;
   letter-spacing:-.03em;margin-bottom:16px}
 .panel p{color:var(--dim);line-height:1.68;font-size:1.02rem;text-wrap:pretty}
@@ -92,26 +98,27 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
 .btn:hover{transform:translateY(-2px)} .btn:hover i{transform:translate(3px,-1px) scale(1.05)}
 .btn:active{transform:scale(.98)}
 .btn--quiet{background:transparent;color:var(--ink);border:1px solid var(--hair-strong);box-shadow:none;padding:11px 22px}
-.btn--quiet:hover{background:rgba(255,255,255,.05)}
 .facts{display:flex;gap:clamp(18px,2.6vw,40px);margin-top:40px;padding-top:24px;border-top:1px solid var(--hair)}
 .fact b{display:block;font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .fact span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:8px}
 
-.scrollcue{position:fixed;z-index:30;bottom:26px;left:50%;transform:translateX(-50%);
-  font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
-  transition:opacity .6s var(--ease);pointer-events:none}
-
-.after{position:relative;z-index:4;background:var(--void);max-width:1460px;margin:0 auto;padding:150px 40px 190px}
+.after{position:relative;z-index:6;max-width:1460px;margin:0 auto;padding:150px clamp(24px,5vw,56px) 190px}
 .after h2{font-family:var(--display);font-weight:600;font-size:clamp(2rem,3.3vw,3rem);letter-spacing:-.03em;max-width:20ch}
 .after p{color:var(--dim);max-width:52ch;margin-top:16px;line-height:1.68}
 
-@media(max-width:980px){
-  .panel{padding:0 20px} .panel.right{justify-content:flex-start} .panel .box{width:100%}
+/* Narrow: stack rather than overlap. The two-column scroll story needs width;
+   below that the robot takes a band of its own and the copy simply flows. */
+@media(max-width:1024px){
+  .stage{position:relative;height:62vh}
+  .col{position:absolute;inset:0;width:100%}
+  .titlecard .num{font-size:min(30vw,10rem)}
   .callout{display:none}
-  .after{padding:100px 20px 120px}
+  .panel{min-height:auto;padding:56px clamp(20px,5vw,40px)}
+  .panel .box{max-width:none}
+  .after{padding:90px 20px 120px}
 }
-@media(prefers-reduced-motion:reduce){ .stage{position:relative;height:74dvh} }
+@media(prefers-reduced-motion:reduce){ .stage{position:relative;height:62vh} }
 </style>
 </head>
 <body>
@@ -127,28 +134,30 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
 
 <div class="spine" id="spine">
   <div class="stage">
+    <div class="col">
+      <canvas id="stage"></canvas>
+      <div id="overlay">
+        <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/></svg>
+        <div class="callout" id="c-drive"><div class="t">Drivetrain</div>
+          <div class="d">Four independently steered swerve modules.</div></div>
+        <div class="callout" id="c-shooter"><div class="t">Shooter</div>
+          <div class="d">A 552&nbsp;mm flywheel spun by four Kraken X60s.</div></div>
+        <div class="callout" id="c-intake"><div class="t">Intake</div>
+          <div class="d">Slapdown, extending 300&nbsp;mm past the frame.</div></div>
+        <div class="callout" id="c-hood"><div class="t">Hood</div>
+          <div class="d">Variable angle — flattens or arcs the shot.</div></div>
+      </div>
+    </div>
     <div class="titlecard" id="title">
       <span class="pre">FIRST Robotics Competition</span>
       <span class="num">5805</span>
       <span class="post">SMbly&nbsp;Required</span>
     </div>
-    <canvas id="stage"></canvas>
-    <div id="overlay">
-      <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/></svg>
-      <div class="callout" id="c-drive"><div class="t">Drivetrain</div>
-        <div class="d">Four independently steered swerve modules on 4-inch wheels.</div></div>
-      <div class="callout" id="c-shooter"><div class="t">Shooter</div>
-        <div class="d">A 552&nbsp;mm flywheel spun by four Kraken X60s.</div></div>
-      <div class="callout" id="c-intake"><div class="t">Intake</div>
-        <div class="d">Slapdown, extending 300&nbsp;mm past the frame.</div></div>
-      <div class="callout" id="c-hood"><div class="t">Hood</div>
-        <div class="d">Variable angle — flattens or arcs the shot.</div></div>
-    </div>
   </div>
 
-  <section class="panel" style="min-height:118dvh"></section>
+  <section class="panel" style="min-height:112dvh"></section>
 
-  <section class="panel right">
+  <section class="panel">
     <div class="box">
       <span class="kicker">Built by students</span>
       <h2>Twenty people<br>made this.</h2>
@@ -171,7 +180,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
     </div>
   </section>
 
-  <section class="panel right">
+  <section class="panel">
     <div class="box">
       <span class="kicker">Six subteams, one machine</span>
       <h2>Mechanical. Electrical.<br>Programming. CAD.<br>Business. Media.</h2>
@@ -194,8 +203,6 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
     </div>
   </section>
 </div>
-
-<div class="scrollcue" id="cue">Scroll</div>
 
 <section class="after">
   <h2>The rest of the site goes here — record, robots, blog, sponsors.</h2>
@@ -223,8 +230,8 @@ function studioEnvironment(renderer){
   shell.setAttribute('color',new THREE.BufferAttribute(tone,3));
   add(shell,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide}));
   const sb=(w,h,i,hex,x,y,z)=>{const c=new THREE.Color(hex).multiplyScalar(i);
-    const p=add(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));
-    p.position.set(x,y,z);p.lookAt(0,0.4,0);};
+    const pl=add(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));
+    pl.position.set(x,y,z);pl.lookAt(0,0.4,0);};
   sb(5,2.5,5.0,0xffffff,-1,7,2); sb(9,1.2,2.6,0xffffff,0,2.0,8);
   sb(1.4,6,3.2,0xf0f3f9,-8,3,0.5); sb(1.4,6,1.6,0xf0f3f9,8,3,-1.5); sb(8,1.2,2.4,0xe0e7f4,0,3.4,-8);
   const pm=new THREE.PMREMGenerator(renderer), t=pm.fromScene(room,0.04);
@@ -248,43 +255,31 @@ const REFLECT={aluminium:1.0,steel:0.95,motor:0.8,poly:1.4,print:0.35,belt:0.3,t
                electronics:0.55,black:0.4,other:0.5};
 
 /* ── the teardown ────────────────────────────────────────────────────────
-   Parts do not fly apart. They lift in LAYERS along single axes, in the order
-   a person would actually take the robot to bits: the shooter off the top, the
-   feed path after it, the intake off the front, the modules off the bottom.
-   The chassis never moves — it is the reference everything else is measured
-   from, and a teardown with no fixed point reads as an explosion.
+   assembly-drive is the fixed reference and never moves. Neither do the swerve
+   modules: the bake splits a module three ways for STEERING animation, so its
+   gearbox and bevel gears sit in assembly-drive while only the steer plate and
+   wheel are in `module-*` — all 2,127 triangles of it. Moving `module-*`
+   therefore pulled the wheels off their own gears. They belong to the drive
+   base and stay bolted to it.
 
-   `at` staggers each layer so they peel in sequence instead of all at once.
-   Every direction is a single axis: no diagonals, so parts stay aligned with
-   where they came from and the eye can put them back. */
+   Everything else lifts along ONE axis, in the order the bolts actually come
+   out, staggered so the stack peels instead of blooming. */
 const LAYERS=[
-  /* The order a person would actually take it to bits, bottom of the stack
-     first. assembly-drive is the reference and never moves: a teardown with no
-     fixed body reads as an explosion rather than a disassembly.
-
-     The rollers are children of these assemblies now, so they are NOT listed —
-     they travel with whatever they are bolted to, and moving them here as well
-     would double their displacement. */
-  { pick:n=>/^module-/.test(n),        dir:[ 0,-1,0], d:0.11, at:0.00 }, // off the drive base
-  /* Modules drop only a little. Further and four small dark bodies against a
-     black stage stop reading as "unbolted from the corners" and start reading
-     as debris that fell off. */
-  { pick:n=>n==='intake',              dir:[ 1, 0,0], d:0.52, at:0.08 }, // off the front
-  { pick:n=>n==='assembly-intake',     dir:[ 1, 0,0], d:0.34, at:0.12 },
-  { pick:n=>n==='assembly-floor',      dir:[ 0, 1,0], d:0.22, at:0.24 }, // belly pan up
-  { pick:n=>n==='assembly-hopper',     dir:[ 0, 1,0], d:0.46, at:0.36 },
-  { pick:n=>n==='assembly-shooter',    dir:[ 0, 1,0], d:0.74, at:0.48 },
-  { pick:n=>n==='hood',                dir:[ 0, 1,0], d:1.00, at:0.58 }, // off the top last
+  { pick:n=>n==='intake',           dir:[1,0,0], d:0.52, at:0.00 },
+  { pick:n=>n==='assembly-intake',  dir:[1,0,0], d:0.34, at:0.04 },
+  { pick:n=>n==='assembly-floor',   dir:[0,1,0], d:0.24, at:0.18 },
+  { pick:n=>n==='assembly-hopper',  dir:[0,1,0], d:0.50, at:0.32 },
+  { pick:n=>n==='assembly-shooter', dir:[0,1,0], d:0.80, at:0.46 },
+  { pick:n=>n==='hood',             dir:[0,1,0], d:1.08, at:0.58 },
 ];
-const moving=[]; const anchors={}; const spin=[];
+const moving=[], anchors={}, spin=[];
 const smooth=t=>t*t*(3-2*t);
+let ready=false;
 
 new GLTFLoader().load('/models/robot.glb',(gltf)=>{
   const robot=gltf.scene;
   robot.traverse(o=>{ if(!o.isMesh||!o.material)return; const m=o.material;
     m.envMapIntensity=REFLECT[m.name]??0.6; m.dithering=true;
-    /* 0.62, matching Console. At 0.34 every panel read as a ghost and the robot
-       looked like a wireframe rather than a machine with polycarbonate on it. */
     if(m.name==='poly'){m.transparent=true;m.opacity=0.62;m.roughness=0.08;m.depthWrite=false;m.side=THREE.DoubleSide;}
   });
   const box=new THREE.Box3().setFromObject(robot), c=box.getCenter(new THREE.Vector3());
@@ -293,116 +288,109 @@ new GLTFLoader().load('/models/robot.glb',(gltf)=>{
 
   robot.traverse(o=>{
     if(o===robot||!o.name) return;
-    for(const L of LAYERS){
-      if(!L.pick(o.name)) continue;
-      moving.push({n:o,home:o.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at});
-      break;
-    }
+    for(const L of LAYERS) if(L.pick(o.name)){
+      moving.push({n:o,home:o.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at}); break; }
     if(o.name.startsWith('roller-')&&!o.name.endsWith('-geometry'))
       spin.push({node:o,rate:o.name==='roller-flywheel'?1:o.name.includes('feeder')?0.42:0.26});
   });
 
-  const mark=(host,p,name)=>{const o=new THREE.Object3D();o.position.set(p[0],p[1],p[2]);host.add(o);anchors[name]=o;};
+  const mark=(host,q,k)=>{const o=new THREE.Object3D();o.position.set(q[0],q[1],q[2]);host.add(o);anchors[k]=o;};
   const g=n=>robot.getObjectByName(n);
-  if(g('module-fl')) mark(g('module-fl'),[0,0.10,0],'drive');
+  if(g('module-fl'))        mark(g('module-fl'),[0,0.10,0],'drive');
   if(g('assembly-shooter')) mark(g('assembly-shooter'),[-0.26,0.46,0],'shooter');
-  if(g('intake')) mark(g('intake'),[0.16,0.02,0],'intake');
-  if(g('hood')) mark(g('hood'),[-0.04,0.05,0],'hood');
+  if(g('intake'))           mark(g('intake'),[0.16,0.02,0],'intake');
+  if(g('hood'))             mark(g('hood'),[-0.04,0.05,0],'hood');
 
-  resize();
+  ready=true; resize();
 },undefined,e=>console.error(e));
 
 function resize(){const r=canvas.getBoundingClientRect(); if(!r.width)return;
   renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix();}
 addEventListener('resize',resize); resize();
 
-const spine=document.getElementById('spine');
-const titleEl=document.getElementById('title'), cue=document.getElementById('cue');
-let target=0,p=0;
-addEventListener('scroll',()=>{const r=spine.getBoundingClientRect();
-  target=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));},{passive:true});
+/* drag to orbit — it is an object, not a video */
+let spinUser=0, spinVel=0, dragging=false, lastX=0;
+canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.classList.add('dragging');
+  try{canvas.setPointerCapture(e.pointerId)}catch{}});
+canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
+  const dx=e.clientX-lastX; lastX=e.clientX; spinUser+=dx*0.006; spinVel=dx*0.006; });
+const endDrag=()=>{dragging=false;canvas.classList.remove('dragging')};
+canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
 
-/* Labels go beside the robot, never on it, on whichever side the copy is not
-   using. Same-side labels push each other apart. */
+const spine=document.getElementById('spine');
+const titleEl=document.getElementById('title');
+let target=0,p=0;
+function readScroll(){const r=spine.getBoundingClientRect();
+  target=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));}
+addEventListener('scroll',readScroll,{passive:true}); readScroll();
+
 const CO=['drive','shooter','intake','hood'].map(k=>({k,
   el:document.getElementById('c-'+k),line:document.getElementById('l-'+k)}));
 const v=new THREE.Vector3();
-function layout(show,textRight){
+function layout(show){
   const w=canvas.clientWidth,h=canvas.clientHeight,taken=[];
   for(const {k,el,line} of CO){
     const a=anchors[k];
     if(!a||!show){el.classList.remove('on');line.style.opacity=0;continue;}
     a.getWorldPosition(v); v.project(camera);
     const x=(v.x*0.5+0.5)*w, y=(-v.y*0.5+0.5)*h;
-    const ok=v.z<1&&x>-40&&x<w+40&&y>40&&y<h-40;
+    const ok=v.z<1&&x>-40&&x<w+40&&y>30&&y<h-30;
     el.classList.toggle('on',ok); line.style.opacity=ok?1:0;
     if(!ok)continue;
-    const lw=el.offsetWidth||210, lh=el.offsetHeight||64;
-    const lx=textRight ? Math.max(28,Math.min(x-104-lw, w*0.30)) : Math.min(w-lw-28,Math.max(x+104,w*0.66));
-    let ly=Math.max(96,Math.min(h-lh-48,y-lh/2));
-    for(const t of taken) if(Math.abs(t-ly)<lh+16) ly=t+lh+16;
-    ly=Math.max(96,Math.min(h-lh-48,ly)); taken.push(ly);
+    const lw=el.offsetWidth||196, lh=el.offsetHeight||60;
+    const lx=Math.min(w-lw-20, Math.max(x+84, w*0.60));
+    let ly=Math.max(28,Math.min(h-lh-28,y-lh/2));
+    for(const t of taken) if(Math.abs(t-ly)<lh+14) ly=t+lh+14;
+    ly=Math.max(28,Math.min(h-lh-28,ly)); taken.push(ly);
     el.style.transform=`translate(${lx}px,${ly}px)`;
-    const ex=textRight?lx+lw+8:lx-8;
-    line.setAttribute('x1',ex);line.setAttribute('y1',ly+lh/2);
+    line.setAttribute('x1',lx-8);line.setAttribute('y1',ly+lh/2);
     line.setAttribute('x2',x);line.setAttribute('y2',y);
   }
 }
 
-/* Which side the copy is on, observed rather than guessed. Deriving it from a
-   scroll range was wrong the moment the panel heights changed — and a callout
-   landing on top of the headline is the one thing this layout must never do. */
-let textRight=false;
-const panels=[...document.querySelectorAll('.panel')];
-const seen=new Map();
-const panelIO=new IntersectionObserver((entries)=>{
-  for(const e of entries) seen.set(e.target,e.intersectionRatio);
-  let best=null,bestR=0;
-  for(const [el,r] of seen) if(r>bestR){bestR=r;best=el;}
-  if(best) textRight=best.classList.contains('right');
-},{threshold:[0,.25,.5,.75,1]});
-panels.forEach(el=>panelIO.observe(el));
-
 const clock=new THREE.Clock(); let spool=0;
-renderer.setAnimationLoop(()=>{
-  const dt=Math.min(0.05,clock.getDelta());
+function frame(dt){
   p+=(target-p)*0.09;
 
-  /* The title holds through the first screen, then lifts and dissolves as the
-     teardown begins — it hands the stage over rather than cutting away. */
-  const tOut=Math.min(1,Math.max(0,(p-0.05)/0.14));
+  /* Focus pull. The title is sharp over a soft robot, so the words own the
+     first screen; as the title lifts, the blur clears and the machine becomes
+     the subject. Pulling focus is how a camera hands attention over. */
+  const tOut=Math.min(1,Math.max(0,(p-0.04)/0.13));
   titleEl.style.opacity=String(1-tOut);
-  titleEl.style.transform=`translateY(${-tOut*90}px) scale(${1+tOut*0.06})`;
-  cue.style.opacity=String(Math.max(0,1-p*14));
+  titleEl.style.transform=`translateY(${-tOut*80}px) scale(${1+tOut*0.05})`;
+  canvas.style.setProperty('--dof', `${((1-tOut)*14).toFixed(2)}px`);
 
-  /* explode rises, holds across the labelled stretch, then closes */
-  const e = p<0.16 ? 0
-          : p<0.52 ? (p-0.16)/0.36
-          : p<0.76 ? 1
-          : p<0.93 ? 1-(p-0.76)/0.17 : 0;
+  const e = p<0.16 ? 0 : p<0.52 ? (p-0.16)/0.36 : p<0.78 ? 1 : p<0.94 ? 1-(p-0.78)/0.16 : 0;
   for(const q of moving){
     const local=Math.max(0,Math.min(1,(e-q.at)/(1-q.at)));
     q.n.position.copy(q.home).addScaledVector(q.dir,smooth(local)*q.d);
   }
 
-  spool+=((p>0.04&&p<0.88?1:0)-spool)*dt*1.2;
+  spool+=((p>0.03&&p<0.90?1:0)-spool)*dt*1.2;
   if(!reduced) for(const s of spin) s.node.rotation.z+=dt*s.rate*spool*26;
 
-  /* One slow continuous move. The stage never jumps sideways between panels —
-     it stays centred and the copy lives in the outer columns. */
-  rig.rotation.y = -0.62 + p*2.0 + (reduced?0:performance.now()/110000);
+  if(!dragging){ spinUser+=spinVel; spinVel*=0.92; }
+  rig.rotation.y = -0.55 + p*1.9 + spinUser + (reduced?0:performance.now()/120000);
 
-  /* The camera has to frame what is actually there. Assembled, the robot is
-     0.74 m across; fully apart the stack is about 1.9 m tall, so a fixed
-     distance crops the hood off the top and the modules off the bottom. Pull
-     back with the explode and ride the look-at up to the stack's new centre. */
-  const spread = smooth(e);
-  camera.position.set(0, 0.56 + spread*0.42, 2.55 + spread*1.95);
-  camera.lookAt(0, 0.04 + spread*0.42, 0);
+  const spread=smooth(e);
+  camera.position.set(0, 0.56 + spread*0.46, 2.45 + spread*2.05);
+  camera.lookAt(0, 0.04 + spread*0.46, 0);
 
-  layout(e>0.55, textRight);
+  layout(e>0.5);
   renderer.render(scene,camera);
-});
+}
+renderer.setAnimationLoop(()=>frame(Math.min(0.05,clock.getDelta())));
+
+/* Verification hook. This page gets reviewed inside an automated browser whose
+   requestAnimationFrame is throttled below 1 fps, which makes any eased value
+   impossible to observe — a screenshot catches a half-finished interpolation
+   rather than the real state. `settle()` drives the same frame function
+   directly so the state is reached deterministically. Nothing calls it in a
+   real browser. */
+window.__spine={
+  get ready(){ return ready },
+  settle(to,steps=240){ target=to; for(let i=0;i<steps;i++) frame(1/60); return {p:+p.toFixed(3)}; },
+};
 </script>
 </body>
 </html>
