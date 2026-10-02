@@ -642,4 +642,24 @@ button {
   .btn .arrow {
     transition: none;
   }
+
+  /* Every spring is spelled `var(--spring-X-dur) var(--spring-X)`, so
+     collapsing the duration tokens here disables spring travel everywhere at
+     once — including the CSS-module-scoped rules this block cannot name.
+     (Those were never covered: the three global classes above were the whole
+     reduced-motion story, so a hover lift in a module still travelled.)
+
+     1ms rather than `none`: the state change must still HAPPEN and still be
+     visible, it just must not move across the screen. Durations for colour,
+     opacity and border are deliberately untouched — a colour cross-fade is
+     not motion, and killing it would make the interface flicker between
+     states instead of settling into them. */
+  :root {
+    --spring-fast-dur: 1ms;
+    --spring-ui-dur: 1ms;
+    --spring-pop-dur: 1ms;
+    --spring-drawer-dur: 1ms;
+    --spring-rubber-dur: 1ms;
+    --spring-reveal-dur: 1ms;
+  }
 }
