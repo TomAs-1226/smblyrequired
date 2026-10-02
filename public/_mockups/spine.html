@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>5805 — the spine</title>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --void:#050505; --ink:#f4f5f7; --dim:#8d8f96; --faint:#5a5d66;
+  --gold:#f0b323; --hair:rgba(255,255,255,.08); --hair-strong:rgba(255,255,255,.14);
+  --display:"Clash Display",sans-serif; --body:"Plus Jakarta Sans",sans-serif;
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.aura{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(1100px 720px at 50% 42%, rgba(240,179,35,.07), transparent 64%),
+             radial-gradient(900px 600px at 22% 76%, rgba(40,96,190,.13), transparent 66%)}
+
+.nav{position:fixed;z-index:40;top:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;
+  gap:6px;padding:7px 7px 7px 20px;border-radius:999px;background:rgba(12,12,14,.6);
+  backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--hair-strong);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.9)}
+.nav .mark{font-family:var(--display);font-weight:700;font-size:.9rem;margin-right:14px}
+.nav a{font-size:.82rem;font-weight:500;color:var(--dim);text-decoration:none;padding:9px 13px;border-radius:999px;
+  transition:color .45s var(--ease),background .45s var(--ease)}
+.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.nav .cta{display:flex;align-items:center;gap:8px;background:var(--ink);color:#07070a;font-weight:600;
+  padding:9px 9px 9px 16px;transition:transform .5s var(--ease)}
+.nav .cta i{width:26px;height:26px;border-radius:999px;background:rgba(0,0,0,.09);display:grid;place-items:center;
+  font-style:normal;font-size:.72rem;transition:transform .5s var(--ease)}
+.nav .cta:hover i{transform:translate(2px,-1px)}
+.nav .cta:active{transform:scale(.97)}
+@media(max-width:860px){.nav .links{display:none}}
+
+/* ── the spine ─────────────────────────────────────────── */
+.spine{position:relative;z-index:1}
+.stage{position:sticky;top:0;height:100dvh;width:100%;overflow:hidden}
+
+/* The title sits IN FRONT. Behind the canvas the robot sliced the number at
+   whatever arbitrary point its silhouette fell and it read as wallpaper; in
+   front it is a deliberate title card that lifts away to reveal the machine. */
+.titlecard{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;
+  will-change:transform,opacity;pointer-events:none}
+.titlecard .pre{font-size:.76rem;font-weight:600;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:.4rem;padding-left:.42em}
+.titlecard .num{font-family:var(--display);font-weight:700;font-size:min(30vw,25rem);line-height:.8;
+  letter-spacing:-.045em;background:linear-gradient(176deg,#fff 6%,#9aa0ad 52%,#4c5059 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1.1rem,2.3vw,2rem);
+  letter-spacing:.01em;color:var(--dim);margin-top:.2rem}
+
+#stage{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%}
+#overlay{position:absolute;inset:0;z-index:3;pointer-events:none}
+#hair{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#hair line{stroke:rgba(255,255,255,.26);stroke-width:1}
+
+.callout{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;
+  transition:opacity .55s var(--ease);width:210px}
+.callout.on{opacity:1}
+.callout .t{font-family:var(--display);font-weight:600;font-size:1rem;letter-spacing:-.015em}
+.callout .d{font-size:.76rem;color:var(--dim);line-height:1.5;margin-top:5px}
+
+/* copy panels scroll past the stage; they sit in the outer columns only */
+.panel{position:relative;z-index:4;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
+  max-width:1460px;margin:0 auto;padding:0 clamp(20px,4vw,72px)}
+.panel.right{justify-content:flex-end}
+.panel .box{width:min(26rem,42vw);pointer-events:auto;position:relative}
+.panel .box::before{content:"";position:absolute;inset:-56px -120px -56px -80px;z-index:-1;
+  background:radial-gradient(118% 84% at 24% 50%, rgba(5,5,6,.95) 0%, rgba(5,5,6,.74) 46%, transparent 76%)}
+.panel.right .box::before{background:radial-gradient(118% 84% at 76% 50%, rgba(5,5,6,.95) 0%, rgba(5,5,6,.74) 46%, transparent 76%)}
+.panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3.1vw,2.9rem);line-height:1.03;
+  letter-spacing:-.03em;margin-bottom:16px}
+.panel p{color:var(--dim);line-height:1.68;font-size:1.02rem;text-wrap:pretty}
+.kicker{font-size:.72rem;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);
+  margin-bottom:18px;display:block}
+em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--gold),#ffd97a 52%,var(--gold));
+  -webkit-background-clip:text;background-clip:text}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:12px;text-decoration:none;font-weight:600;font-size:.88rem;
+  padding:11px 11px 11px 23px;border-radius:999px;background:var(--ink);color:#07070a;
+  transition:transform .5s var(--ease);box-shadow:0 14px 34px -18px rgba(255,255,255,.5)}
+.btn i{width:31px;height:31px;border-radius:999px;background:rgba(0,0,0,.09);display:grid;place-items:center;
+  font-style:normal;font-size:.78rem;transition:transform .5s var(--ease)}
+.btn:hover{transform:translateY(-2px)} .btn:hover i{transform:translate(3px,-1px) scale(1.05)}
+.btn:active{transform:scale(.98)}
+.btn--quiet{background:transparent;color:var(--ink);border:1px solid var(--hair-strong);box-shadow:none;padding:11px 22px}
+.btn--quiet:hover{background:rgba(255,255,255,.05)}
+.facts{display:flex;gap:clamp(18px,2.6vw,40px);margin-top:40px;padding-top:24px;border-top:1px solid var(--hair)}
+.fact b{display:block;font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.fact span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:8px}
+
+.scrollcue{position:fixed;z-index:30;bottom:26px;left:50%;transform:translateX(-50%);
+  font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);
+  transition:opacity .6s var(--ease);pointer-events:none}
+
+.after{position:relative;z-index:4;background:var(--void);max-width:1460px;margin:0 auto;padding:150px 40px 190px}
+.after h2{font-family:var(--display);font-weight:600;font-size:clamp(2rem,3.3vw,3rem);letter-spacing:-.03em;max-width:20ch}
+.after p{color:var(--dim);max-width:52ch;margin-top:16px;line-height:1.68}
+
+@media(max-width:980px){
+  .panel{padding:0 20px} .panel.right{justify-content:flex-start} .panel .box{width:100%}
+  .callout{display:none}
+  .after{padding:100px 20px 120px}
+}
+@media(prefers-reduced-motion:reduce){ .stage{position:relative;height:74dvh} }
+</style>
+</head>
+<body>
+<div class="aura"></div><div class="grain"></div>
+
+<nav class="nav">
+  <span class="mark">5805</span>
+  <span class="links" style="display:flex;gap:2px">
+    <a href="#">Team</a><a href="#">Robots</a><a href="#">Season</a><a href="#">Join</a>
+  </span>
+  <a class="cta" href="#">Sponsor<i>&#8599;</i></a>
+</nav>
+
+<div class="spine" id="spine">
+  <div class="stage">
+    <div class="titlecard" id="title">
+      <span class="pre">FIRST Robotics Competition</span>
+      <span class="num">5805</span>
+      <span class="post">SMbly&nbsp;Required</span>
+    </div>
+    <canvas id="stage"></canvas>
+    <div id="overlay">
+      <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/></svg>
+      <div class="callout" id="c-drive"><div class="t">Drivetrain</div>
+        <div class="d">Four independently steered swerve modules on 4-inch wheels.</div></div>
+      <div class="callout" id="c-shooter"><div class="t">Shooter</div>
+        <div class="d">A 552&nbsp;mm flywheel spun by four Kraken X60s.</div></div>
+      <div class="callout" id="c-intake"><div class="t">Intake</div>
+        <div class="d">Slapdown, extending 300&nbsp;mm past the frame.</div></div>
+      <div class="callout" id="c-hood"><div class="t">Hood</div>
+        <div class="d">Variable angle — flattens or arcs the shot.</div></div>
+    </div>
+  </div>
+
+  <section class="panel" style="min-height:118dvh"></section>
+
+  <section class="panel right">
+    <div class="box">
+      <span class="kicker">Built by students</span>
+      <h2>Twenty people<br>made this.</h2>
+      <p>Every season starts with an empty shop and a blank assembly. Six weeks later
+        there is a 120-pound machine that nobody has built before.</p>
+      <div class="facts">
+        <div class="fact"><b>20</b><span>Students</span></div>
+        <div class="fact"><b>6</b><span>Subteams</span></div>
+        <div class="fact"><b>10+</b><span>Seasons</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="box">
+      <span class="kicker">This season &middot; Numbers</span>
+      <h2>Every part has<br>someone's <em>name</em> on it.</h2>
+      <p>Nothing here was bought assembled. Students cut the rails, wired the loom,
+        tuned the shooter and wrote the code that aims it.</p>
+    </div>
+  </section>
+
+  <section class="panel right">
+    <div class="box">
+      <span class="kicker">Six subteams, one machine</span>
+      <h2>Mechanical. Electrical.<br>Programming. CAD.<br>Business. Media.</h2>
+      <p>Most students cross between them before the season ends. No experience
+        required — we teach you on the robot that is going to competition.</p>
+      <div class="row"><a class="btn" href="#">Join the team<i>&#8599;</i></a></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="box">
+      <span class="kicker">And then we do it again</span>
+      <h2>A new robot,<br>every single year.</h2>
+      <p>Genesis, Exodus, Leviticus, Numbers. One machine a season since 2016,
+        each built by whoever walked into the shop that September.</p>
+      <div class="row">
+        <a class="btn" href="#">See the lineage<i>&#8599;</i></a>
+        <a class="btn btn--quiet" href="#">Sponsor us</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="scrollcue" id="cue">Scroll</div>
+
+<section class="after">
+  <h2>The rest of the site goes here — record, robots, blog, sponsors.</h2>
+  <p>The spine above is the only place the 3D lives. Everything below is ordinary
+    fast HTML, so the page stays light once you are past it.</p>
+</section>
+
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+ "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function studioEnvironment(renderer){
+  const room=new THREE.Scene(), spent=[];
+  const add=(g,m)=>{spent.push(g,m);const x=new THREE.Mesh(g,m);room.add(x);return x};
+  const shell=new THREE.SphereGeometry(10,48,24), pos=shell.getAttribute('position');
+  const tone=new Float32Array(pos.count*3);
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i)/10;
+    const v=y<0?0.03+0.27*Math.pow(Math.max(0,1+y/0.7),1.6):0.2+0.25*Math.pow(y,0.8);
+    tone[i*3]=tone[i*3+1]=tone[i*3+2]=v;}
+  shell.setAttribute('color',new THREE.BufferAttribute(tone,3));
+  add(shell,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide}));
+  const sb=(w,h,i,hex,x,y,z)=>{const c=new THREE.Color(hex).multiplyScalar(i);
+    const p=add(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));
+    p.position.set(x,y,z);p.lookAt(0,0.4,0);};
+  sb(5,2.5,5.0,0xffffff,-1,7,2); sb(9,1.2,2.6,0xffffff,0,2.0,8);
+  sb(1.4,6,3.2,0xf0f3f9,-8,3,0.5); sb(1.4,6,1.6,0xf0f3f9,8,3,-1.5); sb(8,1.2,2.4,0xe0e7f4,0,3.4,-8);
+  const pm=new THREE.PMREMGenerator(renderer), t=pm.fromScene(room,0.04);
+  pm.dispose(); spent.forEach(s=>s.dispose()); return t.texture;
+}
+
+const canvas=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.NeutralToneMapping; renderer.toneMappingExposure=1.05;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene(); scene.environment=studioEnvironment(renderer);
+const camera=new THREE.PerspectiveCamera(30,1,0.05,60);
+const rig=new THREE.Group(); scene.add(rig);
+scene.add(new THREE.HemisphereLight(0xffffff,0x0b0b0c,0.15));
+const key=new THREE.DirectionalLight(0xffffff,1.6); key.position.set(-2.2,5,3.4);
+const rim=new THREE.DirectionalLight(0xdae3f4,2.2); rim.position.set(2.4,3.2,-5);
+scene.add(key,rim);
+
+const REFLECT={aluminium:1.0,steel:0.95,motor:0.8,poly:1.4,print:0.35,belt:0.3,tread:0.3,
+               electronics:0.55,black:0.4,other:0.5};
+
+/* ── the teardown ────────────────────────────────────────────────────────
+   Parts do not fly apart. They lift in LAYERS along single axes, in the order
+   a person would actually take the robot to bits: the shooter off the top, the
+   feed path after it, the intake off the front, the modules off the bottom.
+   The chassis never moves — it is the reference everything else is measured
+   from, and a teardown with no fixed point reads as an explosion.
+
+   `at` staggers each layer so they peel in sequence instead of all at once.
+   Every direction is a single axis: no diagonals, so parts stay aligned with
+   where they came from and the eye can put them back. */
+const LAYERS=[
+  /* The order a person would actually take it to bits, bottom of the stack
+     first. assembly-drive is the reference and never moves: a teardown with no
+     fixed body reads as an explosion rather than a disassembly.
+
+     The rollers are children of these assemblies now, so they are NOT listed —
+     they travel with whatever they are bolted to, and moving them here as well
+     would double their displacement. */
+  { pick:n=>/^module-/.test(n),        dir:[ 0,-1,0], d:0.11, at:0.00 }, // off the drive base
+  /* Modules drop only a little. Further and four small dark bodies against a
+     black stage stop reading as "unbolted from the corners" and start reading
+     as debris that fell off. */
+  { pick:n=>n==='intake',              dir:[ 1, 0,0], d:0.52, at:0.08 }, // off the front
+  { pick:n=>n==='assembly-intake',     dir:[ 1, 0,0], d:0.34, at:0.12 },
+  { pick:n=>n==='assembly-floor',      dir:[ 0, 1,0], d:0.22, at:0.24 }, // belly pan up
+  { pick:n=>n==='assembly-hopper',     dir:[ 0, 1,0], d:0.46, at:0.36 },
+  { pick:n=>n==='assembly-shooter',    dir:[ 0, 1,0], d:0.74, at:0.48 },
+  { pick:n=>n==='hood',                dir:[ 0, 1,0], d:1.00, at:0.58 }, // off the top last
+];
+const moving=[]; const anchors={}; const spin=[];
+const smooth=t=>t*t*(3-2*t);
+
+new GLTFLoader().load('/models/robot.glb',(gltf)=>{
+  const robot=gltf.scene;
+  robot.traverse(o=>{ if(!o.isMesh||!o.material)return; const m=o.material;
+    m.envMapIntensity=REFLECT[m.name]??0.6; m.dithering=true;
+    /* 0.62, matching Console. At 0.34 every panel read as a ghost and the robot
+       looked like a wireframe rather than a machine with polycarbonate on it. */
+    if(m.name==='poly'){m.transparent=true;m.opacity=0.62;m.roughness=0.08;m.depthWrite=false;m.side=THREE.DoubleSide;}
+  });
+  const box=new THREE.Box3().setFromObject(robot), c=box.getCenter(new THREE.Vector3());
+  robot.position.set(-c.x,-box.min.y,-c.z);
+  const pivot=new THREE.Group(); pivot.add(robot); pivot.position.y=-0.3; rig.add(pivot);
+
+  robot.traverse(o=>{
+    if(o===robot||!o.name) return;
+    for(const L of LAYERS){
+      if(!L.pick(o.name)) continue;
+      moving.push({n:o,home:o.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at});
+      break;
+    }
+    if(o.name.startsWith('roller-')&&!o.name.endsWith('-geometry'))
+      spin.push({node:o,rate:o.name==='roller-flywheel'?1:o.name.includes('feeder')?0.42:0.26});
+  });
+
+  const mark=(host,p,name)=>{const o=new THREE.Object3D();o.position.set(p[0],p[1],p[2]);host.add(o);anchors[name]=o;};
+  const g=n=>robot.getObjectByName(n);
+  if(g('module-fl')) mark(g('module-fl'),[0,0.10,0],'drive');
+  if(g('assembly-shooter')) mark(g('assembly-shooter'),[-0.26,0.46,0],'shooter');
+  if(g('intake')) mark(g('intake'),[0.16,0.02,0],'intake');
+  if(g('hood')) mark(g('hood'),[-0.04,0.05,0],'hood');
+
+  resize();
+},undefined,e=>console.error(e));
+
+function resize(){const r=canvas.getBoundingClientRect(); if(!r.width)return;
+  renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix();}
+addEventListener('resize',resize); resize();
+
+const spine=document.getElementById('spine');
+const titleEl=document.getElementById('title'), cue=document.getElementById('cue');
+let target=0,p=0;
+addEventListener('scroll',()=>{const r=spine.getBoundingClientRect();
+  target=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));},{passive:true});
+
+/* Labels go beside the robot, never on it, on whichever side the copy is not
+   using. Same-side labels push each other apart. */
+const CO=['drive','shooter','intake','hood'].map(k=>({k,
+  el:document.getElementById('c-'+k),line:document.getElementById('l-'+k)}));
+const v=new THREE.Vector3();
+function layout(show,textRight){
+  const w=canvas.clientWidth,h=canvas.clientHeight,taken=[];
+  for(const {k,el,line} of CO){
+    const a=anchors[k];
+    if(!a||!show){el.classList.remove('on');line.style.opacity=0;continue;}
+    a.getWorldPosition(v); v.project(camera);
+    const x=(v.x*0.5+0.5)*w, y=(-v.y*0.5+0.5)*h;
+    const ok=v.z<1&&x>-40&&x<w+40&&y>40&&y<h-40;
+    el.classList.toggle('on',ok); line.style.opacity=ok?1:0;
+    if(!ok)continue;
+    const lw=el.offsetWidth||210, lh=el.offsetHeight||64;
+    const lx=textRight ? Math.max(28,Math.min(x-104-lw, w*0.30)) : Math.min(w-lw-28,Math.max(x+104,w*0.66));
+    let ly=Math.max(96,Math.min(h-lh-48,y-lh/2));
+    for(const t of taken) if(Math.abs(t-ly)<lh+16) ly=t+lh+16;
+    ly=Math.max(96,Math.min(h-lh-48,ly)); taken.push(ly);
+    el.style.transform=`translate(${lx}px,${ly}px)`;
+    const ex=textRight?lx+lw+8:lx-8;
+    line.setAttribute('x1',ex);line.setAttribute('y1',ly+lh/2);
+    line.setAttribute('x2',x);line.setAttribute('y2',y);
+  }
+}
+
+/* Which side the copy is on, observed rather than guessed. Deriving it from a
+   scroll range was wrong the moment the panel heights changed — and a callout
+   landing on top of the headline is the one thing this layout must never do. */
+let textRight=false;
+const panels=[...document.querySelectorAll('.panel')];
+const seen=new Map();
+const panelIO=new IntersectionObserver((entries)=>{
+  for(const e of entries) seen.set(e.target,e.intersectionRatio);
+  let best=null,bestR=0;
+  for(const [el,r] of seen) if(r>bestR){bestR=r;best=el;}
+  if(best) textRight=best.classList.contains('right');
+},{threshold:[0,.25,.5,.75,1]});
+panels.forEach(el=>panelIO.observe(el));
+
+const clock=new THREE.Clock(); let spool=0;
+renderer.setAnimationLoop(()=>{
+  const dt=Math.min(0.05,clock.getDelta());
+  p+=(target-p)*0.09;
+
+  /* The title holds through the first screen, then lifts and dissolves as the
+     teardown begins — it hands the stage over rather than cutting away. */
+  const tOut=Math.min(1,Math.max(0,(p-0.05)/0.14));
+  titleEl.style.opacity=String(1-tOut);
+  titleEl.style.transform=`translateY(${-tOut*90}px) scale(${1+tOut*0.06})`;
+  cue.style.opacity=String(Math.max(0,1-p*14));
+
+  /* explode rises, holds across the labelled stretch, then closes */
+  const e = p<0.16 ? 0
+          : p<0.52 ? (p-0.16)/0.36
+          : p<0.76 ? 1
+          : p<0.93 ? 1-(p-0.76)/0.17 : 0;
+  for(const q of moving){
+    const local=Math.max(0,Math.min(1,(e-q.at)/(1-q.at)));
+    q.n.position.copy(q.home).addScaledVector(q.dir,smooth(local)*q.d);
+  }
+
+  spool+=((p>0.04&&p<0.88?1:0)-spool)*dt*1.2;
+  if(!reduced) for(const s of spin) s.node.rotation.z+=dt*s.rate*spool*26;
+
+  /* One slow continuous move. The stage never jumps sideways between panels —
+     it stays centred and the copy lives in the outer columns. */
+  rig.rotation.y = -0.62 + p*2.0 + (reduced?0:performance.now()/110000);
+
+  /* The camera has to frame what is actually there. Assembled, the robot is
+     0.74 m across; fully apart the stack is about 1.9 m tall, so a fixed
+     distance crops the hood off the top and the modules off the bottom. Pull
+     back with the explode and ride the look-at up to the stack's new centre. */
+  const spread = smooth(e);
+  camera.position.set(0, 0.56 + spread*0.42, 2.55 + spread*1.95);
+  camera.lookAt(0, 0.04 + spread*0.42, 0);
+
+  layout(e>0.55, textRight);
+  renderer.render(scene,camera);
+});
+</script>
+</body>
+</html>
