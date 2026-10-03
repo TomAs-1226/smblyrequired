@@ -89,8 +89,9 @@ for (const f of files) {
   console.log(`  applied  ${f}`)
 }
 
-// 02 depends on the users seeded by 01, so the order here is load-bearing.
-const suites = ['01_rls_tests.sql', '02_scouting_tests.sql']
+// 02 depends on the users seeded by 01, and 03 on both, so the order here is
+// load-bearing.
+const suites = ['01_rls_tests.sql', '02_scouting_tests.sql', '03_portal_tests.sql']
 console.log('\nrunning suites\n')
 let out = ''
 for (const s of suites) {
