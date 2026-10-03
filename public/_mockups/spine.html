@@ -13,84 +13,72 @@
 :root{
   --void:#050505; --ink:#f4f5f7; --dim:#8d8f96; --faint:#5a5d66;
   /* Sampled from the crest in public/photos/logo.png — 21,243 blue pixels and
-     6,200 gold. The brand gold is an ANTIQUE gold, not the amber the site had
-     been using (#f0b323), and the blue is a deep royal rather than navy. */
+     6,200 gold. An antique gold and a deep royal blue. */
   --brand-blue:#144781; --brand-gold:#cbb87b;
   --blue-lift:#2f74c8;          /* the crest blue opened up enough to read on black */
-  --gold:#d9c68a;               /* brand gold, a touch brighter for small UI text */
+  --gold:#d9c68a;
   --hair:rgba(255,255,255,.08); --hair-strong:rgba(255,255,255,.14);
   --display:"Clash Display",sans-serif; --body:"Plus Jakarta Sans",sans-serif;
   --ease:cubic-bezier(.32,.72,0,1);
-  --dof:16px;   /* depth of field, driven by scroll */
+  --dof:14px;
   --frame:1500px;  /* the page's measure — nothing spreads wider than this */
 }
 body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:hidden;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-/* One ambient wash for the whole page. Nothing else paints a background — a
-   second dark panel over this is exactly what read as a grey rectangle. */
 .aura{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(1200px 780px at 68% 44%, rgba(240,179,35,.07), transparent 64%),
-             radial-gradient(900px 620px at 16% 78%, rgba(40,96,190,.12), transparent 66%)}
+  background:radial-gradient(1200px 780px at 68% 44%, rgba(203,184,123,.06), transparent 64%),
+             radial-gradient(900px 620px at 16% 78%, rgba(20,71,129,.16), transparent 66%)}
 
 .nav{position:fixed;z-index:40;top:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;
   gap:6px;padding:7px 7px 7px 20px;border-radius:999px;background:rgba(12,12,14,.6);
   backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--hair-strong);
   box-shadow:0 20px 50px -20px rgba(0,0,0,.9)}
 .nav .mark{font-family:var(--display);font-weight:700;font-size:.9rem;margin-right:14px}
-/* Not an inline style: an inline `display` outranks the media query below,
-   which is why the nav kept all five links on a phone and overflowed. */
 .nav .links{display:flex;gap:2px}
 .nav a{font-size:.82rem;font-weight:500;color:var(--dim);text-decoration:none;padding:9px 13px;border-radius:999px;
   transition:color .45s var(--ease),background .45s var(--ease)}
-.nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
 .nav .cta{display:flex;align-items:center;gap:8px;background:var(--ink);color:#07070a;font-weight:600;
   padding:9px 9px 9px 16px;transition:transform .5s var(--ease)}
 .nav .cta i{width:26px;height:26px;border-radius:999px;background:rgba(0,0,0,.09);display:grid;place-items:center;
   font-style:normal;font-size:.72rem;transition:transform .5s var(--ease)}
-.nav .cta:hover i{transform:translate(2px,-1px)}
+@media(hover:hover) and (pointer:fine){
+  .nav a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+  .nav .cta:hover{color:#07070a;background:var(--ink)}
+  .nav .cta:hover i{transform:translate(2px,-1px)}
+}
 .nav .cta:active{transform:scale(.97)}
 @media(max-width:900px){.nav .links{display:none}}
 
 .spine{position:relative;z-index:1}
-.stage{position:sticky;top:0;height:100dvh;width:100%;overflow:hidden;pointer-events:none}
-
-/* The robot owns its own column and never sits under the copy, so no scrim is
-   needed — which is also why there is no stray tint anywhere on the page. */
-/* Everything lives inside one capped, centred measure. Full-bleed was what put
-   a quarter of a 1900px screen of dead black between the copy and the robot:
-   the two were pinned to opposite edges of a viewport that kept growing. */
+.stage{position:sticky;top:0;height:100dvh;width:100%;overflow:hidden;pointer-events:none;z-index:2}
 .col{position:absolute;top:0;left:50%;transform:translateX(-50%);
   width:min(100%,var(--frame));height:100%;pointer-events:auto}
-/* Focus pull is a filter on the canvas, not a backdrop-filter on a layer over
-   it. A backdrop layer blurs whatever sits behind its own box, so wherever that
-   box ended — the foot of the stage — there was a visible seam and a patch of
-   slightly different black. Filtering the canvas blurs only the robot, has no
-   edge to show, and costs less. */
-#stage{display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;
-  filter:blur(var(--dof));will-change:filter}
+/* Focus pull is a filter on the canvas itself: no layer over it, so no seam. */
+#stage{display:block;width:100%;height:100%;cursor:grab;touch-action:pan-y;filter:blur(var(--dof))}
 #stage.dragging{cursor:grabbing}
 
+/* Callouts follow Catalyst Console's park view: a small grey name over a white
+   value, set out beside the robot on the side its part is on, level with the
+   part, joined to it by a hairline. Text leans toward the robot. */
 #overlay{position:absolute;inset:0;z-index:4;pointer-events:none}
 #hair{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-#hair line{stroke:rgba(255,255,255,.26);stroke-width:1}
-.callout{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;
-  transition:opacity .55s var(--ease);width:196px}
-.callout.on{opacity:1}
-.callout .t{font-family:var(--display);font-weight:600;font-size:.98rem;letter-spacing:-.015em}
-.callout .d{font-size:.75rem;color:var(--dim);line-height:1.5;margin-top:5px}
+#hair line{stroke:rgba(255,255,255,.34);stroke-width:1;transition:opacity .45s var(--ease)}
+#hair circle{fill:#fff;transition:opacity .45s var(--ease)}
+.callout{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:flex-start;
+  white-space:nowrap;line-height:1.25;will-change:transform;opacity:0;transition:opacity .45s var(--ease)}
+.callout[data-on="true"]{opacity:1}
+.callout[data-side="left"]{align-items:flex-end;text-align:right}
+.callout small{font-size:.75rem;color:var(--dim);font-weight:500;letter-spacing:.01em}
+.callout b{font-size:.94rem;color:var(--ink);font-weight:500;margin-top:2px}
 
 .titlecard{position:absolute;inset:0;z-index:5;display:grid;place-content:center;text-align:center;
   will-change:transform,opacity;pointer-events:none}
 .titlecard .pre{font-size:.74rem;font-weight:600;letter-spacing:.42em;text-transform:uppercase;
   color:var(--brand-gold);margin-bottom:.5rem;padding-left:.42em}
-
-/* The crest is a blue letterform with a gold outline. The wordmark follows the
-   same logic rather than inventing a third treatment: a blue body opened up
-   enough to hold against black, carrying a gold edge. Two stacked layers,
-   because HTML text has no paint-order — the back one draws the stroke, the
-   front one the fill, so the gold never cuts into the numerals. */
+/* The crest's own logic: a blue letterform with a gold edge. Two stacked
+   layers because HTML text has no paint-order — the gold never cuts in. */
 .num{position:relative;display:block;font-family:var(--display);font-weight:700;
   font-size:min(26vw,21rem);line-height:.82;letter-spacing:-.045em}
 .num span{display:block}
@@ -102,65 +90,75 @@ body{background:var(--void);color:var(--ink);font-family:var(--body);overflow-x:
 .titlecard .post{font-family:var(--display);font-weight:500;font-size:clamp(1rem,2vw,1.7rem);
   color:#e6e9ee;margin-top:.55rem;letter-spacing:.01em}
 
-/* The copy keeps to the half the robot has vacated. --copy is set from the
-   same scroll value that slides the robot, so the two can never close on each
-   other and the text never clips into the machine. */
-.panel{position:relative;z-index:6;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
-  width:min(100%,var(--frame));margin:0 auto;padding:0 clamp(20px,3vw,48px);
-  opacity:var(--copy-in,1);transition:opacity .5s var(--ease)}
-.panel .box{width:min(30rem,var(--copy,46%))}
-.panel .box{pointer-events:auto}
-.panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3.1vw,2.9rem);line-height:1.03;
+/* Each panel is one shot. Its copy sits on the side the robot has left, and
+   the robot's framing is computed from the same column, so they never meet. */
+.panels{position:relative;z-index:3;margin-top:-100dvh}
+.panel{position:relative;min-height:100dvh;display:flex;align-items:center;pointer-events:none;
+  width:min(100%,var(--frame));margin:0 auto;padding:0 clamp(24px,3.4vw,56px)}
+.panel.r{justify-content:flex-end}
+.panel.caption{align-items:flex-end;padding-bottom:9dvh}
+.panel .box{width:min(29rem,36%);pointer-events:auto}
+.panel.caption .box{width:min(24rem,28%)}
+.panel.tight .box{width:min(25rem,30%)}
+.panel h2{font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,3vw,2.8rem);line-height:1.03;
   letter-spacing:-.03em;margin-bottom:16px}
+.panel.caption h2{font-size:clamp(1.5rem,2.2vw,2.1rem)}
 .panel p{color:var(--dim);line-height:1.68;font-size:1.02rem;text-wrap:pretty}
-.kicker{font-size:.72rem;font-weight:600;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);
-  margin-bottom:18px;display:block}
+.kicker{display:flex;align-items:center;gap:10px;font-size:.72rem;font-weight:600;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:18px}
+.kicker b{font-weight:600;color:var(--brand-gold)}
 em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--gold),#ffd97a 52%,var(--gold));
   -webkit-background-clip:text;background-clip:text}
 .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
 .btn{display:inline-flex;align-items:center;gap:12px;text-decoration:none;font-weight:600;font-size:.88rem;
   padding:11px 11px 11px 23px;border-radius:999px;background:var(--ink);color:#07070a;
-  transition:transform .5s var(--ease);box-shadow:0 14px 34px -18px rgba(255,255,255,.5)}
+  transition:transform .5s var(--ease)}
 .btn i{width:31px;height:31px;border-radius:999px;background:rgba(0,0,0,.09);display:grid;place-items:center;
   font-style:normal;font-size:.78rem;transition:transform .5s var(--ease)}
-.btn:hover{transform:translateY(-2px)} .btn:hover i{transform:translate(3px,-1px) scale(1.05)}
-.btn:active{transform:scale(.98)}
-.btn--quiet{background:transparent;color:var(--ink);border:1px solid var(--hair-strong);box-shadow:none;padding:11px 22px}
+@media(hover:hover) and (pointer:fine){
+  .btn:hover{transform:translateY(-2px)} .btn:hover i{transform:translate(3px,-1px) scale(1.05)}
+}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.btn:active{transform:scale(.97)}
+.btn--quiet{background:transparent;color:var(--ink);border:1px solid var(--hair-strong);padding:11px 22px}
 .facts{display:flex;gap:clamp(18px,2.6vw,40px);margin-top:40px;padding-top:24px;border-top:1px solid var(--hair)}
 .fact b{display:block;font-family:var(--display);font-weight:600;font-size:1.7rem;line-height:1;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .fact span{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:8px}
 
-/* The callouts, as plain content. Shown only on narrow screens, but they are
-   real markup either way, so the facts exist without WebGL. */
-.specs .spec{border-left:2px solid var(--brand-blue);padding:2px 0 2px 14px}
-.specs .spec b{display:block;font-family:var(--display);font-weight:600;font-size:1rem}
-.specs .spec span{display:block;font-size:.84rem;color:var(--dim);line-height:1.55;margin-top:3px}
+/* The callouts' words, as plain markup in the panel they belong to. JS builds
+   the on-stage callouts from these, so the facts live in one place and still
+   exist without WebGL. Shown as a list only on narrow screens. */
+.specs{display:none}
+.spec{border-left:2px solid var(--brand-blue);padding:2px 0 2px 14px}
+.spec b{display:block;font-family:var(--display);font-weight:600;font-size:1rem}
+.spec span{display:block;font-size:.84rem;color:var(--dim);line-height:1.55;margin-top:3px}
 
 .after{position:relative;z-index:6;max-width:var(--frame);margin:0 auto;padding:150px clamp(24px,5vw,56px) 190px}
 .after h2{font-family:var(--display);font-weight:600;font-size:clamp(2rem,3.3vw,3rem);letter-spacing:-.03em;max-width:20ch}
 .after p{color:var(--dim);max-width:52ch;margin-top:16px;line-height:1.68}
 
-/* Narrow: stack rather than overlap. The two-column scroll story needs width;
-   below that the robot takes a band of its own and the copy simply flows. */
-/* Below 1024 the two-column scroll story has nowhere to go. The robot takes a
-   band of its own, the copy flows beneath it, and the callouts become an
-   ordinary list — the same facts, no projection maths, no overlap. */
+/* Below 1024 there is no room beside the robot. It takes a band at the top
+   that the copy scrolls up beneath, the way a sticky header works, so text
+   never crosses the model; the callouts become the panel's own list. */
 @media(max-width:1024px){
-  .stage{position:sticky;top:0;height:54svh}
-  .col{position:absolute;inset:0;width:100%;transform:none;left:0}
-  .num{font-size:min(28vw,8rem)}
+  /* Above the panels here, so copy passes under the band, never over the robot. */
+  .stage{height:52svh;background:var(--void);border-bottom:1px solid var(--hair);z-index:4}
+  .col{left:0;transform:none;width:100%}
+  .num{font-size:min(27vw,8rem)}
   .titlecard .pre{font-size:.6rem;letter-spacing:.3em}
   .titlecard .post{font-size:1rem}
-  .callout{display:none}
-  .panel{min-height:auto;padding:44px 20px}
-  .panel .box{width:100%}
+  #overlay{display:none}
+  .panels{margin-top:0}
+  .panel,.panel.r,.panel.caption{min-height:78svh;justify-content:flex-start;align-items:flex-start;
+    padding:36px 20px 40px}
+  .panel.lead{min-height:6svh;padding:0}
+  .panel .box,.panel.caption .box,.panel.tight .box{width:100%}
   .panel h2{font-size:clamp(1.7rem,6.4vw,2.2rem)}
-  .specs{display:grid;gap:10px;margin-top:26px}
+  .specs{display:grid;gap:10px;margin-top:24px}
   .after{padding:80px 20px 110px}
 }
-@media(min-width:1025px){ .specs{display:none} }
-@media(prefers-reduced-motion:reduce){ .stage{position:relative;height:62vh} }
+@media(prefers-reduced-motion:reduce){ #stage{filter:none} }
 </style>
 </head>
 <body>
@@ -178,20 +176,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
   <div class="stage">
     <div class="col">
       <canvas id="stage"></canvas>
-      <div id="overlay">
-        <svg id="hair"><line id="l-drive"/><line id="l-shooter"/><line id="l-intake"/><line id="l-hood"/><line id="l-core"/></svg>
-        <div class="callout" id="c-drive"><div class="t">Drivetrain</div>
-          <div class="d">Four independently steered swerve modules.</div></div>
-        <div class="callout" id="c-shooter"><div class="t">Shooter</div>
-          <div class="d">A 552&nbsp;mm flywheel spun by four Kraken X60s.</div></div>
-        <div class="callout" id="c-intake"><div class="t">Intake</div>
-          <div class="d">Slapdown, extending 300&nbsp;mm past the frame.</div></div>
-        <div class="callout" id="c-hood"><div class="t">Hood</div>
-          <div class="d">Variable angle — flattens or arcs the shot.</div></div>
-        <div class="callout" id="c-core"><div class="t">SystemCore</div>
-          <div class="d">FIRST's new control system — this is the generation
-            that replaces the roboRIO.</div></div>
-      </div>
+      <div id="overlay"><svg id="hair"></svg></div>
     </div>
     <div class="titlecard" id="title">
       <span class="pre">FIRST Robotics Competition</span>
@@ -200,82 +185,112 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
     </div>
   </div>
 
-  <section class="panel" style="min-height:112dvh"></section>
+  <div class="panels">
+  <!-- data-shot names the camera move in SHOTS below. A .spec's data-anchor
+       names the part in ANCHORS; its <b> is the callout's name, its <span> the value. -->
+  <section class="panel lead" data-shot="title"></section>
 
-  <section class="panel">
+  <section class="panel" data-shot="team">
     <div class="box">
       <span class="kicker">Built by students</span>
       <h2>Twenty people<br>made this.</h2>
-      <p>Every season starts with an empty shop and a blank assembly. Six weeks later
+      <p>Every season starts with an empty shop and a blank assembly. Months later
         there is a 120-pound machine that nobody has built before.</p>
       <div class="facts">
         <div class="fact"><b>20</b><span>Students</span></div>
-        <div class="fact"><b>6</b><span>Subteams</span></div>
+        <div class="fact"><b>3</b><span>Subteams</span></div>
         <div class="fact"><b>10+</b><span>Seasons</span></div>
       </div>
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel caption" data-shot="explode">
     <div class="box">
       <span class="kicker">This season &middot; Numbers</span>
-      <h2>Every part has<br>someone's <em>name</em> on it.</h2>
-      <p>Nothing here was bought assembled. Students cut the rails, wired the loom,
-        tuned the shooter and wrote the code that aims it.</p>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="box">
-      <span class="kicker">Six subteams, one machine</span>
-      <h2>Mechanical. Electrical.<br>Programming. CAD.<br>Business. Media.</h2>
-      <p>Most students cross between them before the season ends. No experience
-        required — we teach you on the robot that is going to competition.</p>
-      <div class="row"><a class="btn" href="#">Join the team<i>&#8599;</i></a></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="box">
-      <span class="kicker">Electrical &amp; programming</span>
-      <h2>The half you<br>can't see.</h2>
-      <p>Under the belly pan sits the loom, the power distribution and
-        SystemCore — FIRST's new control system. Students wire every connection
-        and write every line that runs on it.</p>
+      <h2>Every part has someone's <em>name</em> on it.</h2>
       <div class="specs">
-        <div class="spec"><b>Drivetrain</b><span>Four independently steered swerve modules.</span></div>
-        <div class="spec"><b>Shooter</b><span>A 552&nbsp;mm flywheel spun by four Kraken X60s.</span></div>
-        <div class="spec"><b>Intake</b><span>Slapdown, extending 300&nbsp;mm past the frame.</span></div>
-        <div class="spec"><b>Hood</b><span>Variable angle — flattens or arcs the shot.</span></div>
-        <div class="spec"><b>SystemCore</b><span>The control system that replaces the roboRIO.</span></div>
+        <div class="spec" data-anchor="intake"><b>Intake</b><span>Slides out 300 mm</span></div>
+        <div class="spec" data-anchor="floor"><b>Floor</b><span>Eleven-roller conveyor</span></div>
+        <div class="spec" data-anchor="hopper"><b>Hopper</b><span>Holds 13 FUEL deployed</span></div>
+        <div class="spec" data-anchor="shooter"><b>Shooter</b><span>Four Krakens, one flywheel</span></div>
+        <div class="spec" data-anchor="hood"><b>Hood</b><span>Aims from 13° to 45°</span></div>
+        <div class="spec" data-anchor="drive"><b>Drive base</b><span>Four swerve modules</span></div>
       </div>
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel tight" data-shot="mech">
+    <div class="box">
+      <span class="kicker"><b>01</b> Mechanisms</span>
+      <h2>Designed in CAD.<br>Built by hand.</h2>
+      <p>The mechanisms subteam turns a game manual into hardware. This shooter went
+        from a sketch to an Onshape assembly to the robot — its hood rides on the
+        flywheel's own axis, so a single pivot sets every shot.</p>
+      <div class="specs">
+        <div class="spec" data-anchor="flywheel"><b>Flywheel</b><span>4 in stainless, 552 mm wide</span></div>
+        <div class="spec" data-anchor="mhood"><b>Hood</b><span>Pivots on the flywheel axis</span></div>
+        <div class="spec" data-anchor="feeder"><b>Feeder</b><span>Three-roller stack</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel r tight" data-shot="elec">
+    <div class="box">
+      <span class="kicker"><b>02</b> Electrical</span>
+      <h2>Lift the lid.</h2>
+      <p>Under the superstructure is what makes it a robot rather than a sculpture:
+        the battery, the main breaker, power distribution, and the CAN network that
+        carries every motor's commands. The electrical subteam plans and wires all of it.</p>
+      <div class="specs">
+        <div class="spec" data-anchor="battery"><b>Battery</b><span>12 V, the only source on board</span></div>
+        <div class="spec" data-anchor="breaker"><b>Main breaker</b><span>120 A — and the on switch</span></div>
+        <div class="spec" data-anchor="pdp"><b>Power distribution</b><span>Feeds every motor</span></div>
+        <div class="spec" data-anchor="mpm"><b>Power modules</b><span>Fused low-current rails</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel tight" data-shot="prog">
+    <div class="box">
+      <span class="kicker"><b>03</b> Programming</span>
+      <h2>Nothing moves until someone writes it.</h2>
+      <p>Swerve kinematics, the shot solver that sets the hood from distance, the
+        intake's deploy — all Java, written by students, running on SystemCore,
+        FIRST's new generation of robot controller.</p>
+      <div class="specs">
+        <div class="spec" data-anchor="swerve"><b>Swerve</b><span>Each module steers itself</span></div>
+        <div class="spec" data-anchor="aim"><b>Hood</b><span>Angle solved from distance</span></div>
+        <div class="spec" data-anchor="deploy"><b>Intake</b><span>Profiled 300 mm deploy</span></div>
+        <div class="spec" data-anchor="shot"><b>Flywheel</b><span>Four motors, one setpoint</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel r" data-shot="catalyst">
     <div class="box">
       <span class="kicker">Open source</span>
       <h2>We wrote the<br>library <em>too</em>.</h2>
-      <p>FRC Catalyst is our own Java library — pre-built mechanism blocks,
-        vision fusion and logging. Built here, used by teams that are not us.</p>
+      <p>That code is built on FRC Catalyst, our own Java library — pre-built mechanism
+        blocks, vision fusion and logging. Built here, used by teams that are not us.</p>
       <div class="row">
         <a class="btn" href="#/catalyst">Explore Catalyst<i>&#8599;</i></a>
       </div>
     </div>
   </section>
 
-  <section class="panel">
+  <section class="panel" data-shot="lineage">
     <div class="box">
       <span class="kicker">And then we do it again</span>
       <h2>A new robot,<br>every single year.</h2>
       <p>Genesis, Exodus, Leviticus, Numbers. One machine a season since 2016,
         each built by whoever walked into the shop that September.</p>
       <div class="row">
-        <a class="btn" href="#">See the lineage<i>&#8599;</i></a>
+        <a class="btn" href="#">Join the team<i>&#8599;</i></a>
         <a class="btn btn--quiet" href="#">Sponsor us</a>
       </div>
     </div>
   </section>
+  </div>
 </div>
 
 <section class="after">
@@ -285,13 +300,17 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
 </section>
 
 <script type="importmap">
-{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js",
- "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+{"imports":{"three":"https://unpkg.com/three@0.170.0/build/three.module.js",
+ "three/addons/":"https://unpkg.com/three@0.170.0/examples/jsm/"}}
 </script>
 <script type="module">
+/* three r170, not r160: NeutralToneMapping arrived in r162, so on r160 the
+   constant was undefined and every material compiled with no tone mapping at
+   all — the console logged "Unsupported toneMapping" once per shader. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const narrowMQ = matchMedia('(max-width:1024px)');
 
 function studioEnvironment(renderer){
   const room=new THREE.Scene(), spent=[];
@@ -314,11 +333,11 @@ function studioEnvironment(renderer){
 
 const canvas=document.getElementById('stage');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.toneMapping=THREE.NeutralToneMapping; renderer.toneMappingExposure=1.05;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene(); scene.environment=studioEnvironment(renderer);
-const camera=new THREE.PerspectiveCamera(30,1,0.05,60);
+const FOV=30, TAN=Math.tan(FOV*Math.PI/360);
+const camera=new THREE.PerspectiveCamera(FOV,1,0.05,60);
 const rig=new THREE.Group(); scene.add(rig);
 scene.add(new THREE.HemisphereLight(0xffffff,0x0b0b0c,0.15));
 const key=new THREE.DirectionalLight(0xffffff,1.6); key.position.set(-2.2,5,3.4);
@@ -328,68 +347,180 @@ scene.add(key,rim);
 const REFLECT={aluminium:1.0,steel:0.95,motor:0.8,poly:1.4,print:0.35,belt:0.3,tread:0.3,
                electronics:0.55,black:0.4,other:0.5};
 
-/* ── the teardown ────────────────────────────────────────────────────────
-   assembly-drive is the fixed reference and never moves. Neither do the swerve
-   modules: the bake splits a module three ways for STEERING animation, so its
-   gearbox and bevel gears sit in assembly-drive while only the steer plate and
-   wheel are in `module-*` — all 2,127 triangles of it. Moving `module-*`
-   therefore pulled the wheels off their own gears. They belong to the drive
-   base and stay bolted to it.
+/* ── the shots ──────────────────────────────────────────────────────────────
+   Every panel names one. A shot says what the camera looks at (`look`, a point
+   in the robot's frame: x forward, y up, z right) and how big it is (`R`, the
+   radius that encloses it), never where the camera is. Distance is solved from
+   the screen: the subject is made `fill` of the free column wide and at most
+   `fillH` of the height. That is what makes it scale — a 1280 laptop and a
+   1900 monitor get the same composition, not the same metres.
 
-   Everything else lifts along ONE axis, in the order the bolts actually come
-   out, staggered so the stack peels instead of blooming. */
-const LAYERS=[
-  { pick:n=>n==='intake',           dir:[1,0,0], d:0.52, at:0.00 },
-  { pick:n=>n==='assembly-intake',  dir:[1,0,0], d:0.34, at:0.04 },
-  { pick:n=>n==='assembly-floor',   dir:[0,1,0], d:0.24, at:0.18 },
-  { pick:n=>n==='assembly-hopper',  dir:[0,1,0], d:0.50, at:0.32 },
-  { pick:n=>n==='assembly-shooter', dir:[0,1,0], d:0.80, at:0.46 },
-  { pick:n=>n==='hood',             dir:[0,1,0], d:1.08, at:0.58 },
-];
-const moving=[], anchors={}, spin=[];
-let robotRoot=null;
-const smooth=t=>t*t*(3-2*t);
-const narrow=()=>matchMedia('(max-width:1024px)').matches;
-let ready=false;
+   side    -1 robot left of the copy, 0 centred, 1 right
+   yaw     the robot's turn; negative shows its front, positive its back
+   el      camera elevation, radians
+   explode 0..1, the teardown
+   dim     per assembly, how lit it stays (1 = fully)
+   show    per assembly, how present it is (0 = gone, used to lift the lid)
+   prog    0..1, the mechanisms run the way the code drives them           */
+const SHOTS={
+  title:   {side:0, yaw:-0.62,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.62,fillH:0.60},
+  team:    {side:1, yaw:-0.85,el:0.18,look:[0,0.28,0],     R:0.56,fill:0.78,fillH:0.66},
+  explode: {side:0, yaw:-0.50,el:0.22,look:[0.14,0.80,0],  R:1.08,fill:0.80,fillH:0.92,explode:1},
+  /* The shooter on its own: intake, hopper and floor lift out, the drive base
+     stays as a dimmed plinth, and the robot turns to show its back. Its labels
+     all go to the far column, where nothing else is. */
+  mech:    {side:1, yaw:2.25, el:0.24,look:[-0.17,0.32,-0.02],R:0.42,fill:0.72,fillH:0.70,labelSide:'far',
+            show:{intake:0,hopper:0,floor:0}, dim:{drive:0.3}},
+  /* Front to the right, back to the left: the battery's label goes one way and
+     the PDP and breaker's the other, so no hairline has to cross the deck. */
+  elec:    {side:-1,yaw:0.12, el:1.00,look:[-0.01,0.06,0], R:0.40,fill:0.96,fillH:0.74,explode:1,
+            show:{intake:0,hopper:0,floor:0,shooter:0,hood:0}},
+  /* Nearly head-on, so the intake deploys toward the reader and every part
+     the code moves sits on the far side, where its label goes. */
+  prog:    {side:1, yaw:-1.20,el:0.24,look:[0.06,0.30,0],  R:0.62,fill:0.82,fillH:0.68,prog:1,labelSide:'far'},
+  catalyst:{side:-1,yaw:0.55, el:0.21,look:[0,0.29,0],     R:0.60,fill:0.70,fillH:0.66,prog:1},
+  lineage: {side:1, yaw:-0.72,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.78,fillH:0.66},
+};
+const GROUPS=['drive','floor','hopper','intake','shooter','hood'];
+const groupOfNode=n=>n==='assembly-floor'?'floor':n==='assembly-hopper'?'hopper':
+  (n==='intake'||n==='assembly-intake')?'intake':n==='assembly-shooter'?'shooter':n==='hood'?'hood':'drive';
 
-new GLTFLoader().load('/models/robot.glb',(gltf)=>{
-  const robot=gltf.scene;
-  robot.traverse(o=>{ if(!o.isMesh||!o.material)return; const m=o.material;
-    m.envMapIntensity=REFLECT[m.name]??0.6; m.dithering=true;
-    if(m.name==='poly'){m.transparent=true;m.opacity=0.62;m.roughness=0.08;m.depthWrite=false;m.side=THREE.DoubleSide;}
-  });
-  const box=new THREE.Box3().setFromObject(robot), c=box.getCenter(new THREE.Vector3());
-  robot.position.set(-c.x,-box.min.y,-c.z);
-  const pivot=new THREE.Group(); pivot.add(robot); pivot.position.y=-0.3; rig.add(pivot);
-  robotRoot=robot;
+/* The teardown. assembly-drive and the swerve modules never move: the bake
+   splits a module three ways for steering, so its gearbox sits in
+   assembly-drive and moving `module-*` tears the wheel off its own gears. */
+const LAYERS={
+  'intake':          {dir:[1,0,0], d:0.52, at:0.00},
+  'assembly-intake': {dir:[1,0,0], d:0.34, at:0.04},
+  'assembly-floor':  {dir:[0,1,0], d:0.24, at:0.18},
+  'assembly-hopper': {dir:[0,1,0], d:0.50, at:0.32},
+  'assembly-shooter':{dir:[0,1,0], d:0.80, at:0.46},
+  'hood':            {dir:[0,1,0], d:1.08, at:0.58},
+};
 
+/* Where each callout points, as a node and a point in the robot's frame at
+   rest. The point is re-expressed in the node's own frame at load, so it rides
+   with the part through the teardown and the mechanisms. Positions come from
+   the source CAD: the battery, PDP 2.0, 120 A breaker and MPMs are named parts
+   in Assembly 1.gltf. The CAD has no controller in it, so nothing points at one. */
+const ANCHORS={
+  intake:  ['intake',          [0.31,0.395,0.22]],
+  floor:   ['assembly-floor',  [0.12,0.300,0.27]],
+  hopper:  ['assembly-hopper', [0.16,0.420,0.368]],
+  shooter: ['assembly-shooter',[-0.30,0.300,0.33]],
+  hood:    ['hood',            [-0.10,0.555,-0.26]],
+  drive:   ['module-fr',       [0.279,0.100,0.298]],
+  flywheel:['roller-flywheel', [-0.300,0.530,0.22]],
+  mhood:   ['hood',            [-0.085,0.552,0.22]],
+  feeder:  ['roller-feeder-2', [-0.10,0.370,0.22]],
+  battery: ['assembly-drive',  [0.22,0.108,0.05]],
+  breaker: ['assembly-drive',  [-0.277,0.131,0.0]],
+  pdp:     ['assembly-drive',  [-0.195,0.069,0.07]],
+  mpm:     ['assembly-drive',  [0.036,0.062,-0.215]],
+  swerve:  ['module-fl',       [0.279,0.010,-0.330]],   // the tread's contact patch, below the deployed intake
+  aim:     ['hood',            [-0.10,0.555,-0.22]],
+  deploy:  ['intake',          [0.31,0.395,-0.22]],
+  shot:    ['roller-flywheel', [-0.30,0.530,-0.22]],
+};
+
+/* ── panels, shots and callouts from the markup ─────────────────────────── */
+const panels=[...document.querySelectorAll('.panel[data-shot]')].map(el=>({
+  el, box:el.querySelector('.box'), shot:SHOTS[el.dataset.shot], name:el.dataset.shot,
+  specs:[...el.querySelectorAll('.spec[data-anchor]')].map(s=>({anchor:s.dataset.anchor,
+    name:s.querySelector('b').textContent, value:s.querySelector('span').textContent})),
+}));
+const overlay=document.getElementById('overlay'), hair=document.getElementById('hair');
+const SVG='http://www.w3.org/2000/svg';
+const callouts=[];   // {panel, anchor, el, line, dot, w, h, side, x, y, live}
+panels.forEach((p,pi)=>p.specs.forEach(s=>{
+  const el=document.createElement('div'); el.className='callout';
+  el.innerHTML=`<small></small><b></b>`; el.firstChild.textContent=s.name; el.lastChild.textContent=s.value;
+  overlay.appendChild(el);
+  const line=document.createElementNS(SVG,'line'), dot=document.createElementNS(SVG,'circle');
+  dot.setAttribute('r','2.5'); line.style.opacity=dot.style.opacity=0;
+  hair.append(line,dot);
+  callouts.push({pi,anchor:s.anchor,el,line,dot,w:0,h:0,side:null,x:0,y:0,live:false});
+}));
+/* A label's side is chosen from its width, so a re-measure (the web font
+   arriving, a resize) lets every label choose again. */
+function measureCallouts(){ for(const c of callouts){ c.w=c.el.offsetWidth; c.h=c.el.offsetHeight; c.side=null; } }
+
+/* ── the model ──────────────────────────────────────────────────────────── */
+let robot=null, ready=false, manifest=null;
+const moving=[], spin=[], anchors={}, mats={dim:{},show:{}};
+const groupMats=Object.fromEntries(GROUPS.map(g=>[g,[]]));
+const groupNodes=Object.fromEntries(GROUPS.map(g=>[g,[]]));
+const mods=[];       // {node, wheel, axis, cad, angle}
+let hoodNode=null, intakeNode=null, intakeAxis=null;
+
+const [gltf, man] = await Promise.all([
+  new GLTFLoader().loadAsync('/models/robot.glb'),
+  fetch('/models/robot.json').then(r=>r.json()),
+]).catch(e=>{ console.error(e); return [null,null]; });
+if(gltf){
+  manifest=man; robot=gltf.scene; rig.add(robot);
+  const top=robot.getObjectByName('robot_1')||robot;
+  const cache=new Map();
   robot.traverse(o=>{
-    if(o===robot||!o.name) return;
-    for(const L of LAYERS) if(L.pick(o.name)){
-      moving.push({n:o,home:o.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at}); break; }
+    if(!o.isMesh||!o.material) return;
+    let a=o; while(a.parent&&a.parent!==top) a=a.parent;
+    const g=groupOfNode(a.name);
+    const inWheel=(()=>{let x=o;while(x){if(x.name&&x.name.startsWith('wheel-'))return true;x=x.parent}return false})();
+    const k=g+'|'+o.material.uuid+(inWheel?'|w':'');
+    if(!cache.has(k)){
+      const m=o.material.clone();
+      m.envMapIntensity=REFLECT[m.name]??0.6; m.dithering=true;
+      if(m.name==='poly'){m.transparent=true;m.opacity=0.62;m.roughness=0.08;m.depthWrite=false;m.side=THREE.DoubleSide;}
+      /* The CAD's tread is the vendor model's placeholder pale blue. Real
+         tread is black rubber; a pale disc is what read as "weird wheels". */
+      if(inWheel&&m.name==='tread'){m.color.set(0x161719);m.roughness=0.92;m.metalness=0;m.envMapIntensity=0.25;}
+      m.userData.base={color:m.color.clone(),env:m.envMapIntensity,opacity:m.opacity,
+        transparent:m.transparent,depthWrite:m.depthWrite};
+      cache.set(k,m); groupMats[g].push(m);
+    }
+    o.material=cache.get(k);
+  });
+  for(const c of top.children){ if(c.name) groupNodes[groupOfNode(c.name)].push(c); }
+
+  robot.updateMatrixWorld(true);
+  for(const [name,L] of Object.entries(LAYERS)){
+    const n=robot.getObjectByName(name); if(!n) continue;
+    moving.push({n,home:n.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at});
+  }
+  robot.traverse(o=>{
     if(o.name.startsWith('roller-')&&!o.name.endsWith('-geometry'))
       spin.push({node:o,rate:o.name==='roller-flywheel'?1:o.name.includes('feeder')?0.42:0.26});
   });
+  for(const [k,[node,p]] of Object.entries(ANCHORS)){
+    const n=robot.getObjectByName(node); if(!n) continue;
+    const a=new THREE.Object3D(); a.position.copy(n.worldToLocal(new THREE.Vector3(...p)));
+    n.add(a); anchors[k]=a;
+  }
+  for(const m of manifest?.modules??[]){
+    const node=robot.getObjectByName(m.steerNode), wheel=robot.getObjectByName(m.wheelNode);
+    if(node&&wheel) mods.push({node,wheel,axis:new THREE.Vector3(...m.wheelAxis).normalize(),
+      cad:m.cadSteerAngle*Math.PI/180,pos:m.position,angle:0,roll:0});
+  }
+  hoodNode=robot.getObjectByName(manifest?.hood?.node??'hood');
+  intakeNode=robot.getObjectByName(manifest?.intake?.node??'intake');
+  intakeAxis=new THREE.Vector3(...(manifest?.intake?.axis??[1,0,0]));
+  ready=true;
+}
 
-  const mark=(host,q,k)=>{const o=new THREE.Object3D();o.position.set(q[0],q[1],q[2]);host.add(o);anchors[k]=o;};
-  const g=n=>robot.getObjectByName(n);
-  if(g('module-fl'))        mark(g('module-fl'),[0,0.10,0],'drive');
-  if(g('assembly-shooter')) mark(g('assembly-shooter'),[-0.26,0.46,0],'shooter');
-  if(g('intake'))           mark(g('intake'),[0.16,0.02,0],'intake');
-  if(g('hood'))             mark(g('hood'),[-0.04,0.05,0],'hood');
-  /* The control system sits on the belly pan, inside assembly-floor — the bake
-     merges electronics into their parent assembly rather than naming them, so
-     this anchors to the pan itself rather than to a node called SystemCore. */
-  if(g('assembly-floor'))   mark(g('assembly-floor'),[-0.02,0.10,0.10],'core');
-
-  ready=true; resize();
-},undefined,e=>console.error(e));
-
-function resize(){const r=canvas.getBoundingClientRect(); if(!r.width)return;
-  renderer.setSize(r.width,r.height,false); camera.aspect=r.width/r.height; camera.updateProjectionMatrix();}
+/* ── sizing ─────────────────────────────────────────────────────────────── */
+let W=1,H=1;
+let copyEdges=[];   // per panel: the copy box's left/right in canvas px
+function resize(){
+  const r=canvas.getBoundingClientRect(); if(!r.width) return;
+  W=r.width; H=r.height;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, narrowMQ.matches?1.5:2));
+  renderer.setSize(W,H,false); camera.aspect=W/H; camera.updateProjectionMatrix();
+  measureCallouts(); measureCopy();
+}
 addEventListener('resize',resize); resize();
+document.fonts?.ready.then(()=>{measureCallouts();measureCopy();});
 
-/* drag to orbit — it is an object, not a video */
+/* drag to turn — it is an object, not a video. It eases home when let go, so
+   a composed shot is never left wherever a drag happened to stop. */
 let spinUser=0, spinVel=0, dragging=false, lastX=0;
 canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.classList.add('dragging');
   try{canvas.setPointerCapture(e.pointerId)}catch{}});
@@ -398,124 +529,296 @@ canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
 const endDrag=()=>{dragging=false;canvas.classList.remove('dragging')};
 canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
 
-const spine=document.getElementById('spine');
-const titleEl=document.getElementById('title');
-let target=0,p=0;
-function readScroll(){const r=spine.getBoundingClientRect();
-  target=Math.max(0,Math.min(1,-r.top/Math.max(1,r.height-innerHeight)));}
-addEventListener('scroll',readScroll,{passive:true}); readScroll();
+/* ── scroll → shot ──────────────────────────────────────────────────────── */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const smooth=t=>t*t*(3-2*t);
+const lerp=(a,b,t)=>a+(b-a)*t;
+/* The reading line: mid-screen on desktop, mid-way down the copy area under
+   the robot band on a phone. A panel's shot is fully in place when the
+   panel's middle is on that line; between two, the move holds for the first
+   and last fifth so the copy is read against a still robot. */
+function readingLine(){
+  if(!narrowMQ.matches) return innerHeight/2;
+  return canvas.getBoundingClientRect().height+12;
+}
+/* On a phone a panel is "on" when its top meets the band, so its heading is
+   the first thing read under the robot; on desktop, when its middle is mid-screen. */
+const panelKey=r=>narrowMQ.matches?r.top:r.top+r.height/2;
+function scrollShot(){
+  const line=readingLine(), mids=panels.map(p=>panelKey(p.el.getBoundingClientRect()));
+  if(line<=mids[0]) return 0;
+  for(let i=0;i<mids.length-1;i++) if(line<mids[i+1]) return i+(line-mids[i])/(mids[i+1]-mids[i]);
+  return mids.length-1;
+}
 
-const CO=['drive','shooter','intake','hood','core'].map(k=>({k,
-  el:document.getElementById('c-'+k),line:document.getElementById('l-'+k)}));
-const v=new THREE.Vector3();
-/* Labels are placed from the robot's own projected bounding box, not from a
-   fraction of the viewport. That is why they were sitting on the machine: a
-   label pinned to 56% of the screen lands wherever the robot happens to be.
-   Now the box is measured every frame and the labels go beside it — the side
-   with room, flipping together so they read as one column. */
-const bbox=new THREE.Box3(), corner=new THREE.Vector3();
-function screenBounds(w,h){
-  if(!robotRoot) return null;
-  bbox.setFromObject(robotRoot);
-  let minX=1e9,maxX=-1e9;
+/* What a shot means on this screen: where the subject's centre goes and how
+   far the camera has to be for it to fill its share of the free region. The
+   region is what is left after the copy box (measured, not assumed) and, in a
+   shot with callouts, a label column on each side of the robot — labels are
+   set out beside the machine, so the framing has to leave them somewhere to go.
+   Under 1200 px only the far column is kept. */
+const LABEL_COL=280;   // 40 gap + the widest label (~210) + 24 margin, with room to spare
+function measureCopy(){
+  const col=canvas.getBoundingClientRect();
+  copyEdges=panels.map(p=>{ if(!p.box) return null; const r=p.box.getBoundingClientRect();
+    return {left:r.left-col.left,right:r.right-col.left}; });
+}
+function frameShot(s,pi){
+  const narrow=narrowMQ.matches, side=narrow?0:s.side;
+  if(narrow){ const D=Math.min(0.84*W,0.70*H); return {cx:W/2,d:H*s.R/(D*TAN)}; }
+  const labelled=panels[pi].specs.length>0, far=labelled?LABEL_COL:0;
+  const near=labelled&&s.labelSide!=='far'&&W>=1200?LABEL_COL:0;
+  const c=copyEdges[pi];
+  let lo=0, hi=W;
+  if(side>0) { lo=(c?c.right+28:0)+near; hi=W-far; }
+  else if(side<0) { lo=far; hi=(c?c.left-28:W)-near; }
+  else if(labelled) { lo=far; hi=W-far; }
+  const D=Math.min(s.fill*(hi-lo), s.fillH*H);
+  return {cx:(lo+hi)/2, d:H*s.R/(D*TAN)};
+}
+function blend(i,t){
+  const a=panels[i].shot, b=panels[i+1].shot, fa=frameShot(a,i), fb=frameShot(b,i+1), o={};
+  for(const k of ['yaw','el','R']) o[k]=lerp(a[k],b[k],t);
+  for(const k of ['explode','prog']) o[k]=lerp(a[k]??0,b[k]??0,t);
+  o.look=a.look.map((v,i)=>lerp(v,b.look[i],t));
+  o.cx=lerp(fa.cx,fb.cx,t); o.d=lerp(fa.d,fb.d,t);
+  o.dim={}; o.show={};
+  for(const g of GROUPS){ o.dim[g]=lerp(a.dim?.[g]??1,b.dim?.[g]??1,t); o.show[g]=lerp(a.show?.[g]??1,b.show?.[g]??1,t); }
+  return o;
+}
+
+/* ── materials: dim and show per assembly ───────────────────────────────── */
+function applyLook(dim,show){
+  for(const g of GROUPS){
+    const dv=dim[g], sv=show[g];
+    for(const n of groupNodes[g]) n.visible=sv>0.01;
+    for(const m of groupMats[g]){
+      const b=m.userData.base;
+      m.color.copy(b.color).multiplyScalar(dv); m.envMapIntensity=b.env*dv;
+      const fading=sv<0.999, t=b.transparent||fading;
+      if(m.transparent!==t){ m.transparent=t; m.needsUpdate=true; }
+      m.opacity=b.opacity*sv; m.depthWrite=b.depthWrite&&!fading;
+    }
+  }
+}
+
+/* ── the mechanisms, moving the way the code moves them ─────────────────── */
+let progT=0;
+const wrapNear=(target,cur)=>{ // a swerve module may flip its wheel instead of turning past 90°
+  let t=target; while(t-cur>Math.PI/2) t-=Math.PI; while(cur-t>Math.PI/2) t+=Math.PI; return t; };
+function runMechanisms(w,dt){
+  if(!reduced && w>0.001) progT+=dt;
+  const phase=progT%9;
+  for(const m of mods){
+    /* WPILib heading in, steer node turn out: the CAD already sits at the
+       module's cadSteerAngle, so the turn is the difference. 0–3 s crab with a
+       sweeping heading, 3–6 s spin in place (which is the CAD pose), 6–9 s strafe. */
+    const heading = phase<3 ? 0.42*Math.sin(progT*0.9) : phase<6 ? m.cad : Math.PI/2;
+    const target = wrapNear(heading-m.cad, m.angle);
+    m.angle+= (target-m.angle)*(1-Math.exp(-dt*7));
+    m.node.rotation.y=m.angle*w;
+    m.roll+=dt*w*9; m.wheel.quaternion.setFromAxisAngle(m.axis,m.roll);
+  }
+  if(hoodNode){
+    const deg=13+25*(0.5-0.5*Math.cos(progT*0.8));      // Hood.java's range is 13–45°
+    hoodNode.rotation.z=w*(deg-(manifest?.hood?.cadAngle??11))*Math.PI/180;
+  }
+  return (manifest?.intake?.travel??0.3)*(0.5-0.5*Math.cos(progT*0.55))*w;
+}
+
+/* ── callout layout: Catalyst Console's layoutCallouts, ported ──────────── */
+/* Labels go out past the robot's edge on the side their part is on, level with
+   it; one side keeps its order and is pushed apart so labels never overlap.
+   Two additions: a side's band excludes the copy box, and a label keeps the
+   side it already has unless its part has clearly crossed the middle — the
+   lack of that hysteresis is what made labels flick back and forth. */
+function layoutCallouts(items, box, area){
+  const gap=40, spacing=14, margin=24, sides={left:[],right:[]};
+  const middle=(box.left+box.right)/2;
+  for(const it of items){
+    const room={left:box.left-gap-it.w-margin, right:area.w-margin-(box.right+gap+it.w)};
+    /* A label picks its side once, when it appears, and keeps it. Re-deciding
+       every frame is what made labels flick across while the robot swayed or
+       the intake slid out. */
+    let side=it.c.side||it.force;
+    if(!side){
+      side=it.p.x<middle?'left':'right';
+      const other=side==='left'?'right':'left';
+      if(room[side]<0 && room[other]>room[side]) side=other;
+    }
+    it.c.side=side; sides[side].push({...it,y:it.p.y-it.h/2});
+  }
+  const out=[];
+  for(const side of ['left','right']){
+    const list=sides[side].sort((a,b)=>a.y-b.y), band=area[side]??[0,area.h];
+    let floor=band[0];
+    for(const it of list){ it.y=Math.max(it.y,floor); floor=it.y+it.h+spacing; }
+    let ceiling=band[1];
+    for(let i=list.length-1;i>=0;i--){ const it=list[i];
+      it.y=Math.max(band[0],Math.min(it.y,ceiling-it.h)); ceiling=it.y-spacing; }
+    for(const it of list){
+      const x=side==='left'?Math.max(margin,box.left-gap-it.w):Math.min(area.w-margin-it.w,box.right+gap);
+      out.push({...it,side,x});
+    }
+  }
+  return out;
+}
+/* The band a column may use: the full height under the nav, unless the copy
+   box sits in that column — then whichever part above or below it is taller. */
+function bandFor(x0,x1,copy){
+  const top=96, bottom=H-28;
+  if(!copy||x1<copy.left-16||x0>copy.right+16) return [top,bottom];
+  const above=[top,copy.top-20], below=[copy.bottom+20,bottom];
+  return (above[1]-above[0])>=(below[1]-below[0])?above:below;
+}
+
+const v=new THREE.Vector3(), bb=new THREE.Box3(), tmp=new THREE.Box3(), corner=new THREE.Vector3();
+let sbox=null;   // the subject's screen box, smoothed
+/* The box labels are set beside: only the assemblies in focus, so a shot
+   that dims the rest of the robot labels the shooter, not the whole machine. */
+function subjectBox(look){
+  bb.makeEmpty();
+  for(const g of GROUPS) if(look.show[g]>0.5&&look.dim[g]>0.5) for(const n of groupNodes[g]){ tmp.setFromObject(n); bb.union(tmp); }
+  if(bb.isEmpty()) return null;
+  let l=1e9,r=-1e9,t=1e9,b=-1e9;
   for(let i=0;i<8;i++){
-    corner.set(i&1?bbox.max.x:bbox.min.x, i&2?bbox.max.y:bbox.min.y, i&4?bbox.max.z:bbox.min.z);
-    corner.project(camera);
-    const x=(corner.x*0.5+0.5)*w;
-    if(x<minX)minX=x; if(x>maxX)maxX=x;
+    corner.set(i&1?bb.max.x:bb.min.x,i&2?bb.max.y:bb.min.y,i&4?bb.max.z:bb.min.z).project(camera);
+    const x=(corner.x+1)/2*W, y=(1-corner.y)/2*H;
+    l=Math.min(l,x); r=Math.max(r,x); t=Math.min(t,y); b=Math.max(b,y);
   }
-  return {minX,maxX};
+  return {left:l,right:r,top:t,bottom:b};
 }
-function layout(show){
-  const w=canvas.clientWidth,h=canvas.clientHeight,taken=[];
-  const b=screenBounds(w,h);
-  const lw=206, gap=26;
-  /* Prefer the side the copy is not on; fall back to whichever actually fits. */
-  let right = b ? (b.maxX + gap + lw <= w) : true;
-  if(b && !right && b.minX - gap - lw < 0) right = true;
-  for(const {k,el,line} of CO){
-    const a=anchors[k];
-    if(!a||!show||!b){el.classList.remove('on');line.style.opacity=0;continue;}
-    a.getWorldPosition(v); v.project(camera);
-    const x=(v.x*0.5+0.5)*w, y=(-v.y*0.5+0.5)*h;
-    const ok=v.z<1&&y>20&&y<h-20;
-    el.classList.toggle('on',ok); line.style.opacity=ok?1:0;
-    if(!ok)continue;
-    const lh=el.offsetHeight||62;
-    const lx = right ? Math.min(w-lw-8, b.maxX+gap) : Math.max(8, b.minX-gap-lw);
-    let ly=Math.max(20,Math.min(h-lh-20,y-lh/2));
-    for(const t of taken) if(Math.abs(t-ly)<lh+12) ly=t+lh+12;
-    ly=Math.max(20,Math.min(h-lh-20,ly)); taken.push(ly);
-    el.style.width=lw+'px';
-    el.style.transform=`translate(${lx}px,${ly}px)`;
-    const ex = right ? lx-6 : lx+lw+6;
-    line.setAttribute('x1',ex);line.setAttribute('y1',ly+lh/2);
-    line.setAttribute('x2',x);line.setAttribute('y2',y);
+function placeCallouts(beat, settled, look, dt){
+  const on = !narrowMQ.matches && settled && beat>=0;
+  const k=1-Math.exp(-dt*12);
+  let laid=[];
+  if(on){
+    const raw=subjectBox(look);
+    if(raw){
+      /* Smoothed so the column holds still while the robot sways or is dragged. */
+      if(!sbox) sbox={...raw};
+      else for(const q of ['left','right','top','bottom']) sbox[q]+= (raw[q]-sbox[q])*(1-Math.exp(-dt*5));
+      const box={...sbox,w:sbox.right-sbox.left};
+      const cr=panels[beat].box?.getBoundingClientRect(), col=canvas.getBoundingClientRect();
+      const copy=cr?{left:cr.left-col.left,right:cr.right-col.left,top:cr.top-col.top,bottom:cr.bottom-col.top}:null;
+      const items=[];
+      for(const c of callouts){ if(c.pi!==beat) continue;
+        const a=anchors[c.anchor]; if(!a) continue;
+        a.getWorldPosition(v).project(camera);
+        const p={x:(v.x+1)/2*W, y:(1-v.y)/2*H};
+        if(v.z>1||p.x<0||p.x>W||p.y<0||p.y>H) continue;
+        /* labelSide:'far' sends every label away from the copy. */
+        const force=panels[beat].shot.labelSide==='far'?(panels[beat].shot.side>0?'right':'left'):null;
+        items.push({c,p,w:c.w,h:c.h,force});
+      }
+      const maxW=Math.max(0,...items.map(i=>i.w));
+      const area={w:W,h:H,
+        left: bandFor(box.left-40-maxW, box.left-40, copy),
+        right:bandFor(box.right+40, box.right+40+maxW, copy)};
+      laid=layoutCallouts(items,box,area);
+    }
+  } else sbox=null;
+  const shown=new Set(laid.map(l=>l.c));
+  for(const l of laid){
+    const c=l.c;
+    if(!c.live){ c.x=l.x; c.y=l.y; c.live=true; }
+    else { c.x+= (l.x-c.x)*k; c.y+= (l.y-c.y)*k; }
+    c.el.dataset.side=l.side; c.el.dataset.on='true';
+    c.el.style.transform=`translate(${c.x.toFixed(1)}px,${c.y.toFixed(1)}px)`;
+    const ex=l.side==='left'?c.x+c.w+10:c.x-10, ey=c.y+c.h/2;
+    c.line.setAttribute('x1',ex); c.line.setAttribute('y1',ey);
+    c.line.setAttribute('x2',l.p.x); c.line.setAttribute('y2',l.p.y);
+    c.dot.setAttribute('cx',l.p.x); c.dot.setAttribute('cy',l.p.y);
+    c.line.style.opacity=c.dot.style.opacity=1;
+  }
+  for(const c of callouts) if(!shown.has(c)){
+    c.el.dataset.on='false'; c.line.style.opacity=c.dot.style.opacity=0; c.live=false; c.side=null;
   }
 }
 
-const clock=new THREE.Clock(); let spool=0;
-function frame(dt){
-  p+=(target-p)*0.09;
+/* ── the frame ──────────────────────────────────────────────────────────── */
+const titleEl=document.getElementById('title');
+let s=0, spool=0, visible=true;
+new IntersectionObserver(([e])=>{visible=e.isIntersecting}).observe(document.getElementById('spine'));
+const clock=new THREE.Clock();
 
-  /* Focus pull. The title is sharp over a soft robot, so the words own the
-     first screen; as the title lifts, the blur clears and the machine becomes
-     the subject. Pulling focus is how a camera hands attention over. */
-  const tOut=Math.min(1,Math.max(0,(p-0.04)/0.13));
+function frame(dt,draw=true){
+  if(!ready) return;
+  const target=scrollShot();
+  s = reduced ? target : s+(target-s)*(1-Math.exp(-dt*7));
+  const i=Math.min(panels.length-2,Math.floor(s)), f=s-i;
+  const t=smooth(clamp01((f-0.2)/0.6));
+  const look=blend(i,t);
+
+  /* Focus pull: the title is sharp over a soft robot, then hands over. */
+  const tOut=clamp01(s/0.55);
   titleEl.style.opacity=String(1-tOut);
-  titleEl.style.transform=`translateY(${-tOut*80}px) scale(${1+tOut*0.05})`;
-  canvas.style.setProperty('--dof', `${((1-tOut)*14).toFixed(2)}px`);
+  titleEl.style.transform=`translateY(${-tOut*70}px) scale(${1+tOut*0.05})`;
+  canvas.style.setProperty('--dof',`${((1-tOut)*14).toFixed(2)}px`);
 
-  const e = p<0.16 ? 0 : p<0.52 ? (p-0.16)/0.36 : p<0.78 ? 1 : p<0.94 ? 1-(p-0.78)/0.16 : 0;
-  for(const q of moving){
-    const local=Math.max(0,Math.min(1,(e-q.at)/(1-q.at)));
-    q.n.position.copy(q.home).addScaledVector(q.dir,smooth(local)*q.d);
+  /* Panels fade with distance from the reading line. */
+  const line=readingLine();
+  for(const p of panels){ if(!p.box) continue;
+    const r=p.el.getBoundingClientRect(), dist=Math.abs(panelKey(r)-line)/innerHeight;
+    p.box.style.opacity=String(narrowMQ.matches?1:1-smooth(clamp01((dist-0.22)/0.3)));
   }
 
-  spool+=((p>0.03&&p<0.90?1:0)-spool)*dt*1.2;
-  if(!reduced) for(const s of spin) s.node.rotation.z+=dt*s.rate*spool*26;
+  /* Materials, teardown, mechanisms. */
+  applyLook(look.dim,look.show);
+  const deploy=runMechanisms(look.prog,dt);
+  for(const q of moving){
+    const local=clamp01((look.explode-q.at)/(1-q.at));
+    q.n.position.copy(q.home).addScaledVector(q.dir,smooth(local)*q.d);
+    if(q.n===intakeNode) q.n.position.addScaledVector(intakeAxis,deploy);
+  }
+  spool+=((0.3+0.7*look.prog)-spool)*dt*1.5;
+  if(!reduced) for(const r of spin) r.node.rotation.z+=dt*r.rate*spool*26;
 
-  if(!dragging){ spinUser+=spinVel; spinVel*=0.92; }
-  rig.rotation.y = -0.55 + p*1.9 + spinUser + (reduced?0:performance.now()/120000);
+  /* Turn: the shot's yaw, a slow sway that stops while labels are up, and
+     whatever the reader dragged, easing back. */
+  const beat=Math.round(s), settled=Math.abs(s-beat)<0.18 && panels[beat].specs.length>0;
+  if(!dragging){ spinUser+=spinVel; spinVel*=0.9; spinUser*=Math.exp(-dt*0.6); }
+  const sway=reduced?0:Math.sin(performance.now()/5200)*0.07*(settled?0.15:1);
+  rig.rotation.y=look.yaw+sway+spinUser;
 
-  /* The robot holds dead centre under the wordmark, then slides right as the
-     title clears and hands the left half to the copy. Translating the rig
-     rather than swinging the camera keeps the perspective square — a camera
-     panned off-axis skews a machine that should read as drawn. */
-  const spread=smooth(e);
-  /* After the teardown closes, the camera pushes in on the belly pan for the
-     electrical/programming beat — the one subsystem you cannot see from across
-     a room, so it gets the only close-up. */
-  const zoom = smooth(Math.min(1,Math.max(0,(p-0.80)/0.12))) * (1-smooth(Math.min(1,Math.max(0,(p-0.94)/0.06))));
-  const dist = (2.45 + spread*2.05) * (1 - zoom*0.45);
+  /* Camera: on a sphere round the look point, with the principal point moved
+     so the subject lands at cx. Shifting the view rather than the robot keeps
+     perspective square — a camera panned off-axis skews the machine. */
+  const lk=v.set(...look.look).applyAxisAngle(THREE.Object3D.DEFAULT_UP,rig.rotation.y).clone();
+  camera.position.set(lk.x, lk.y+Math.sin(look.el)*look.d, lk.z+Math.cos(look.el)*look.d);
+  camera.lookAt(lk);
+  /* On a phone the nav pill covers the top of the band, so the subject sits a
+     little below its middle. */
+  camera.setViewOffset(W,H,W/2-look.cx,narrowMQ.matches?-26:0,W,H);
+  camera.updateMatrixWorld();
+  /* Measure against this frame's pose. Rendering refreshes world matrices, but
+     only after this point — measuring first used last frame's robot. */
+  scene.updateMatrixWorld();
 
-  /* The offset is in metres but the copy's gap is in screen space, so it has to
-     scale with camera distance — otherwise the robot drifts back to centre
-     exactly when it pulls away for the teardown, which is when the copy is on
-     screen and has least room to give. */
-  const aside = narrow() ? 0 : smooth(Math.min(1,Math.max(0,(p-0.09)/0.13)));
-  rig.position.x = aside * 0.62 * (dist/2.45);
-  document.documentElement.style.setProperty('--copy', `${(46*aside).toFixed(1)}%`);
-  document.documentElement.style.setProperty('--copy-in', aside.toFixed(3));
-
-  camera.position.set(0, 0.56 + spread*0.46 - zoom*0.34, dist);
-  camera.lookAt(0, 0.04 + spread*0.46 - zoom*0.30, 0);
-
-  layout(e>0.5);
-  renderer.render(scene,camera);
+  placeCallouts(settled?beat:-1, settled, look, dt);
+  if(draw) renderer.render(scene,camera);
 }
-renderer.setAnimationLoop(()=>frame(Math.min(0.05,clock.getDelta())));
+renderer.setAnimationLoop(()=>{ const dt=Math.min(0.05,clock.getDelta()); if(visible) frame(dt); });
 
-/* Verification hook. This page gets reviewed inside an automated browser whose
-   requestAnimationFrame is throttled below 1 fps, which makes any eased value
-   impossible to observe — a screenshot catches a half-finished interpolation
-   rather than the real state. `settle()` drives the same frame function
-   directly so the state is reached deterministically. Nothing calls it in a
-   real browser. */
+/* Verification hook. This page is reviewed in an automated browser whose
+   requestAnimationFrame is throttled below 1 fps, so eased values can't be
+   observed. `settle(name)` scrolls a panel onto the reading line and drives
+   the same frame function until it rests. Nothing calls it in a real browser. */
 window.__spine={
   get ready(){ return ready },
-  settle(to,steps=240){ target=to; for(let i=0;i<steps;i++) frame(1/60); return {p:+p.toFixed(3)}; },
+  settle(name,steps=200){
+    const p=panels.find(x=>x.name===name)||panels[0];
+    const r=p.el.getBoundingClientRect();
+    scrollTo(0, scrollY + panelKey(r) - readingLine());
+    for(let k=0;k<steps;k++) frame(1/60,k===steps-1);
+    return {s:+s.toFixed(3), shown:callouts.filter(c=>c.el.dataset.on==='true').length};
+  },
+  callouts(){ return callouts.filter(c=>c.el.dataset.on==='true').map(c=>({a:c.anchor,side:c.side,
+    x:Math.round(c.x),y:Math.round(c.y),w:c.w,h:c.h})); },
 };
+/* ?shot=mech opens the page settled on that shot — for review screenshots. */
+const want=new URLSearchParams(location.search).get('shot');
+if(want&&ready) setTimeout(()=>window.__spine.settle(want),300);
 </script>
 </body>
 </html>
