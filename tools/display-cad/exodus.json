@@ -1,0 +1,52 @@
+{
+  "source": "Assembly 1 (1).gltf",
+  "robot": "Exodus, the 2025 REEFSCAPE offseason robot",
+  "drop": [],
+  "dropNode": [
+    "CAGE (GE-25231) <1>",
+    "node:1359"
+  ],
+  "dropNodeDetail": [
+    {
+      "what": "The field's REEFSCAPE CAGE, mated to the robot and clipping through the funnel. Drop the whole sub-assembly.",
+      "name": "CAGE (GE-25231) <1>",
+      "path": "Assembly 1 / CAGE (GE-25231) <1>",
+      "nodeIndex": 108,
+      "onshapeInstanceId": ["MbZgGGMG7VPL/kn2c"],
+      "unique": "the only node whose name contains CAGE; a direct child of the root",
+      "parts": 36,
+      "triangles": 228512,
+      "cadBBox": { "min": [-0.124, -0.481, 0.146], "max": [0.124, 0.752, 1.250] }
+    },
+    {
+      "what": "The robot-left (CAD +x) elevator belt. It runs up past the top pulleys and ends 0.79 m above the elevator in a loose hook: an open strand that is not on its pulleys. Its mirror twin (node 1476, kept) stops at the top pulleys.",
+      "name": "occurrence of 916T 5M 18mm Wide Belt",
+      "path": "Assembly 1 / Elevator <1> / Elevator Gearbox <1> / occurrence of 916T 5M 18mm Wide Belt",
+      "nodeIndex": 1359,
+      "meshNodeIndex": 1360,
+      "meshIndex": 177,
+      "onshapeInstanceId": ["MzoitZJUihNjk661W", "M6a+XiB2WdwBHLDXM", "MugeE2sNkWFboGMm0"],
+      "unique": "NOT by name or path: node 1476 (Onshape id ending ME7kKl7r6SSmuEwfE, mesh 191) has the identical name and path and must stay. Match by node index, by Onshape instance id, or by mesh index 177.",
+      "triangles": 230568,
+      "cadBBox": { "min": [0.001, -0.149, 0.008], "max": [0.286, -0.131, 1.855] },
+      "keptTwin": { "nodeIndex": 1476, "meshIndex": 191, "onshapeInstanceIdLast": "ME7kKl7r6SSmuEwfE", "triangles": 228412, "cadBBox": { "min": [-0.281, -0.149, 0.008], "max": [-0.001, -0.131, 1.053] } }
+    }
+  ],
+  "orientation": {
+    "target": "site frame: x = robot forward, y = up, z = robot right, metres, origin on the floor under the drivetrain centre (src/robot3d.js convention)",
+    "cadUp": [0, 0, 1],
+    "cadForward": [0, -1, 0],
+    "cadRight": [-1, 0, 0],
+    "mapping": "site (x, y, z) = (-y_cad, z_cad, -x_cad)",
+    "cadOrigin": [0, 0, 0],
+    "matrixColumnMajor": [0, 0, -1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    "evidence": [
+      "Up: the export is z-up. The Drive Base spans z 0.000 to 0.167, the four X2 molded wheels have centres at z 0.0508 (2 in radius) and touch z = 0; the elevator rises to z 1.064.",
+      "Origin: the four swerve wheel centres are at (+-0.2794, +-0.3175) in CAD x/y, so their centre is (0.0001, 0.0000): already under the drivetrain centre, floor at z = 0. No translation needed.",
+      "Forward = CAD -y: the End Effector (coral scoring rollers and the algae arm) sits at y -0.520 to -0.171 and overhangs the frame (-0.381) on that side; the coral Funnel (back-loading from the station), the battery (y 0.174 to 0.355), the climber Arm & Gearbox (y 0.102 to 0.381) and the cage all sit at +y, the rear.",
+      "Handedness check: 'Drive Left Panel' is at CAD x +0.038 to +0.343 and 'Drive Right Panel' at x -0.343 to -0.038. With forward = -y and up = +z, robot left is +x and right is -x, which matches the panel names.",
+      "Frame: drivebase 0.692 m (x, side to side) by 0.765 m (y, front to back); wheelbase 0.635 m front-to-back, track 0.559 m side-to-side."
+    ]
+  },
+  "notes": "Only the two nodes above are dropped (cage: 36 parts, 228,512 tris; belt: 1 part, 230,568 tris), out of 1,312 instances and 14,403,064 tris. No regex is used because the broken belt's name and path are identical to its twin's. After the drop, the elevator's robot-left side has no belt: the team may want that, but it is visible on close views. Five small HTD belts in the Funnel, Head and End Effector (about 490 tris each) and the 52-link energy chain are fine and kept. Evidence renders were made from a 3 mm vertex-clustered preview, not the bake."
+}
