@@ -21,26 +21,82 @@ function wrap(error) {
   return error.message
 }
 
+// --- last-known copies for a phone with no signal ----------------------------
+//
+// The write path is offline-first, but the screen a scout writes FROM was not:
+// reloading the Scout tab in an arena with no signal lost the active form, the
+// event list and the team list, and the page said "No active match form" — so
+// nothing could be recorded even though the queue was ready to hold it. The
+// reads below keep their last good answer on the device and fall back to it
+// only when the request never reached the server (no PostgREST error code). A
+// refusal from the server (RLS, a bad filter) is never papered over.
+const CACHE_PREFIX = 'frc5805.cache.'
+
+function remember(key, data) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), data }))
+  } catch {
+    // Storage full or blocked: the live answer is still returned, just not kept.
+  }
+}
+
+function recall(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+// Wraps a read that resolves { data, error } with a raw supabase error.
+async function withLastKnown(key, read, empty) {
+  let data = null
+  let error = null
+  try {
+    ;({ data, error } = await read())
+  } catch (err) {
+    error = { message: String(err?.message ?? err) }
+  }
+  if (!error) {
+    remember(key, data ?? empty)
+    return { data: data ?? empty, error: null }
+  }
+  if (!error.code) {
+    const kept = recall(key)
+    if (kept) return { data: kept.data, error: null, offline: true, savedAt: kept.at }
+  }
+  return { data: empty, error: wrap(error) }
+}
+
 // --- events & teams (TBA-backed cache) ---------------------------------------
 
 export async function listEvents(year) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('events')
-    .select('key, name, short_name, city, state_prov, start_date, end_date, week')
-    .eq('year', year)
-    .order('start_date')
-  return { data: data ?? [], error: wrap(error) }
+  return withLastKnown(
+    `events.${year}`,
+    () =>
+      supabase
+        .from('events')
+        .select('key, name, short_name, city, state_prov, start_date, end_date, week')
+        .eq('year', year)
+        .order('start_date'),
+    []
+  )
 }
 
 export async function listEventTeams(eventKey) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('event_teams')
-    .select('team_number, nickname, city, state_prov, rookie_year')
-    .eq('event_key', eventKey)
-    .order('team_number')
-  return { data: data ?? [], error: wrap(error) }
+  return withLastKnown(
+    `event_teams.${eventKey}`,
+    () =>
+      supabase
+        .from('event_teams')
+        .select('team_number, nickname, city, state_prov, rookie_year')
+        .eq('event_key', eventKey)
+        .order('team_number'),
+    []
+  )
 }
 
 /**
@@ -55,23 +111,38 @@ export async function syncFromTba(action, params = {}) {
   const { data, error } = await supabase.functions.invoke('tba-proxy', {
     body: { action, ...params },
   })
-  if (error) return { data: null, error: wrap(error) }
+  if (error) return { data: null, error: await functionError(error) }
   if (data?.error) return { data: null, error: data.error }
   return { data: data?.data ?? data, error: null }
+}
+
+// supabase-js turns any non-2xx from an edge function into FunctionsHttpError
+// and keeps the body only on error.context. Every function here answers
+// failures as { error } with a non-2xx status (_shared/auth.ts), so without
+// reading the body a lead pressing "Pull events" saw "Edge Function returned a
+// non-2xx status code" instead of "TBA_KEY is not configured" or "lead only".
+async function functionError(error) {
+  const body = await error?.context?.json?.().catch(() => null)
+  if (body?.error) return String(body.error)
+  return wrap(error)
 }
 
 // --- forms --------------------------------------------------------------------
 
 export async function activeForm(season, kind) {
   if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('scout_forms')
-    .select('id, season, kind, name, description, fields')
-    .eq('season', season)
-    .eq('kind', kind)
-    .eq('is_active', true)
-    .maybeSingle()
-  return { data, error: wrap(error) }
+  return withLastKnown(
+    `form.${season}.${kind}`,
+    () =>
+      supabase
+        .from('scout_forms')
+        .select('id, season, kind, name, description, fields')
+        .eq('season', season)
+        .eq('kind', kind)
+        .eq('is_active', true)
+        .maybeSingle(),
+    null
+  )
 }
 
 export async function listForms(season) {
@@ -408,8 +479,10 @@ export async function triggerRepoSync(id) {
   const { data, error } = await supabase.functions.invoke('repo-sync', {
     body: id ? { force: true, id } : { force: true },
   })
-  if (error) return { data: null, error: wrap(error) }
-  return { data, error: data?.error ?? null }
+  if (error) return { data: null, error: await functionError(error) }
+  if (data?.error) return { data: null, error: data.error }
+  // Same {data, error} envelope as the other functions; unwrapped like them.
+  return { data: data?.data ?? data, error: null }
 }
 
 // --- AI -----------------------------------------------------------------------
