@@ -14,6 +14,9 @@ export const catalyst = {
   family: 'FRC Catalyst',
   version: '2.0',
   kicker: 'Systemcore · WPILib 2027 · Commands v3',
+  // The 2.0 banner's own line (docs/assets/banner.svg on upgrade/alpha-7).
+  motto: 'Different computer, same library.',
+  release: { version: '2.0.0-beta.2', note: 'Beta · on JitPack' },
   // The library's own one-line description (README, upgrade/alpha-7), with what 2.0 is for.
   tagline: 'The whole-robot library for FRC, on CTRE Phoenix 6 — rebuilt for Systemcore.',
   description:

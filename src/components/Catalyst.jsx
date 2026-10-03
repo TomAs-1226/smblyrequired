@@ -121,10 +121,22 @@ export default function Catalyst() {
           <p className={styles.kicker}>
             <b>Open source</b> · {catalyst.license} licence · {catalyst.kicker}
           </p>
-          <h1 className={styles.h1}>
-            {catalyst.family} <span className={styles.ver}>{catalyst.version}</span>
+          {/* The library's own lockup, as its banners draw it: the bolt, a light "Frc", a heavy
+              "Catalyst", and the version in the signal colour. */}
+          <h1 className={styles.h1} aria-label={catalyst.name}>
+            <svg className={styles.bolt} viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13.5 2 5 13h5l-1.5 9L19 10h-5.5z" />
+            </svg>
+            <span aria-hidden="true">
+              <span className={styles.frc}>Frc</span>Catalyst <span className={styles.ver}>{catalyst.version}</span>
+            </span>
           </h1>
-          <p className={styles.tagline}>{catalyst.tagline}</p>
+          <p className={styles.tagline}>{catalyst.motto}</p>
+          <p className={styles.release}>
+            <span className={styles.releasePill}>{catalyst.release.version}</span>
+            <span>{catalyst.release.note}</span>
+          </p>
+          <p className={styles.sub}>{catalyst.tagline}</p>
           <p className={styles.lede}>{catalyst.description}</p>
           <div className={styles.row}>
             {/* A button, not an #anchor: the site's router reads every hash as a route. */}
@@ -204,7 +216,7 @@ export default function Catalyst() {
         {catalystLines.filter((l) => l.id === 'beta').map((l) => (
           <article key={l.id} className={`${styles.card} ${styles.install}`} data-line={l.id}>
             <div className={`${styles.cardCore} ${styles.installCore}`}>
-              <div>
+              <div className={styles.installMain}>
                 <div className={styles.lineTop}>
                   <span className={styles.pill}>{l.label}</span>
                   <span className={styles.version}>{l.version}</span>
