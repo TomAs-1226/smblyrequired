@@ -170,11 +170,23 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
+        // Sign-in only. signInWithOtp creates the account when the email is new,
+        // which turned this form into a public signup form whenever the
+        // dashboard's "Allow new users to sign up" was left on — and docs/PORTAL.md
+        // says accounts are made by a lead, not by the act of asking for a link.
+        shouldCreateUser: false,
         // Land back on the portal route. PKCE appends `?code=` ahead of the
         // hash, so the router still resolves `#/portal` correctly.
         emailRedirectTo: `${window.location.origin}${window.location.pathname}#/portal`,
       },
     })
+    // An unknown address answers otp_disabled ("Signups not allowed for otp").
+    // Reported as sent, like the password-reset path: the screen already says
+    // "if this email has an account", and anything else would let the public
+    // form test which students have accounts.
+    if (error && (error.code === 'otp_disabled' || /signups not allowed/i.test(error.message ?? ''))) {
+      return { error: null }
+    }
     return { error: readableAuthError(error) }
   }, [])
 
