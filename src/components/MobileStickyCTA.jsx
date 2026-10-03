@@ -23,8 +23,9 @@ export default function MobileStickyCTA() {
     // page's 3D story ([data-spine]). The story's copy runs to the bottom of a
     // phone screen and its last panel carries its own "Sponsor us" button, so
     // the dock would sit on top of the words and repeat the action. It comes
-    // back once the story has scrolled away.
-    const targets = [...document.querySelectorAll('[data-primary-cta], [data-spine]')]
+    // back once the story has scrolled away. The footer carries its own gold
+    // CTA too, and at the floor of the page the dock would cover the legal lines.
+    const targets = [...document.querySelectorAll('[data-primary-cta], [data-spine], footer')]
     if (!targets.length) return
     const visible = new Set()
     const io = new IntersectionObserver(

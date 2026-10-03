@@ -13,7 +13,7 @@
     opacity var(--dur-fast) var(--ease-out);
   pointer-events: none;
 }
-.dock .btn {
+.dock :global(.btn) {
   width: 100%;
   min-height: 48px;
 }
@@ -23,9 +23,12 @@
 }
 /* Only a shown dock catches taps; a parked one must never sit invisibly over
    the page's own buttons. */
-.show .btn {
+.show :global(.btn) {
   pointer-events: auto;
 }
+/* (.btn is a global class: a bare `.btn` in a CSS module is renamed and matches
+   nothing. That is how the dock spent its life 250px wide and, with the dock's
+   pointer-events: none inherited, impossible to tap.) */
 
 @media (min-width: 860px) {
   .dock {
