@@ -251,6 +251,10 @@ every one of these is true:
 - at least one object was copied,
 - every copied object had a recorded checksum to compare against.
 
+The expected checksums are read from `files` in pages, because Supabase caps a response at
+1000 rows. Before that was paged, a project past 1000 files had every object beyond the first
+thousand with no checksum to compare against, and the run came out partial forever.
+
 Deriving the status from download failures alone let several empty-but-successful outcomes
 report green. Anything that would make a restore fail, or make the verification meaningless,
 can withhold `ok` on its own. The run is `partial` when a usable artifact was still produced —
@@ -327,7 +331,9 @@ What it proves, in five steps:
 1. The manifest verifies — every file is byte-for-byte what was recorded.
 2. Both dumps actually **restore** into a live Postgres database without erroring. It fails
    immediately if either `db.sql.gz` or `auth_users.sql.gz` is missing or empty, in the same
-   order documented under *Restoring for real* below.
+   order documented under *Restoring for real* below. That includes applying
+   `post-restore.sql` and failing if the `on_auth_user_created` signup trigger is not there
+   afterwards.
 3. The restored database **contains rows** — it reports `files`, `knowledge_docs`, and
    `profiles` counts and fails outright if `profiles` is empty. A dump of an empty database
    restores perfectly; structural success is not evidence of a usable backup. Empty `files` or
@@ -338,7 +344,9 @@ What it proves, in five steps:
    if the database lists files but the snapshot contains no objects, or if any referenced
    object is absent or mismatched.
 5. It PATCHes `restore_tested_at` on `backup_runs` rows matching that `manifest_sha` **and**
-   `leg=supabase->server`.
+   `leg=supabase->server`. The PATCH asks for the updated rows back and only reports "marked
+   verified" if at least one came back: a filter that matches nothing is still a 2xx, and used
+   to log success for a stamp that changed nothing.
 
 That leg filter matters. Filtering on `manifest_sha` alone also marked the `server->optiplex`
 rows verified — copies this script never touched — and, because `manifest_sha` is stable while
@@ -422,33 +430,12 @@ add the socket and data paths `psql` needs.
    `CREATE POLICY ... TO authenticated` in the dump fails without them.
 
    ```bash
-   psql "<target-database-url>" -v ON_ERROR_STOP=1 <<'SQL'
-   do $stub$
-   begin
-     if not exists (select 1 from pg_roles where rolname = 'anon') then
-       create role anon nologin noinherit;
-     end if;
-     if not exists (select 1 from pg_roles where rolname = 'authenticated') then
-       create role authenticated nologin noinherit;
-     end if;
-     if not exists (select 1 from pg_roles where rolname = 'service_role') then
-       create role service_role nologin noinherit bypassrls;
-     end if;
-   end
-   $stub$;
-
-   create schema if not exists auth;
-   create table if not exists auth.users (
-     id uuid primary key,
-     email text unique,
-     raw_user_meta_data jsonb,
-     created_at timestamptz default now()
-   );
-   create or replace function auth.uid() returns uuid language sql stable
-     as $fn$ select null::uuid $fn$;
-   grant usage on schema auth to anon, authenticated, service_role;
-   SQL
+   psql "<target-database-url>" -v ON_ERROR_STOP=1 -f scripts/backup/restore-stub.sql
    ```
+
+   This is the same stub `restore-test.sh` loads. It is a file rather than SQL pasted here
+   because the pasted copy drifted: it declared a four-column `auth.users`, and the
+   `--data-only` dump's `COPY` names every column, so loading into it fails.
 
    **3b. Load `auth.users` data first**, so the `profiles` foreign key has something to point
    at:
@@ -464,6 +451,20 @@ add the socket and data paths `psql` needs.
    ```bash
    gunzip -c "$SNAP/db.sql.gz" | psql "<target-database-url>" -v ON_ERROR_STOP=1
    ```
+
+   **3d. Put back what the dump cannot carry.** This applies to a real Supabase target too.
+
+   ```bash
+   psql "<target-database-url>" -v ON_ERROR_STOP=1 -f scripts/backup/post-restore.sql
+   ```
+
+   The dump is public-only and `--no-acl`, and two things the portal depends on fall outside
+   that. The `on_auth_user_created` trigger lives on `auth.users`, so it is not in a
+   public-only dump: without it, new signups get no `profiles` row and can never be approved
+   (`set_member_role()` says "no such member"). And
+   `--no-acl` drops every `GRANT` and `REVOKE`, including the one that keeps `profiles.role`
+   out of reach of `authenticated`. The script restores both and is safe to run twice.
+   `restore-test.sh` runs it and fails if the trigger is missing afterwards.
 
    Restore into a scratch database first and look at it before you point this at a live
    project — `restore-test.sh` does exactly this sequence and is the safe way to rehearse it.
@@ -482,15 +483,22 @@ add the socket and data paths `psql` needs.
        curl -fsS -X POST "$SUPABASE_URL/storage/v1/object/$bucket/$rel" \
          -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
          -H "x-upsert: true" \
-         -H "Content-Type: application/octet-stream" \
+         -H "Content-Type: $(file --mime-type -b "$f")" \
          --data-binary @"$f" >/dev/null && echo "ok   $bucket/$rel" || echo "FAIL $bucket/$rel"
      done
    done
    ```
 
-   The buckets have to exist first — re-run `0002_storage.sql` if you are restoring into a new
-   project. Keep the paths exactly as they are on disk; the `files` rows you just restored
-   reference them by `(bucket, path)`.
+   Each bucket only accepts the types listed for it in `0002_storage.sql`, so the loop sends
+   each file's own type. A blanket `application/octet-stream` is allowed by `code` alone and
+   would fail every other bucket with a 415. `file` can report `text/plain` for a `.md`, which
+   `knowledge` allows and `media` does not — read the `FAIL` lines and re-send those files by
+   hand with the type the bucket accepts.
+
+   The buckets and their `storage.objects` policies are not in the dump either (it covers
+   `public` only), so they have to exist first — re-run `0002_storage.sql` if you are restoring
+   into a new project. Keep the paths exactly as they are on disk; the `files` rows you just
+   restored reference them by `(bucket, path)`.
 
 5. **Confirm.** Run `mirror.mjs` against the restored project. It re-derives every checksum and
    compares against the `sha256` values in `files`, so a clean run is proof the objects and the

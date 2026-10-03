@@ -52,8 +52,17 @@ described in `DEPLOY.md` — none of that changed.
    | `0002_storage.sql` | The five buckets and every `storage.objects` policy |
    | `0003_content.sql` | `files`, `graphs`, `code_archives`, `knowledge_docs`, version history, the secret guard, RLS |
    | `0004_audit_backup.sql` | `audit_log`, `backup_runs`, the `backup_health` view, RLS |
+   | `0005_scouting.sql` | `events` and `event_teams` (TBA cache), `scout_forms` with a definition validator, `scout_entries` (offline-safe via `client_uuid`), `robot_photos`, `repo_sources`, the `team_event_stats` view |
+   | `0006_picklist.sql` | `picklists` and `picklist_entries`, the lock that rejects edits to a frozen list, the `event_scout_coverage` view |
+   | `0007_scout_passes.sql` | The two-passes-per-team-per-day limit, `passes_remaining()`, the `team_scout_checklist` view |
+   | `0008_collaboration.sql` | `team_collaboration` (observed behaviour of other teams, attributed) and its summary view |
+   | `0009_stats_fix.sql` | Rebuilds `team_event_stats` so scoring averages come from match entries only, and adds `scored_matches` |
+   | `0010_scout_control.sql` | `scout_settings` (the active event and the scouting time window, enforced in the database) and the `scout_control_status` view |
+   | `0011_vision.sql` | `vision_sessions`, `vision_observations` and the session summary view |
+   | `0012_vision_model.sql` | A configurable detection model on `scout_settings`, so leads can point the vision pipeline at a trained detector |
+   | `0013_portal_fixes.sql` | `graphs.html_file_id`, exact counts in `team_scout_checklist`, and `team_event_stats` casts that skip a malformed answer instead of failing the whole view |
 
-   All four have been verified to apply cleanly, in this order, against PostgreSQL 17, and a
+   All thirteen have been verified to apply cleanly, in this order, against PostgreSQL 17, and a
    full dump/restore cycle of the result has been verified end to end. See *Testing the schema
    locally* below to reproduce that, and `docs/BACKUP.md` for the restore.
 
@@ -63,7 +72,7 @@ described in `DEPLOY.md` — none of that changed.
 
    The fix is not to change the migration. Open the dashboard **SQL Editor**, paste the whole
    of `0002_storage.sql`, and run it there — the editor connects with the rights to create
-   those policies. Then continue with `0003` and `0004`.
+   those policies. Then continue with `0003` onward.
 
    The file is written to be safely re-runnable for the bucket rows (`on conflict (id) do
    update`), but `create policy` is not idempotent. If you have to run it twice, drop the
@@ -77,6 +86,11 @@ described in `DEPLOY.md` — none of that changed.
    open signup form is not an immediate breach — but it does let anyone on the internet create
    rows in `auth.users` and mail your project's rate limit, and the sign-in screen already
    tells people to ask a lead instead.
+
+   The portal's magic-link form calls `signInWithOtp` with `shouldCreateUser: false`, so it
+   only signs in people who already have an account and cannot create one, even if this toggle
+   is left on. Turn the toggle off anyway: Supabase's signup endpoint is public, and the
+   portal's form is not the only way to reach it.
 
 5. **Add the site origin to the allowed redirect URLs.** Dashboard → **Authentication → URL
    Configuration**. Magic-link sign-in redirects to
@@ -102,9 +116,15 @@ npm run test:db
 ```
 
 That recreates a throwaway local database (`frc5805_test`, or whatever `TEST_DB` is set to),
-applies `supabase/local-test/00_stub.sql`, then all four migrations in order, then runs
-`supabase/local-test/01_rls_tests.sql`. It prints a line per assertion, finishes with
-`20 assertion(s) passed`, and stops at the first error.
+applies `supabase/local-test/00_stub.sql`, then every file in `supabase/migrations/` in
+numeric order (not a hand-kept list, so a new migration is picked up without touching the
+runner), then runs three suites: `01_rls_tests.sql`, `02_scouting_tests.sql` and
+`03_portal_tests.sql`. It prints a line per assertion, finishes with
+`46 assertion(s) passed`, and stops at the first error.
+
+`npm run test:portal` is the other half: node-only suites for the offline queue, the upload
+Content-Types, the CSV export and the Compare/Analytics maths. It needs no database and no
+network.
 
 **Run it after any change to `supabase/migrations/`.** It is the check that the schema still
 applies and — more to the point — that the access rules still do what the *Roles* section below
@@ -142,6 +162,8 @@ production does, not an approximation of it.
 | Version history | Editing a doc snapshots its previous body, and the history cannot be deleted through the API even by an admin |
 | Audit log | Every role change is written to `audit_log` |
 | `backup_health` | A viewer reads zero rows through the view, proving `security_invoker` keeps `backup_runs`' RLS in force rather than bypassing it |
+| Scouting (`02`) | Malformed form definitions are rejected; only one form per season and kind can be active; a retried offline sync is idempotent; match entries need a match number and alliance; one scout cannot log the same match twice; entries cannot be attributed to another scout; `pending` users cannot read or submit scouting data; forms are lead/mentor-only; only an admin defines which repos are pulled; `team_event_stats` aggregates entries |
+| Portal (`03`) | `graphs.html_file_id` exists under the FK name the portal embeds; the unique constraints carry the names the offline queue matches; checklist counts are exact, with no join fan-out; a malformed answer is skipped rather than failing the stats view; the third pit pass in a day is refused; members are held to the active event and the scouting window (judged on `recorded_at`), and cannot change either; a locked pick list rejects edits even from a lead; collaboration notes are attributed, one per observer, and need two observers; vision frames only go into your own session; a re-scouted match is detectable and correctable by its scout |
 
 ## Environment variables
 
@@ -291,6 +313,13 @@ Supabase — a limit that only exists in the upload form is not a limit.
 | `knowledge` | private | 50 MB | `application/pdf`, `image/png`, `image/jpeg`, `image/webp`, `text/markdown`, `text/plain` | attachments for knowledge-base docs. The doc bodies live in Postgres, not here |
 | `media` | private | 500 MB | `image/png`, `image/jpeg`, `image/webp`, `image/avif`, `video/mp4`, `video/quicktime`, `application/pdf`, `text/markdown` | internal team media — outreach records, meeting notes, award submissions, unreleased photos |
 | `public-media` | **PUBLIC** | 25 MB | `image/png`, `image/jpeg`, `image/webp`, `image/avif`, `image/svg+xml` | sponsor logos and cleared photography only |
+
+Supabase checks the allowed types against the Content-Type the browser sends, and browsers take
+that from the operating system. Windows sends `.zip` as `application/x-zip-compressed`, and
+`.md`, `.7z` and `.step` often arrive with no type at all. So the portal normalises the type
+per bucket before uploading (`src/lib/uploadTypes.js`): `code` accepts anything, sent as
+`application/octet-stream`, and every other bucket refuses an unsupported type up front with a
+readable message rather than a bare 415 from the server.
 
 The four private buckets have no durable URL. The portal mints a signed URL per request with a
 300-second expiry, because long-lived signed links get pasted into group chats and outlive
