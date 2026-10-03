@@ -162,15 +162,23 @@ function Uploader({ onDone }) {
     const safeName = file.name.replace(/[^\w.\-]+/g, '_')
     const path = `${year}/${crypto.randomUUID().slice(0, 8)}-${safeName}`
 
-    const sha256 = await sha256Hex(file)
-    const { error: err } = await uploadFile({
-      bucket,
-      path,
-      file,
-      metadata: { title: title.trim() || file.name, kind, season: year, sha256 },
-    })
-
-    setBusy(false)
+    // try/finally: sha256Hex reads the whole file into memory, and a large
+    // video can make that throw. Without the finally the form stayed disabled
+    // on "Uploading…" with no error and no way to try again.
+    let err = null
+    try {
+      const sha256 = await sha256Hex(file)
+      ;({ error: err } = await uploadFile({
+        bucket,
+        path,
+        file,
+        metadata: { title: title.trim() || file.name, kind, season: year, sha256 },
+      }))
+    } catch (e) {
+      err = String(e?.message ?? e)
+    } finally {
+      setBusy(false)
+    }
     if (err) {
       setError(err)
       return

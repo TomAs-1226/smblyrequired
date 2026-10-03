@@ -10,6 +10,10 @@ export default function Roster() {
   const { atLeast, user } = useAuth()
   const [state, setState] = useState({ loading: true, error: null, members: [] })
   const [saving, setSaving] = useState(null)
+  // A refused role change (self-demotion, last admin) is an answer, not a page
+  // failure. It used to be written into `state.error`, which swapped the whole
+  // roster for an error screen over a guard rail working as intended.
+  const [actionError, setActionError] = useState(null)
 
   async function load() {
     setState((s) => ({ ...s, loading: true, error: null }))
@@ -27,13 +31,14 @@ export default function Roster() {
   // from non-admins is cosmetic — the database is what actually refuses.
   async function setRole(id, role) {
     setSaving(id)
+    setActionError(null)
     const { error } = await supabase.rpc('set_member_role', {
       target_id: id,
       new_role: role,
     })
     setSaving(null)
     if (error) {
-      setState((s) => ({ ...s, error: error.message }))
+      setActionError(error.message)
       return
     }
     load()
@@ -49,6 +54,11 @@ export default function Roster() {
 
   return (
     <div className={styles.stack}>
+      {actionError && (
+        <div className={styles.adminAlert} role="alert">
+          <span>{actionError}</span>
+        </div>
+      )}
       {/* Leads can open this page but cannot act on it — role changes are
           admin-only. Saying so beats leaving them to wonder where the control
           is, or to conclude the page is broken. */}

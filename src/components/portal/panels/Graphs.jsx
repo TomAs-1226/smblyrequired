@@ -65,6 +65,10 @@ export default function Graphs() {
         .replace(/^-+|-+$/g, '')
         .slice(0, 60) || `graph-${season}`
 
+    // The uploader takes .html, and graphify's own graph.html is the preferred
+    // view. Filed as the payload it opened as JSON and failed; filed as
+    // html_file_id (0013) it opens in the sandboxed viewer.
+    const isHtml = /\.html?$/i.test(fileRow.path)
     const { data: userRes } = await supabase.auth.getUser()
     const { error } = await supabase.from('graphs').insert({
       slug,
@@ -76,7 +80,8 @@ export default function Graphs() {
       community_count: meta.community_count != null ? Number(meta.community_count) : null,
       god_nodes: Array.isArray(meta.god_nodes) ? meta.god_nodes : [],
       generated_at: new Date().toISOString(),
-      file_id: fileRow.id,
+      file_id: isHtml ? null : fileRow.id,
+      html_file_id: isHtml ? fileRow.id : null,
       created_by: userRes?.user?.id ?? null,
     })
     if (error?.code === '23505') return { error: `A graph with the slug "${slug}" already exists.` }
