@@ -188,6 +188,14 @@
 @media (max-width: 640px) {
   :root {
     --fs-small: 0.9375rem;
+    /* A phone column is ~350px. At 17px the reading face set ~36 characters a
+       line — a ragged, over-tall column — and a 40px h1 broke every page
+       title into three or four lines. One step down across the scale: 16px
+       body, 17px lead, 36px h1, 28px h2. */
+    --fs-body: 1rem;
+    --fs-body-lg: 1.0625rem;
+    --fs-h1: 2.25rem;
+    --fs-h2: 1.75rem;
   }
 }
 
@@ -306,11 +314,11 @@ button {
   /* Width-driven, not height-driven. 12vh gave a tall phone ~100px a side —
      200px of black between every pair of sections — and a short landscape
      phone the same 72px as a laptop. The measure, not the screen height, is
-     what the gap has to balance. 390px → 68px, 1440px → 110px, max 132px. */
-  padding-block: clamp(64px, 4vw + 52px, 132px);
+     what the gap has to balance. 390px → 56px, 1440px → 110px, max 132px. */
+  padding-block: clamp(56px, 5.2vw + 35px, 132px);
 }
 .section--tight {
-  padding-block: clamp(44px, 3vw + 34px, 92px);
+  padding-block: clamp(40px, 3.6vw + 26px, 92px);
 }
 .section--rule {
   border-top: 1px solid var(--border-hairline);

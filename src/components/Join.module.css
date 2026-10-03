@@ -529,6 +529,35 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--sp-4);
   }
+  /* Phones: a lane is a row — icon beside the name and description. */
+  .lanes {
+    gap: 12px;
+  }
+  .lane {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: var(--sp-3);
+    align-items: start;
+    padding: 20px;
+  }
+  .laneIcon {
+    grid-row: span 2;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+  .laneName {
+    font-size: 1.25rem;
+    margin-bottom: var(--sp-1);
+    padding-right: var(--sp-4);
+  }
+  .laneBody {
+    grid-column: 2;
+  }
+  .laneIndex {
+    top: 18px;
+    right: 18px;
+  }
   .heroActions,
   .ctaActions {
     width: 100%;

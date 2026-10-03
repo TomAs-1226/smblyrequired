@@ -487,9 +487,11 @@
     grid-template-columns: 40px minmax(0, 1fr);
     align-items: start;
     gap: var(--sp-3);
-    padding: 20px 60px 20px 20px;
+    padding: 20px;
   }
-  .cardIcon {
+  .cardIcon,
+  .cardLead .cardIcon,
+  .cardTall .cardIcon {
     width: 40px;
     height: 40px;
   }
@@ -497,14 +499,25 @@
     margin-top: 0;
     gap: var(--sp-1);
   }
+  /* Only the title has to clear the arrow chip; the blurb runs full width. */
+  .cardLabel {
+    padding-right: 36px;
+  }
+  .cardBlurb {
+    font-size: var(--fs-small);
+    line-height: 1.5;
+  }
   .cardLabel,
   .cardLead .cardLabel,
   .cardTall .cardLabel {
     font-size: 1.3rem;
   }
+  /* Small enough to sit beside the title and be gone before the blurb starts. */
   .cardGo {
-    top: 20px;
+    top: 18px;
     right: 16px;
+    width: 28px;
+    height: 28px;
   }
   .ctaActions {
     width: 100%;

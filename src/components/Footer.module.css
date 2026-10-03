@@ -482,6 +482,11 @@
     padding-block: 12px;
     margin-block: -12px;
   }
+  /* The back-to-top button is pinned 16px in from the bottom-right corner;
+     at the very end of the page the copyright line is what sits beneath it. */
+  .copy {
+    padding-right: 60px;
+  }
 }
 
 @media (max-width: 560px) {

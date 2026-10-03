@@ -176,8 +176,38 @@
   .grid > *:first-child {
     grid-row: auto;
   }
+  /* Phones: a tile is a row — icon beside the name and description — rather
+     than a 245px block with the icon stacked on top. Six fit in two screens. */
+  .grid {
+    gap: 12px;
+  }
+  .tile {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: var(--sp-3);
+    align-items: start;
+    padding: 20px;
+  }
+  .tileIcon,
   .grid > *:first-child .tileIcon {
-    margin-bottom: var(--sp-4);
+    grid-row: span 2;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+  }
+  .tileName,
+  .grid > *:first-child .tileName {
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: var(--sp-1);
+    padding-right: var(--sp-4); /* clears the index numeral */
+  }
+  .tileBody {
+    grid-column: 2;
+  }
+  .index {
+    top: 18px;
+    right: 18px;
   }
 }
 
