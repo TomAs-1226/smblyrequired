@@ -11,8 +11,9 @@
    ========================================================================= */
 
 .wrap {
-  padding-block: var(--sp-7) var(--sp-8);
+  padding-block: clamp(var(--sp-5), 6vw, var(--sp-7)) clamp(var(--sp-6), 8vw, var(--sp-8));
   min-height: 70vh;
+  min-height: 70dvh;
 }
 
 /* --- Header ------------------------------------------------------------- */
@@ -110,7 +111,7 @@
 
 .body {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: var(--sp-6);
   margin-top: var(--sp-5);
 }
@@ -1371,7 +1372,7 @@
 
 @media (max-width: 860px) {
   .body {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-3);
     margin-top: var(--sp-2);
   }
@@ -1392,6 +1393,39 @@
   .head {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* Touch: fields at 16px (iOS zooms the page into any input set smaller, and
+   does not zoom back out), and the shell's small controls at 44px. */
+@media (max-width: 860px), (pointer: coarse) {
+  .input,
+  .textarea,
+  .fileInput {
+    font-size: 16px;
+  }
+  .railLink,
+  .signOut {
+    min-height: 44px;
+  }
+  .signOut {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Phones: the sign-in card and the waiting screen give back their padding —
+   48px a side left a 320px phone 184px to type an email address into. */
+@media (max-width: 480px) {
+  .authCard {
+    margin-block: var(--sp-4);
+    padding: var(--sp-5) var(--sp-4);
+  }
+  .submit {
+    align-self: stretch;
+  }
+  .center {
+    padding: var(--sp-6) 0;
   }
 }
 
