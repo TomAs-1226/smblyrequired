@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../Icon'
 import { eventCoverage, listEvents, teamChecklist } from '../../../lib/scoutingApi'
 import { ErrorState, Loading, Empty } from '../ui'
@@ -83,7 +83,11 @@ export default function Checklist() {
     if (eventKey) localStorage.setItem(EVENT_KEY, eventKey)
   }, [eventKey])
 
+  // Only the newest load may write: switching events quickly let the slower,
+  // older answer land last and show one event's teams under another's name.
+  const loadSeq = useRef(0)
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current
     if (!eventKey) {
       setRows([])
       setCoverage(null)
@@ -95,6 +99,7 @@ export default function Checklist() {
     // Both reads at once: they are independent, and the coverage strip arriving
     // a beat after the list it summarises reads as the page still loading.
     const [list, cov] = await Promise.all([teamChecklist(eventKey), eventCoverage(eventKey)])
+    if (seq !== loadSeq.current) return
     setRows(list.data)
     setCoverage(cov.data)
     setError(list.error ?? cov.error)

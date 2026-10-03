@@ -68,6 +68,13 @@ export default function Forms() {
     [state.forms]
   )
 
+  // Filtered to a season whose last form was just deleted, the list went empty
+  // and the season chips hid themselves (one season left), so there was no way
+  // back. Fall back to everything when the filter names a season that is gone.
+  useEffect(() => {
+    if (season !== 'all' && !seasons.includes(season)) setSeason('all')
+  }, [season, seasons])
+
   // season -> kind -> forms. Rebuilt rather than sorted in place so the source
   // list stays in the order the API returned it.
   const grouped = useMemo(() => {
@@ -135,8 +142,15 @@ export default function Forms() {
   async function askDelete(form) {
     setBusy(form.id)
     setActionError(null)
-    const { data: count } = await formEntryCount(form.id)
+    const { data: count, error: countError } = await formEntryCount(form.id)
     setBusy(null)
+    // Without the count the dialog cannot say what is at stake, and it used to
+    // read the error's 0 as "no entries": no typed confirmation, "nothing is
+    // lost". Stop instead of guessing.
+    if (countError) {
+      setActionError(`Could not check whether entries use this form, so it was not deleted: ${countError}`)
+      return
+    }
 
     setConfirm({
       title: `Delete “${form.name}”?`,
