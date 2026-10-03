@@ -8,7 +8,7 @@ import SplitHeading from './SplitHeading'
 import Reveal from './Reveal'
 import Icon from './Icon'
 import RobotViewer from './RobotViewer'
-import { robots } from '../data/robots'
+import { robots, monthYear } from '../data/robots'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotDetail.module.css'
 
@@ -75,7 +75,7 @@ export default function RobotDetail({ slug }) {
     ...(robot.specs || []),
     { label: 'Season', value: season },
     { label: 'Result', value: result },
-    ...(robot.retired ? [{ label: 'Today', value: robot.retired }] : []),
+    ...(robot.retired ? [{ label: 'Retired', value: `${monthYear(robot.retired.date)} — ${robot.retired.note}` }] : []),
   ]
 
   return (
@@ -175,6 +175,15 @@ export default function RobotDetail({ slug }) {
           <Reveal y={24}>
             <p className={`lead ${styles.blurb}`}>{blurb}</p>
           </Reveal>
+
+          {robot.retired && (
+            <a className={styles.farewell} href={`#/blog/${robot.retired.post}`}>
+              <span>
+                <b>Retired {monthYear(robot.retired.date)}.</b> Read its farewell
+              </span>
+              <Icon name="arrowRight" size={18} className="arrow" />
+            </a>
+          )}
 
           <Reveal className={styles.spec} stagger={0.07} y={16} as="dl">
             {specs.map((s) => (

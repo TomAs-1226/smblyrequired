@@ -266,6 +266,7 @@
   }
   .deviceCore {
     min-height: 0;
+    aspect-ratio: 4 / 3;
   }
 }
 @media (prefers-reduced-motion: reduce) {

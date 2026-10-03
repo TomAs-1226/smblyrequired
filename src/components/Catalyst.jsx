@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import Reveal from './Reveal'
+import { scrollTo } from '../lib/smoothScroll'
 import { AutonomyDemo, StatesDemo } from './CatalystDemos'
 import {
-  catalyst, catalystSunset, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
+  catalyst, catalystGlance, catalystSunset, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
 } from '../data/catalyst'
 import styles from './Catalyst.module.css'
 
@@ -118,14 +119,24 @@ export default function Catalyst() {
       <header className={styles.hero}>
         <div className={styles.heroCopy}>
           <p className={styles.kicker}>
-            <b>Open source</b> · {catalyst.license} licence
+            <b>Open source</b> · {catalyst.license} licence · {catalyst.kicker}
           </p>
-          <h1 className={styles.h1}>{catalyst.name}</h1>
+          <h1 className={styles.h1}>
+            {catalyst.family} <span className={styles.ver}>{catalyst.version}</span>
+          </h1>
           <p className={styles.tagline}>{catalyst.tagline}</p>
           <p className={styles.lede}>{catalyst.description}</p>
           <div className={styles.row}>
-            <a className={styles.btn} href={catalyst.docsUrl} target="_blank" rel="noreferrer noopener">
-              Read the docs <Arrow />
+            {/* A button, not an #anchor: the site's router reads every hash as a route. */}
+            <button
+              type="button"
+              className={styles.btn}
+              onClick={() => scrollTo('#cat-lines', { offset: -110 })}
+            >
+              Install 2.0 <Arrow />
+            </button>
+            <a className={`${styles.btn} ${styles.quiet}`} href={catalyst.docsUrl} target="_blank" rel="noreferrer noopener">
+              2.0 docs
             </a>
             <a className={`${styles.btn} ${styles.quiet}`} href={catalyst.repoUrl} target="_blank" rel="noreferrer noopener">
               GitHub
@@ -144,44 +155,15 @@ export default function Catalyst() {
         </figure>
       </header>
 
-      {/* ── 1.x is being retired ────────────────────────────────────── */}
-      <aside className={styles.sunset} aria-labelledby="cat-sunset">
-        <p id="cat-sunset" className={styles.sunsetTitle}>{catalystSunset.title}</p>
-        <p className={styles.sunsetBody}>{catalystSunset.body}</p>
-      </aside>
-
-      {/* ── the two lines ───────────────────────────────────────────── */}
-      <section className={styles.block} aria-labelledby="cat-lines">
-        <div className={styles.blockHead}>
-          <p className={styles.kicker}>Install</p>
-          <h2 id="cat-lines" className={styles.h2}>Start on 2.0.</h2>
-          <p className={styles.lede}>
-            Paste a URL into WPILib’s <em>Manage Vendor Libraries → Install new libraries (online)</em>.{' '}
-            <a className={styles.inline} href={catalyst.versionsUrl} target="_blank" rel="noreferrer noopener">Which one?</a>
-          </p>
-        </div>
-        <Reveal className={styles.lines} stagger={0.08} y={24}>
-          {catalystLines.map((l) => (
-            <article key={l.id} className={styles.card} data-line={l.id}>
-              <div className={styles.cardCore}>
-                <div className={styles.lineTop}>
-                  <span className={styles.pill}>{l.label}</span>
-                  <span className={styles.version}>{l.version}</span>
-                </div>
-                <h3 className={styles.h3}>{l.title}</h3>
-                <ul className={styles.chips}>
-                  {l.platform.map((p) => <li key={p}>{p}</li>)}
-                </ul>
-                <p className={styles.note}>{l.note}</p>
-                <CopyField value={l.vendordep} label={`Vendordep URL for ${l.version}`} />
-                <a className={styles.inline} href={l.docs} target="_blank" rel="noreferrer noopener">
-                  {l.id === 'beta' ? 'Beta docs' : 'Docs'} ↗
-                </a>
-              </div>
-            </article>
-          ))}
-        </Reveal>
-      </section>
+      {/* ── 2.0 at a glance ─────────────────────────────────────────── */}
+      <dl className={styles.glance}>
+        {catalystGlance.map((g) => (
+          <div key={g.label}>
+            <dt>{g.label}</dt>
+            <dd>{g.value}</dd>
+          </div>
+        ))}
+      </dl>
 
       {/* ── what 2.0 adds, the headline two live on the robot ───────── */}
       <AutonomyDemo />
@@ -189,7 +171,7 @@ export default function Catalyst() {
 
       <section className={styles.block} aria-labelledby="cat-pillars">
         <div className={styles.blockHead}>
-          <p className={styles.kicker}>Catalyst 2.0</p>
+          <p className={styles.kicker}>New in 2.0</p>
           <h2 id="cat-pillars" className={styles.h2}>A library for the whole robot.</h2>
           <p className={styles.lede}>
             2.0 is our second revision, built for FIRST’s new control system. It started as a box of
@@ -207,6 +189,53 @@ export default function Catalyst() {
             </article>
           ))}
         </Reveal>
+      </section>
+
+      {/* ── install: 2.0, and 1.x on its way out ────────────────────── */}
+      <section className={styles.block} aria-labelledby="cat-lines">
+        <div className={styles.blockHead}>
+          <p className={styles.kicker}>Install</p>
+          <h2 id="cat-lines" className={styles.h2}>Start on 2.0.</h2>
+          <p className={styles.lede}>
+            Paste the URL into WPILib’s <em>Manage Vendor Libraries → Install new libraries (online)</em>.{' '}
+            <a className={styles.inline} href={catalyst.versionsUrl} target="_blank" rel="noreferrer noopener">Every version</a>
+          </p>
+        </div>
+        {catalystLines.filter((l) => l.id === 'beta').map((l) => (
+          <article key={l.id} className={`${styles.card} ${styles.install}`} data-line={l.id}>
+            <div className={`${styles.cardCore} ${styles.installCore}`}>
+              <div>
+                <div className={styles.lineTop}>
+                  <span className={styles.pill}>{l.label}</span>
+                  <span className={styles.version}>{l.version}</span>
+                </div>
+                <h3 className={styles.h3}>{l.title}</h3>
+                <ul className={styles.chips}>
+                  {l.platform.map((x) => <li key={x}>{x}</li>)}
+                </ul>
+                <p className={styles.note}>{l.note}</p>
+              </div>
+              <div className={styles.installSide}>
+                <p className={styles.label}>Vendordep URL</p>
+                <CopyField value={l.vendordep} label={`Vendordep URL for ${l.version}`} />
+                <a className={styles.inline} href={l.docs} target="_blank" rel="noreferrer noopener">Read the 2.0 docs ↗</a>
+              </div>
+            </div>
+          </article>
+        ))}
+        {catalystLines.filter((l) => l.id === 'stable').map((l) => (
+          <aside key={l.id} className={styles.sunset} aria-labelledby="cat-sunset">
+            <div>
+              <p id="cat-sunset" className={styles.sunsetTitle}>{catalystSunset.title}</p>
+              <p className={styles.sunsetBody}>{catalystSunset.body}</p>
+            </div>
+            <div className={styles.legacy}>
+              <p className={styles.label}>{catalystSunset.lead} {l.title.replace(', for the roboRIO', '')} {l.version}</p>
+              <CopyField value={l.vendordep} label={`Vendordep URL for ${l.version}`} />
+              <a className={styles.inline} href={l.docs} target="_blank" rel="noreferrer noopener">1.x docs ↗</a>
+            </div>
+          </aside>
+        ))}
       </section>
 
       {/* ── the tools around it ─────────────────────────────────────── */}

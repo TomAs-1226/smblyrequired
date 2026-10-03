@@ -7,7 +7,7 @@ import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Icon from './Icon'
 import RobotViewer from './RobotViewer'
-import { robots, lineageNote } from '../data/robots'
+import { robots, lineageNote, monthYear } from '../data/robots'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotLineage.module.css'
 
@@ -175,7 +175,15 @@ function Row({ robot, index, total }) {
 
         <p className={styles.blurb}>{blurb}</p>
 
-        {retired && <p className={styles.retired}>{retired}</p>}
+        {retired && (
+          <div className={styles.retired}>
+            <p className={styles.retiredHead}>Retired {monthYear(retired.date)}</p>
+            <p className={styles.retiredNote}>{retired.note}</p>
+            <a className={styles.retiredLink} href={`#/blog/${retired.post}`}>
+              Read its farewell <Icon name="arrowRight" size={16} className="arrow" />
+            </a>
+          </div>
+        )}
 
         <a className={styles.detailLink} href={`#/robots/${name.toLowerCase()}`}>
           Full details

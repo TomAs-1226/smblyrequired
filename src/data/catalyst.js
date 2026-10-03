@@ -11,8 +11,11 @@
 
 export const catalyst = {
   name: 'FRC Catalyst 2.0',
-  // The library's own one-line description (README, upgrade/alpha-7).
-  tagline: 'The whole-robot library for FRC, on CTRE Phoenix 6.',
+  family: 'FRC Catalyst',
+  version: '2.0',
+  kicker: 'Systemcore · WPILib 2027 · Commands v3',
+  // The library's own one-line description (README, upgrade/alpha-7), with what 2.0 is for.
+  tagline: 'The whole-robot library for FRC, on CTRE Phoenix 6 — rebuilt for Systemcore.',
   description:
     'Mechanisms, swerve, a state machine for the entire robot, physics, autonomy and telemetry — configured through builders, not rewritten every season. We write it, and every team can use it free.',
   license: 'MIT',
@@ -23,9 +26,19 @@ export const catalyst = {
   versionsUrl: 'https://tomas-1226.github.io/FrcCatalyst/versions.html',
 }
 
+/* 2.0 in four numbers, each from the sources above: the API audit, the mechanism types in
+   frc/lib/catalyst, CANBusPlanner's buses, and the docs site's tools. */
+export const catalystGlance = [
+  { value: '974 / 986', label: 'public methods kept their names from 1.x' },
+  { value: '10', label: 'mechanism types, each simulated and profiled' },
+  { value: '5', label: 'CAN buses planned around their controllers' },
+  { value: '13', label: 'browser tools for 2.0, no install' },
+]
+
 /* 1.x is being retired. Shown on the Catalyst page under the hero, and echoed on the 1.x card. */
 export const catalystSunset = {
   title: 'Catalyst 1.x is being sunset.',
+  lead: 'Still on a roboRIO this season?',
   body: 'Catalyst 1.x gets no updates after this offseason ends — no fixes, no new features. It stays installable as it is, but every new robot should start on 2.0, and everything we build from here is 2.0.',
 }
 
@@ -170,6 +183,6 @@ export const catalystApp = {
 
 export const catalystTools = {
   name: 'Browser tools',
-  lede: 'Single-file tools on the docs site, no install: eleven for 1.x, thirteen for 2.0 — a mechanism builder, PID and motion-profile tuners, CAN ID and wiring planners, an auto builder and more.',
+  lede: 'Thirteen single-file tools for 2.0 on the docs site, no install — a mechanism builder, PID and motion-profile tuners, CAN ID and wiring planners, an auto builder and more.',
   url: 'https://tomas-1226.github.io/FrcCatalyst/beta/tools/',
 }
