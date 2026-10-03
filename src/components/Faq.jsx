@@ -65,10 +65,6 @@ export default function Faq() {
             Questions, answered.
           </SplitHeading>
           <p className={`lead ${styles.note}`}>{faqNote}</p>
-          <p className={styles.count} aria-hidden="true">
-            <span className={styles.countTick} />
-            {faqs.length} entries
-          </p>
         </header>
 
         {/* Right: accordion column (7-col). Rows stagger in so the list reads

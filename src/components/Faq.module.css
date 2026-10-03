@@ -27,23 +27,6 @@
 .note {
   max-width: 34ch;
 }
-.count {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: var(--sp-5);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.countTick {
-  width: 6px;
-  height: 6px;
-  background: var(--accent-gold);
-  flex: none;
-}
 
 /* --- Accordion list --- */
 .list {
@@ -216,14 +199,33 @@
 }
 
 @media (max-width: 620px) {
+  /* Phones: the tag sits under the question instead of beside it, and the
+     chevron keeps the right edge. (This used to hide the tag with a bare
+     `.qTag { display: none }`, which the global `.tag` — injected after the
+     modules — overrode: the tag stayed and pushed the chevron onto a row of
+     its own under the number.) */
   .trigger {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: var(--sp-3);
+    grid-template-areas:
+      'idx q chev'
+      '. tag chev';
+    gap: var(--sp-2) var(--sp-3);
     padding-left: var(--sp-2);
   }
-  /* Drop the tag chip on phones to protect the question line */
-  .qTag {
-    display: none;
+  .qIndex {
+    grid-area: idx;
+    align-self: start;
+    padding-top: 0.3em;
+  }
+  .trigger .qText {
+    grid-area: q;
+  }
+  .trigger .qTag {
+    grid-area: tag;
+    justify-self: start;
+  }
+  .chev {
+    grid-area: chev;
   }
   .qText {
     font-size: var(--fs-body-lg);

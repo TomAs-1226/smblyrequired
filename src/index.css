@@ -182,6 +182,15 @@
   --spring-reveal-dur: 761ms; /* apple-swiftui-smooth — duration 0.5, bounce 0 */
 }
 
+/* Phones: the small step is 15px, not 14. --fs-small carries real sentences
+   (card blurbs, result lines, notes), and 14px body text on a phone is the
+   size people pinch-zoom. */
+@media (max-width: 640px) {
+  :root {
+    --fs-small: 0.9375rem;
+  }
+}
+
 /* --- Reset --- */
 *,
 *::before,
@@ -603,7 +612,7 @@ button {
 /* Kept as a hook so the gold variant still resolves; the distinction it used to
    draw (a gold bullet vs a cyan one) is now carried by the words themselves. */
 .data-tag--gold {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 /* Faint blueprint grid backdrop for a section (decorative). */

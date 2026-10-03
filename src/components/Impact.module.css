@@ -420,9 +420,7 @@
 }
 .railDates {
   margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-small);
   color: var(--text-muted);
 }
 .railResult {
@@ -530,9 +528,7 @@
   margin-top: var(--sp-5);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--border-hairline);
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-small);
   line-height: 1.7;
   color: var(--text-muted);
 }

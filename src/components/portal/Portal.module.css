@@ -912,6 +912,14 @@
   padding: 9px 12px;
   color: var(--text-body);
 }
+/* A browser-filled field is painted pale blue with dark text, which on this
+   card reads as two white slabs. Keep the autofilled value on the dark field. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  box-shadow: 0 0 0 1000px var(--surface-sunken) inset;
+}
 
 .uploadNote {
   font-size: var(--fs-small);
