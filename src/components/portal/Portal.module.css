@@ -1026,6 +1026,12 @@
   max-width: 520px;
   margin-inline: auto;
 }
+.centerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+}
 .centerPill {
   margin-bottom: var(--sp-2);
 }

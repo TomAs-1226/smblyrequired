@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Component, useEffect, useState } from 'react'
 import Icon from '../Icon'
 import { AuthProvider, useAuth } from '../../lib/auth'
 import { navigate } from '../../lib/router'
@@ -20,6 +20,7 @@ import CodeArchive from './panels/CodeArchive'
 import Knowledge from './panels/Knowledge'
 import Roster from './panels/Roster'
 import Admin from './panels/Admin'
+import { ErrorState } from './ui'
 import styles from './Portal.module.css'
 
 // Panels are declared with the privilege floor they require. The gate below is
@@ -80,8 +81,18 @@ export default function Portal({ sub = '' }) {
 }
 
 function PortalInner({ sub }) {
-  const { configured, loading, signedIn, awaitingApproval, profile, role, atLeast, signOut } =
-    useAuth()
+  const {
+    configured,
+    loading,
+    signedIn,
+    awaitingApproval,
+    profile,
+    profileError,
+    refreshProfile,
+    role,
+    atLeast,
+    signOut,
+  } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   // Lets any signed-in user change their password with no email round trip —
   // the path a teammate uses to replace an admin-issued temporary password.
@@ -97,7 +108,10 @@ function PortalInner({ sub }) {
   // change — the frame stays put and only the panel body swaps.
   if (loading) return <Booting />
   if (!signedIn) return <SignIn />
-  if (awaitingApproval) return <AwaitingApproval profile={profile} onSignOut={signOut} />
+  if (profileError)
+    return <ProfileFailed error={profileError} onRetry={refreshProfile} onSignOut={signOut} />
+  if (awaitingApproval)
+    return <AwaitingApproval profile={profile} onCheck={refreshProfile} onSignOut={signOut} />
 
   const active = PANELS.find((p) => p.id === sub) ?? PANELS[0]
   const visible = PANELS.filter((p) => atLeast(p.min))
@@ -159,7 +173,13 @@ function PortalInner({ sub }) {
         </nav>
 
         <div className={styles.panel}>
-          {allowed ? <Panel /> : <NoAccess need={active.min} have={role} />}
+          {allowed ? (
+            <PanelBoundary key={active.id}>
+              <Panel />
+            </PanelBoundary>
+          ) : (
+            <NoAccess need={active.min} have={role} />
+          )}
         </div>
       </div>
     </div>
@@ -196,8 +216,21 @@ function NotConfigured() {
 }
 
 // Signing up is not the same as being on the team. New accounts land here until
-// a lead grants them a role — see the `pending` default in migration 0001.
-function AwaitingApproval({ profile, onSignOut }) {
+// an admin grants them a role — see the `pending` default in migration 0001.
+//
+// The role is re-read when the tab regains focus and on "Check again", so the
+// approval shows up the moment it happens. Previously the profile was fetched
+// once per sign-in, and the only way to discover an approval was to know to
+// reload the page — most people instead concluded it had not happened.
+function AwaitingApproval({ profile, onCheck, onSignOut }) {
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') onCheck()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [onCheck])
+
   return (
     <div className={`container ${styles.wrap}`}>
       <div className={styles.center}>
@@ -205,12 +238,41 @@ function AwaitingApproval({ profile, onSignOut }) {
         <h1 className={styles.title}>You're signed in — but not on the roster yet</h1>
         <p className={styles.centerText}>
           {profile?.full_name ? `Thanks, ${profile.full_name.split(' ')[0]}. ` : ''}
-          An account exists for you, but a team lead still has to add you before anything is
+          An account exists for you, but an admin still has to add you before anything is
           visible. Ask in the build channel and someone will approve it.
         </p>
-        <button type="button" className="btn btn--ghost" onClick={onSignOut}>
-          Sign out
-        </button>
+        <div className={styles.centerActions}>
+          <button type="button" className="btn btn--cyan" onClick={onCheck}>
+            Check again
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// The profile could not be read at all — usually the network. Distinct from
+// AwaitingApproval on purpose: telling an approved member "you're not on the
+// roster" because a request failed sends them to ask an admin to fix something
+// that is not broken.
+function ProfileFailed({ error, onRetry, onSignOut }) {
+  return (
+    <div className={`container ${styles.wrap}`}>
+      <div className={styles.center} role="alert">
+        <span className={`pill ${styles.centerPill}`}>Connection problem</span>
+        <h1 className={styles.title}>We couldn't load your account</h1>
+        <p className={styles.centerText}>{error}</p>
+        <div className={styles.centerActions}>
+          <button type="button" className="btn btn--cyan" onClick={onRetry}>
+            Try again
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -226,4 +288,34 @@ function NoAccess({ need, have }) {
       </p>
     </div>
   )
+}
+
+// One panel throwing during render used to take the whole portal with it — React
+// unmounts the tree on an uncaught render error, so one malformed row blanked
+// the page, the rail and the sign-out button included. This keeps a failure
+// inside the panel that had it. Keyed by panel id in the caller, so switching
+// tabs gives the next panel a clean slate.
+class PanelBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('[portal] panel crashed:', error, info?.componentStack)
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <ErrorState
+        error={`This section hit an error and stopped: ${this.state.error?.message ?? this.state.error}`}
+        onRetry={() => this.setState({ error: null })}
+      />
+    )
+  }
 }
