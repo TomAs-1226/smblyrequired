@@ -79,12 +79,20 @@ if (fErr) {
   process.exit(1)
 }
 
-const { error: gErr } = await supabase
+// .select() so a slug that matches no graph is an error. Without it the update
+// "succeeds" on zero rows and the script reported "attached" for a graph that
+// does not exist, leaving the HTML uploaded and referenced by nothing.
+const { data: attached, error: gErr } = await supabase
   .from('graphs')
   .update({ html_file_id: fileRow.id })
   .eq('slug', slug)
+  .select('id')
 if (gErr) {
   console.error(`graphs update failed: ${gErr.message}`)
+  process.exit(1)
+}
+if (!attached?.length) {
+  console.error(`no graph has the slug "${slug}" — upload its JSON first (scripts/upload-graphs.mjs)`)
   process.exit(1)
 }
 
