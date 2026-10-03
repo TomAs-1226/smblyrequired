@@ -292,6 +292,13 @@ export async function saveScoutSettings(patch) {
     .eq('id', 1)
     .select()
     .single()
+  // RLS does not raise on an UPDATE it filters out — the row simply is not
+  // matched, and .single() then reports PGRST116 "JSON object requested,
+  // multiple (or no) rows returned". For this singleton that only ever means
+  // the caller lacks the role, so say that.
+  if (error?.code === 'PGRST116') {
+    return { data: null, error: 'Only a lead, mentor or admin can change scouting settings.' }
+  }
   return { data, error: wrap(error) }
 }
 
