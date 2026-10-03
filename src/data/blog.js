@@ -4,15 +4,15 @@ export const posts = [
   {
     slug: 'numbers-socal-showdown-2026',
     date: '2026-10',
-    title: 'Numbers is ready for SoCal Showdown',
+    title: 'Numbers is coming to SoCal Showdown',
     tag: 'Engineering',
     author: 'Team 5805',
     excerpt:
       'Our 2026 offseason robot debuts at SoCal Showdown, October 9–11 — a build of Team 581’s REBUILT design, running Catalyst 2.0 on FIRST’s new Systemcore controller.',
     body: [
-      'Numbers is the fourth Book: our build of Team 581’s 2026 REBUILT design. Building another team’s proven robot is the fastest way we know to learn how a great machine works, and every subteam had a piece of it — mechanisms cut, assembled and tuned it, electrical planned and wired it, programming brought it up.',
+      'Numbers is the fourth Book: our build of Team 581’s 2026 REBUILT design. Building another team’s proven robot is the fastest way we know to learn how a great machine works, and every subteam has a piece of it: mechanisms, electrical and programming are bringing it up together for its first event.',
       'It shoots from a 4 in stainless flywheel spun by four Kraken X60s, with a hood that ranges from 13 to 45 degrees. The hopper extends 300 mm with the intake on its front and holds about 60 FUEL.',
-      'Under it all is Systemcore, FIRST’s next-generation controller, running FRC Catalyst 2.0 — the library our programmers write. Numbers is our first competition robot on 2.0.',
+      'Under it all is Systemcore, FIRST’s next-generation controller, running FRC Catalyst 2.0 — the library our programmers write. Numbers is our first competition robot built for 2.0.',
       'You can turn it around on the Robots page, and on the home page it takes itself apart. Come and see it run at SoCal Showdown, October 9–11.',
     ],
   },
@@ -26,7 +26,7 @@ export const posts = [
       'Catalyst 2.0 is where the library lives now. Catalyst 1.x gets no updates after this offseason ends.',
     body: [
       'FRC Catalyst 2.0 is our library rebuilt for Systemcore: a new computer, a new JVM and a new command framework. We kept the API teams already know — 974 of its 986 public methods kept their names — and grew it from a box of mechanisms into a library for the whole robot, with a state machine for the superstructure, autonomy that explains its decisions, and a robot that describes itself to Catalyst Console.',
-      'It runs on X1, our swerve test drivebase, where every new feature is driven first, and on Numbers, our offseason robot.',
+      'X1, our swerve test drivebase, is where every new feature is driven first, and Numbers, our offseason robot, is built on it. Both run 2.0 builds from the alpha-6 line; 2.0.0-beta.2 is the build any team can install.',
       'That makes this the right time to say it plainly: Catalyst 1.x is being sunset. It will not receive any updates after this offseason is over — no fixes and no new features. 1.12.0 stays installable as it is, so nothing breaks for a robot that depends on it, but every new robot should start on 2.0, and that is where all of our work goes from here.',
       'Install it, read the docs and try the tools from the Catalyst page.',
     ],
@@ -44,7 +44,7 @@ export const posts = [
       'The first idea is the superstructure: a state machine for the entire robot. You declare the states — stow, intake, aim, shoot — and the transitions between them, once. Ask for a transition you never declared and it is refused, with the reason. And a state only counts as reached when the mechanisms actually get there: the hopper out, the hood on angle, the flywheel at speed. Not when a timer runs out.',
       'The second is autonomy that explains itself. Catalyst’s autonomy cores read the match, pick the next job and hand back a decision with its reason — line up, collect, score. They command nothing themselves. Every decision is advice the robot acts on, never a lock on the driver.',
       'Around those sit the rest of 2.0: Physics Core, which fuses wheel and IMU velocity with a confidence and scores slip and tipping while never driving anything itself; a solver for shooting on the move; first-class Systemcore support, with five CAN buses planned around their shared controllers; and a robot that declares its own spec sheet, so Catalyst Console can draw it to scale.',
-      'You can watch both ideas run on Numbers on the Catalyst page — the robot collecting and scoring on its own with its reasons beside it, and the state machine refusing a shot it was never allowed to take.',
+      'The Catalyst page acts both ideas out on Numbers’ CAD — the robot collecting and scoring with its reasons beside it, and the state machine refusing a shot it was never allowed to take.',
     ],
   },
   {
@@ -176,7 +176,7 @@ export const posts = [
     excerpt:
       'Our student-built Java library of pre-built mechanism building blocks is now public — free for any FRC team on Phoenix 6 and WPILib 2026.',
     body: [
-      'We open-sourced FRC Catalyst, the Java library our programming subteam built to stop re-writing the same mechanism code every season. Elevators, arms, shooters, intakes, climbers and more drop from 150+ lines of setup to about eight, with Motion Magic, simulation, and SysId wired in.',
+      'We open-sourced FRC Catalyst, the Java library our programming subteam built to stop re-writing the same mechanism code every season. An elevator with gravity feedforward drops from about 150 lines of setup to about eight, and arms, shooters, intakes and climbers get the same builders, with Motion Magic, simulation and SysId wired in.',
       'It is part of how we try to give back to the community that taught us — in the spirit of the Open Alliance. Fork it, file an issue, or just borrow what you need.',
     ],
   },

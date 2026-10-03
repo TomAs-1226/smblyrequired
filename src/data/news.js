@@ -4,7 +4,7 @@ export const newsNote = 'The latest from the shop, the field, and the community.
 export const news = [
   {
     date: '2026-09',
-    title: 'Numbers gets ready for SoCal Showdown',
+    title: 'Numbers is coming to SoCal Showdown',
     blurb:
       'Our 2026 offseason robot — our build of Team 581’s REBUILT design, programmed on Catalyst 2.0 — debuts at SoCal Showdown, October 9–11.',
     tag: 'Build',

@@ -53,7 +53,7 @@ export const mentors = [
 export const stats = [
   { to: 2016, label: 'Founded' },
   { to: rosterCount, label: 'Students on the team' },
-  { to: 10, suffix: '+', label: 'Seasons competing' },
+  { to: 10, suffix: '', label: 'Seasons competing' },
   { to: 100, suffix: '%', label: 'Student-built robot' },
 ]
 
@@ -71,7 +71,7 @@ export const pillars = [
   },
   {
     title: 'Competition',
-    body: 'Several events every season, against 40 to 60 teams each, across Southern California.',
+    body: 'One to three official events a season, each against dozens of teams, across Southern California.',
     icon: 'trophy',
   },
   {

@@ -1,4 +1,4 @@
-// Robot lineage. Team 5805 has built a robot every season since 2016; since
+// Robot lineage. Team 5805 has built a robot every competition season since 2016; since
 // 2025 each one is named for a Book of the Bible — a nod to our Santa Margarita
 // roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
 // Phocas for 2018 and 2020.)
@@ -12,7 +12,7 @@ const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', '
 export const monthYear = (ym) => `${MONTH[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`
 
 export const lineageNote =
-  'A new machine every season since 2016 — and since 2025, each one named for a Book of the Bible, a nod to our Santa Margarita roots.'
+  'A new machine every competition season since 2016 — and since 2025, each one named for a Book of the Bible, a nod to our Santa Margarita roots.'
 
 export const robots = [
   {
@@ -59,7 +59,7 @@ export const robots = [
     season: '2026 Season',
     year: 2026,
     game: 'REBUILT',
-    status: 'champion',
+    status: 'season',
     result: 'Port Hueneme Finalist · OC Leadership Award Semi-Finalist',
     subtitle: 'Big dumper · 3.5-ball-wide shooter',
     specs: [
@@ -86,7 +86,7 @@ export const robots = [
       { label: 'Hopper', value: 'Extends 300 mm with the intake on its front; holds about 60 FUEL' },
       { label: 'Code', value: 'Catalyst 2.0 on Systemcore' },
     ],
-    blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, wired by our electrical subteam and programmed on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',
+    blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, brought up by all three subteams and built on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',
     image: null,
     // Catalyst Console's bake of the same CAD: about a third of the landing page's model, plenty
     // for a turntable.

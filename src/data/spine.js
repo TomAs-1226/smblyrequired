@@ -26,7 +26,7 @@ export const spinePanels = [
     facts: [
       { value: String(rosterCount), label: 'Students' },
       { value: String(subteams.length), label: 'Subteams' },
-      { value: '10+', label: 'Seasons' },
+      { value: '10', label: 'Seasons' },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const spinePanels = [
     shot: 'lineage',
     kicker: 'And then we do it again',
     title: 'A new robot,\nevery single year.',
-    body: 'A robot every season since 2016, each built by whoever walked into the shop that year. Since 2025: Genesis, Exodus, Leviticus, Numbers.',
+    body: 'A robot every competition season since 2016, each built by whoever walked into the shop that year. Since 2025: Genesis, Exodus, Leviticus, Numbers.',
     links: [
       { href: '#/join', label: 'Join the team', primary: true },
       { href: '#/sponsor', label: 'Sponsor us' },

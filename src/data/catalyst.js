@@ -7,7 +7,7 @@
 //   Console      github.com/TomAs-1226/CatalystConsole — README, CHANGELOG, src/
 //   App          github.com/TomAs-1226/CatalystApp — README, package.json
 // Checked 2026-10-02. We write Catalyst, so this page speaks for it plainly — and states only what the
-// sources above show.
+// sources above show, plus the team's own decisions (the 1.x sunset is ours to announce).
 
 export const catalyst = {
   name: 'FRC Catalyst 2.0',
@@ -33,7 +33,7 @@ export const catalyst = {
    frc/lib/catalyst, CANBusPlanner's buses, and the docs site's tools. */
 export const catalystGlance = [
   { value: '974 / 986', label: 'public methods kept their names from 1.x' },
-  { value: '10', label: 'mechanism types, each simulated and profiled' },
+  { value: '10', label: 'mechanism types, each configured through a builder' },
   { value: '5', label: 'CAN buses planned around their controllers' },
   { value: '13', label: 'browser tools for 2.0, no install' },
 ]
@@ -54,7 +54,7 @@ export const catalystLines = [
     title: 'FRC Catalyst 2.0, for Systemcore',
     platform: ['Systemcore', 'WPILib 2027 alpha-7', 'Java 25', 'Commands v3', 'Phoenix 6 26.70'],
     note:
-      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Running on our X1 swerve drivebase and on Numbers.',
+      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Our X1 drivebase and Numbers run 2.0 builds from the alpha-6 line; beta.2 is the one to install.',
     vendordep: 'https://tomas-1226.github.io/FrcCatalyst/beta/vendordep/FrcCatalyst.json',
     docs: 'https://tomas-1226.github.io/FrcCatalyst/beta/',
   },
@@ -74,7 +74,7 @@ export const catalystLines = [
 export const catalystPillars = [
   {
     title: 'Ten mechanism types',
-    body: 'Elevators, arms, turrets, flywheels, rollers, winches, claws, differential wrists, pneumatics and servos — each with motion profiles, named positions, simulation, telemetry and safety limits built in.',
+    body: 'Elevators, arms, turrets, flywheels, rollers, winches, claws, differential wrists, pneumatics and servos — with named positions, simulation, telemetry and safety limits built in, and motion profiles on the ones that travel.',
     names: ['LinearMechanism', 'RotationalMechanism', 'TurretMechanism', 'FlywheelMechanism'],
   },
   {
@@ -109,8 +109,8 @@ export const catalystDemos = {
   autonomy: {
     kicker: 'Autonomy 2.0 · Situation, CycleCore, TaskArbiter',
     title: 'It decides — and tells you why.',
-    body: 'Catalyst’s autonomy reads the match, picks the next job and hands back a decision with its reason: line up, collect, score. Here it is on Numbers — one clean pass through the FUEL, then firing on the move with the hood solved from range. Every decision is advice the robot acts on, never a lock on the driver.',
-    note: 'Numbers on a REBUILT field, live. The FUEL it scores rolls back out of the HUB and lands somewhere new each cycle.',
+    body: 'Catalyst’s autonomy reads the match, picks the next job and hands back a decision with its reason: line up, collect, score. Here it is acted out on Numbers’ CAD — one clean pass through the FUEL, then firing on the move with the hood solved from range. Every decision is advice the robot acts on, never a lock on the driver.',
+    note: 'A simulation drawn on Numbers’ CAD, acting out how the autonomy decides. The FUEL it scores rolls back out of the HUB and lands somewhere new each cycle.',
   },
   states: {
     kicker: 'Superstructure · a state machine for the whole robot',
@@ -119,9 +119,9 @@ export const catalystDemos = {
   },
 }
 
-/* The README's quick start (upgrade/alpha-7), unedited apart from layout. */
+/* The README's quick start (upgrade/alpha-7), trimmed: two of its named positions are left out. */
 export const catalystExample = {
-  caption: 'From the README. Most of these have defaults — this is what the builder can carry, not what it needs.',
+  caption: 'From the README, trimmed. Most of these have defaults — this is what the builder can carry, not what it needs.',
   code: `LinearMechanism elevator = new LinearMechanism(
     LinearMechanism.Config.builder()
         .name("Elevator")
