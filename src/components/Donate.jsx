@@ -20,7 +20,8 @@ const usd = (n) => `$${n.toLocaleString('en-US')}`
 // Smallest tier doubles as a friendly "any size helps" anchor for individuals.
 const entryTier = tiers[0]
 
-// One-time / recurring gift — opens the visitor's mail client, pre-addressed.
+// A gift — opens the visitor's mail client, pre-addressed. (There is no payment
+// processor behind this page: do not promise recurring or monthly gifts.)
 const giveHref = `mailto:${contact.sponsorEmail}?subject=${encodeURIComponent(
   `Donation — ${team.shortName}`
 )}&body=${encodeURIComponent(
@@ -28,7 +29,6 @@ const giveHref = `mailto:${contact.sponsorEmail}?subject=${encodeURIComponent(
     `I'd like to make a gift to FIRST ${team.shortName}.`,
     '',
     'Amount: ',
-    'One-time or recurring: ',
     'Name (as it should appear): ',
     '',
     'Thanks!',
@@ -81,8 +81,8 @@ export default function Donate() {
               A competitive FRC season runs{' '}
               <strong>~$25,000&ndash;$35,000</strong> — registration, materials,
               tools, and travel for a 100% student-built robot. A gift of any size
-              helps, and contributions are <strong>tax-deductible</strong> through
-              the school.
+              helps, and contributions <strong>may be tax-deductible</strong> to
+              the extent allowed by law.
             </p>
           </div>
 
@@ -97,27 +97,25 @@ export default function Donate() {
               </span>
             </p>
             <p className={styles.costNote}>
-              Funded entirely by donors, sponsors, and the families behind{' '}
-              {team.shortName}.
+              Funded by donors, sponsors and families, through the school.
             </p>
           </aside>
         </header>
 
         {/* --- The board: four editorial, non-identical "ways to give" ----- */}
         <div className={styles.board}>
-          {/* (1) PRIMARY — one-time or recurring gift. The single gold CTA. */}
+          {/* (1) PRIMARY — a gift by email. The single gold CTA. */}
           <article className={`${styles.card} ${styles.cardGive}`}>
             <div className={styles.cardTop}>
               <span className={`${styles.cardIcon} ${styles.cardIconGold}`}>
                 <Icon name="heart" size={26} />
               </span>
-              <span className={styles.cardTag}>Most popular</span>
             </div>
-            <h3 className={styles.cardTitle}>One-time or recurring gift</h3>
+            <h3 className={styles.cardTitle}>Make a gift</h3>
             <p className={styles.cardBody}>
-              Give once, or set up a monthly gift that keeps the shop stocked all
-              season. Even {usd(entryTier.amount)} buys real parts — and your name
-              joins our supporters.
+              A gift of any size keeps the shop stocked through the season. Even{' '}
+              {usd(entryTier.amount)} buys real parts — and your name joins our
+              supporters.
             </p>
             <ul className={styles.giveChips}>
               <li>$25</li>

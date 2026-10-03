@@ -242,14 +242,6 @@
     background: rgba(245, 184, 46, 0.16);
   }
 }
-.cardTag {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-gold);
-}
 .cardGive .cardTitle {
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
 }

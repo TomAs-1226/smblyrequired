@@ -115,7 +115,7 @@ export default function HomeTeasers() {
 
               <p className={styles.featureLede}>
                 Our 2025 flagship robot, {champ?.robot || 'Genesis'}, drove 5805 to
-                a banner against the best of Southern California — one of three event
+                a banner from the 49th seed — one of three event
                 wins in a record that goes back to our rookie year.
               </p>
 
@@ -184,8 +184,8 @@ export default function HomeTeasers() {
               Build the future with us.
             </SplitHeading>
             <p className={styles.ctaLede}>
-              Every sponsor puts tools in students&rsquo; hands and sends another
-              engineer to college. Partner with 5805, or come see what we build.
+              Every sponsor puts tools in students&rsquo; hands. Partner with 5805,
+              or come see what we build.
             </p>
             <div className={styles.ctaActions}>
               <MagneticButton as="a" href="#/sponsor" className="btn btn--gold">

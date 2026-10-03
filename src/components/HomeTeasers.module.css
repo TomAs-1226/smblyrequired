@@ -189,6 +189,13 @@
 .cardTall {
   grid-row: span 2;
 }
+/* The wide and the tall tile each take an extra cell, so a count that is a
+   multiple of three leaves one hole at the end of the three-column grid. The
+   last tile closes it. (Two columns and one column have no hole — reset
+   below.) */
+.grid > :last-child:nth-child(3n) {
+  grid-column: span 2;
+}
 
 .card {
   position: relative;
@@ -447,6 +454,9 @@
   }
   .cardTall {
     grid-row: auto;
+  }
+  .grid > :last-child:nth-child(3n) {
+    grid-column: auto;
   }
 }
 
