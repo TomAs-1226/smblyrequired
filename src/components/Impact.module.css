@@ -285,7 +285,11 @@
 .proofImgWrap {
   position: relative;
   width: 100%;
-  height: clamp(420px, 78vh, 820px);
+  /* Never taller than a landscape frame of the photo on a phone (75vw), and
+     never taller than the screen it is on (dvh, so a mobile URL bar can't
+     push the caption off the bottom). 78vh on a 390px phone was a 660px
+     portrait slice of a landscape team photo. */
+  height: clamp(300px, min(78dvh, 75vw), 820px);
   overflow: hidden;
 }
 .proofImg {
@@ -308,7 +312,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: clamp(28px, 6vh, 72px);
+  bottom: clamp(20px, 4vw, 72px);
 }
 .proofKicker {
   display: inline-flex;
@@ -560,18 +564,31 @@
 }
 
 @media (max-width: 640px) {
+  /* Three record stats as three compact rows — numeral left, label right —
+     instead of three full-width blocks a screen tall. */
   .statsRow {
     grid-template-columns: 1fr;
-    gap: var(--sp-5);
+    gap: 0;
   }
   .stat {
     border-left: 0;
-    padding-left: 0;
-    padding-bottom: var(--sp-4);
+    padding: var(--sp-3) 0;
     border-bottom: 1px solid var(--border-hairline);
   }
   .stat:last-child {
     border-bottom: 0;
+  }
+  .stat :global(.stat-numeral) {
+    display: grid;
+    grid-template-columns: 4.6ch minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-3);
+  }
+  .stat :global(.stat-numeral__n) {
+    font-size: 2.5rem;
+  }
+  .stat :global(.stat-numeral__l) {
+    margin-top: 0;
   }
   /* Year stacks above its rows */
   .yearGroup {

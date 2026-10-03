@@ -10,12 +10,6 @@
 }
 
 /* Ghost numeral bleeds top-right behind the headline. */
-.root :global(.num-ghost) {
-  position: absolute;
-  top: clamp(-24px, -2vw, 0px);
-  right: var(--gutter);
-  z-index: 0;
-}
 
 /* ---- Top grid: lede heavy on the left ---- */
 .grid {

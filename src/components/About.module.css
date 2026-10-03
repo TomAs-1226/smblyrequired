@@ -203,7 +203,11 @@
 .bandImgWrap {
   position: relative;
   width: 100%;
-  height: clamp(440px, 78vh, 860px);
+  /* Never taller than a landscape frame of the photo on a phone (75vw), and
+     never taller than the screen it is on (dvh, so a mobile URL bar can't
+     push the caption off the bottom). 78vh on a 390px phone was a 660px
+     portrait slice of a landscape team photo. */
+  height: clamp(300px, min(78dvh, 75vw), 860px);
   overflow: hidden;
 }
 .bandImg {
@@ -228,7 +232,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  bottom: clamp(20px, 4vh, 44px);
+  bottom: clamp(16px, 3vw, 44px);
 }
 .bandCaption {
   display: inline-flex;

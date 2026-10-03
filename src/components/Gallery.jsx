@@ -220,7 +220,6 @@ export default function Gallery() {
                 aria-pressed={isActive}
                 onClick={() => setActive(t)}
               >
-                <span className={styles.chipDot} aria-hidden="true" />
                 {t}
               </button>
             )
@@ -272,7 +271,6 @@ export default function Gallery() {
                   <Icon name="spark" size={26} />
                 </span>
                 <span className={styles.placeholderText}>More coming soon</span>
-                <span className={styles.placeholderTag}>ADD A PHOTO</span>
               </div>
             ))}
         </div>

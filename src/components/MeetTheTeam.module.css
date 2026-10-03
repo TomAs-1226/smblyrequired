@@ -351,8 +351,19 @@
 }
 
 @media (max-width: 560px) {
+  /* Names are short: two-up keeps twenty students to half a screen instead
+     of a full-height single file. Smaller avatar so a long name still fits. */
   .groupGrid {
-    grid-template-columns: 1fr;
+    column-gap: var(--sp-3);
+  }
+  .person {
+    gap: 10px;
+    padding: 12px 0;
+  }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.74rem;
   }
   .breakdown {
     grid-template-columns: 1fr 1fr;
@@ -363,6 +374,12 @@
     justify-items: start;
   }
   .mentorsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 339px) {
+  .groupGrid {
     grid-template-columns: 1fr;
   }
 }

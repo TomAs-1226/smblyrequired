@@ -50,10 +50,6 @@ export default function WhySponsor() {
 
   return (
     <Section id="sponsor" className={styles.root}>
-      <span className="num-ghost" aria-hidden="true">
-        03
-      </span>
-
       <div ref={ref} className={styles.grid}>
         {/* LEFT — cost as hero stat + investment copy */}
         <div className={styles.lede}>

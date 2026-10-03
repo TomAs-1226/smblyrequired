@@ -37,10 +37,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-small);
+  font-weight: 500;
   color: var(--text-muted);
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
@@ -51,15 +49,6 @@
     border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
     transform var(--spring-fast-dur) var(--spring-fast);
 }
-.chipDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  opacity: 0.6;
-  transition: background var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
-}
 /* Touch synthesises :hover on tap and latches it — a tapped filter chip would
    sit there looking half-selected. Gate it on a real pointer. */
 @media (hover: hover) and (pointer: fine) {
@@ -68,17 +57,11 @@
     border-color: var(--border-strong);
     transform: translateY(-1px);
   }
-  .chip:hover .chipDot {
-    opacity: 1;
-  }
 }
 .chip:focus-visible {
   color: var(--text-body);
   border-color: var(--border-strong);
   transform: translateY(-1px);
-}
-.chip:focus-visible .chipDot {
-  opacity: 1;
 }
 .chip:active {
   transform: scale(0.97);
@@ -103,10 +86,6 @@
 .chipActive:focus-visible {
   color: var(--text-on-cyan);
   border-color: var(--accent-data);
-}
-.chipActive .chipDot {
-  background: var(--bg-void);
-  opacity: 1;
 }
 
 /* --- Dense editorial grid --- */
@@ -380,14 +359,6 @@
   letter-spacing: 0.04em;
   color: var(--text-muted);
 }
-.placeholderTag {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  opacity: 0.7;
-}
 
 /* =========================================================================
    LIGHTBOX — full-viewport fixed overlay, above everything
@@ -464,7 +435,7 @@
   user-select: none;
   -webkit-user-drag: none;
   max-width: 100%;
-  max-height: calc(100vh - 230px);
+  max-height: calc(100dvh - 230px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -630,6 +601,14 @@
   }
 }
 
+/* Filter chips are 44px targets wherever a finger is the pointer. */
+@media (max-width: 900px), (pointer: coarse) {
+  .chip {
+    min-height: 44px;
+    padding-inline: 16px;
+  }
+}
+
 @media (max-width: 720px) {
   /* Nav buttons hug the screen edges so the image gets the room */
   .lbNav {
@@ -641,7 +620,7 @@
     font-size: var(--fs-body-lg);
   }
   .lbImg {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100dvh - 200px);
   }
 }
 
@@ -654,6 +633,12 @@
   .tall {
     grid-column: auto;
     grid-row: auto;
+  }
+  /* The "more coming soon" tiles only exist to finish the desktop grid's
+     rhythm. In one column there is no rhythm to finish — they would just be
+     full-width empty boxes at the end of the photos. */
+  .placeholder {
+    display: none;
   }
   /* On a single column captions are easy to miss on touch — show them resting */
   .cap {
@@ -673,7 +658,6 @@
   .tile,
   .tileBtn,
   .chip,
-  .chipDot,
   .img,
   .scrim,
   .cap,
