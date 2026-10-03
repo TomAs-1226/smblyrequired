@@ -42,7 +42,15 @@ values
   ('000d0000-0000-0000-0000-000000000002','Sam Chen (demo)','member','__demo',2026),
   ('000d0000-0000-0000-0000-000000000003','Jordan Lee (demo)','member','__demo',2028),
   ('000d0000-0000-0000-0000-000000000004','Riley Park (demo)','lead','__demo',2026)
-on conflict (id) do update set subteam = '__demo';
+-- The conflict is the normal path, not the exception: inserting into auth.users
+-- above fires on_auth_user_created, which has already written each row as
+-- 'pending'. Updating only subteam left all four demo scouts pending, so the
+-- roster showed four unapproved strangers instead of the members named here.
+on conflict (id) do update
+  set subteam   = '__demo',
+      full_name = excluded.full_name,
+      grad_year = excluded.grad_year,
+      role      = excluded.role;
 
 -- Clear any previous demo run so this file is safe to re-run.
 delete from public.scout_entries where scout_id in (select id from public.profiles where subteam = '__demo');
