@@ -1,0 +1,426 @@
+{
+  "name": "exodus",
+  "source": {
+    "file": "Assembly 1 (1).gltf",
+    "triangles": 14403064,
+    "bytes": 290383169
+  },
+  "triangles": 200154,
+  "bytes": 4920632,
+  "frame": {
+    "length": 0.9592,
+    "width": 0.6922,
+    "height": 1.0634
+  },
+  "bbox": {
+    "min": [
+      -0.4395,
+      0.0002,
+      -0.346
+    ],
+    "max": [
+      0.5196,
+      1.0636,
+      0.3461
+    ]
+  },
+  "materials": [
+    {
+      "name": "belt",
+      "colour": [
+        24,
+        24,
+        27
+      ],
+      "bumper": false
+    },
+    {
+      "name": "aluminium",
+      "colour": [
+        196,
+        200,
+        206
+      ],
+      "bumper": false
+    },
+    {
+      "name": "other",
+      "colour": [
+        0,
+        87,
+        184
+      ],
+      "bumper": false
+    },
+    {
+      "name": "black",
+      "colour": [
+        34,
+        35,
+        38
+      ],
+      "bumper": false
+    },
+    {
+      "name": "steel",
+      "colour": [
+        150,
+        152,
+        156
+      ],
+      "bumper": false
+    },
+    {
+      "name": "motor",
+      "colour": [
+        28,
+        28,
+        30
+      ],
+      "bumper": false
+    },
+    {
+      "name": "print",
+      "colour": [
+        228,
+        189,
+        104
+      ],
+      "bumper": false
+    },
+    {
+      "name": "tread",
+      "colour": [
+        22,
+        23,
+        25
+      ],
+      "bumper": false
+    },
+    {
+      "name": "electronics",
+      "colour": [
+        40,
+        41,
+        45
+      ],
+      "bumper": false
+    }
+  ],
+  "dropped": [
+    {
+      "name": "#10-32 BHCS Configurable",
+      "reason": "fastener",
+      "count": 68
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS",
+      "reason": "fastener",
+      "count": 48
+    },
+    {
+      "name": "Hex-Spacer-Config",
+      "reason": "spacer / standoff",
+      "count": 37
+    },
+    {
+      "name": "Bolt-Spacer-Config",
+      "reason": "spacer / standoff",
+      "count": 36
+    },
+    {
+      "name": ".5\" Hex ID 1.125\" OD Flanged Bearing (217-2734)",
+      "reason": "bearing",
+      "count": 30
+    },
+    {
+      "name": "10-32 SHCS - No Thread_WCP-0267 - 1.000",
+      "reason": "fastener",
+      "count": 24
+    },
+    {
+      "name": "Socket button head cap screw #10-32 x 0.25",
+      "reason": "fastener",
+      "count": 21
+    },
+    {
+      "name": "GE-25229",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 19
+    },
+    {
+      "name": "#10-32 SHCS Configurable",
+      "reason": "fastener",
+      "count": 16
+    },
+    {
+      "name": "8mm SplineXS ID x 5/8\" OD x 1/4\" WD Spacer (10-Pack) (WCP-1405)",
+      "reason": "spacer / standoff",
+      "count": 16
+    },
+    {
+      "name": "Bearing, R4AZZ",
+      "reason": "bearing",
+      "count": 16
+    },
+    {
+      "name": "WCP-0488 (Center Bearing Retention Plate (1.125 Bore, 1.5\" C-C))",
+      "reason": "bearing",
+      "count": 16
+    },
+    {
+      "name": "2\" x 1\" Tube Plug 0.06\" Wall, #10-32 Tapped (WCP-0374 & WCP-0379)",
+      "reason": "hidden insert",
+      "count": 14
+    },
+    {
+      "name": "WCP-0041 (0.250\" ID x 0.625\" OD x 0.196\" WD (Radial Bearing))",
+      "reason": "bearing",
+      "count": 12
+    },
+    {
+      "name": "WCP-0773 (0.188\" ID x 0.500\" OD x 0.196\" WD (Radial Bearing))",
+      "reason": "bearing",
+      "count": 12
+    },
+    {
+      "name": "1/2\" Hex to 3DP Adapter (1/4\" WD)(WCP-1121)",
+      "reason": "hidden insert",
+      "count": 9
+    },
+    {
+      "name": "0.250\" ID x 0.625\" OD x 0.196\" WD (Flanged Bearing) (WCP-0042)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "0.375\" ID x 0.875\" OD x 0.280\" WD (Flanged Bearing) (WCP-0779)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "0.500\" ID x 1.125\" OD x 0.313\" WD (Radial Bearing) (WCP-0778)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "1.75\" LG .196\" ID .375\" OD Aluminum Spacer",
+      "reason": "spacer / standoff",
+      "count": 8
+    },
+    {
+      "name": "15mm ID x 24mm OD x 5mm WD (Radial Bearing) (WCP-0078)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "2\" LG .196\" ID .375\" OD Aluminum Spacer",
+      "reason": "spacer / standoff",
+      "count": 8
+    },
+    {
+      "name": "Hard Stop Spacer",
+      "reason": "spacer / standoff",
+      "count": 8
+    },
+    {
+      "name": "NFS-0024_250-20_thin_locknut_90566A029",
+      "reason": "fastener",
+      "count": 8
+    },
+    {
+      "name": "1\" LG .196\" ID .375\" OD Aluminum Spacer",
+      "reason": "spacer / standoff",
+      "count": 6
+    },
+    {
+      "name": "1.5\" LG .196\" ID .375\" OD Aluminum Spacer",
+      "reason": "spacer / standoff",
+      "count": 5
+    },
+    {
+      "name": "1/8\" 1/2\" Hex Acetal Spacer (217-2758)",
+      "reason": "spacer / standoff",
+      "count": 5
+    },
+    {
+      "name": ".375\" Round ID .875\" OD Flanged Bearing (217-2733)",
+      "reason": "bearing",
+      "count": 4
+    },
+    {
+      "name": "0.250\" ID x 0.625\" OD x 0.196\" WD (Radial Bearing) (WCP-0041)",
+      "reason": "bearing",
+      "count": 4
+    },
+    {
+      "name": "1/2\" Hex Clamping Shaft Collar (217-2737)",
+      "reason": "spacer / standoff",
+      "count": 4
+    },
+    {
+      "name": "1/2\" ThunderHex (2.625 in)",
+      "reason": "short shaft (inside gearbox)",
+      "count": 4
+    },
+    {
+      "name": "13.75mm (1/2\" ThunderHex ID) x 1.125\" OD x 0.313\" WD (Flanged Bearing) (WCP-0785)",
+      "reason": "bearing",
+      "count": 4
+    },
+    {
+      "name": "2.25\" LG .196\" ID .375\" OD Aluminum Spacer",
+      "reason": "spacer / standoff",
+      "count": 4
+    },
+    {
+      "name": "250-20 x 0.5L SHCS_91251A537",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "250-20 x 3.5L SHCS_90044A316",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "3\" L x 3/8\" Hex x 10-32 Tapped Hex Standoff",
+      "reason": "spacer / standoff",
+      "count": 4
+    },
+    {
+      "name": "91251A115_Black-Oxide Alloy Steel Socket Head Screw",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "Belt Holder Spacer",
+      "reason": "spacer / standoff",
+      "count": 4
+    },
+    {
+      "name": "Belt Tensioner Spacer",
+      "reason": "spacer / standoff",
+      "count": 4
+    },
+    {
+      "name": "FE-01016",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 4
+    },
+    {
+      "name": "GE-25201-03",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 4
+    },
+    {
+      "name": "Kraken-Spacer-Config",
+      "reason": "spacer / standoff",
+      "count": 3
+    },
+    {
+      "name": "1\" x 1\" Tube Plug .060\" Wall, #10-32 Tapped (WCP-0376 & WCP-0383)",
+      "reason": "hidden insert",
+      "count": 2
+    },
+    {
+      "name": "2\" x 2\" Tube Plug .125\" Wall, #10-32 Tapped (WCP-0373)",
+      "reason": "hidden insert",
+      "count": 2
+    },
+    {
+      "name": "3216T41_Carabiner",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 2
+    },
+    {
+      "name": "91290A168_Alloy Steel Socket Head Screw",
+      "reason": "fastener",
+      "count": 2
+    },
+    {
+      "name": "91290A180_Alloy Steel Socket Head Screw",
+      "reason": "fastener",
+      "count": 2
+    },
+    {
+      "name": "Motor Spacer",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "ROUND Spacer 0.125 in",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "washer_flat_.5",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 2
+    },
+    {
+      "name": "1/2\" ThunderHex (1.875 in)",
+      "reason": "short shaft (inside gearbox)",
+      "count": 1
+    },
+    {
+      "name": "1/2\" ThunderHex (2.375 in)",
+      "reason": "short shaft (inside gearbox)",
+      "count": 1
+    },
+    {
+      "name": "916T 5M 18mm Wide Belt",
+      "reason": "--drop-node \"node:1359\"",
+      "count": 1
+    },
+    {
+      "name": "eyebolt_shoulder_.5_13_1.5",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 1
+    },
+    {
+      "name": "eyenut_.5-13_3019T18",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 1
+    },
+    {
+      "name": "GE-25201-01",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 1
+    },
+    {
+      "name": "GE-25201-02",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 1
+    },
+    {
+      "name": "hex_.5_13_1.25",
+      "reason": "--drop-node \"CAGE (GE-25231) <1>\"",
+      "count": 1
+    }
+  ],
+  "orientation": {
+    "up": "+z",
+    "forward": "-y",
+    "cad": "axes are the export's own; frame is y up, +x forward, origin on the floor under the drivetrain centre",
+    "evidence": [
+      "up +z (CAD) given by --up or --config",
+      "origin: floor at the wheels' lowest point, centred on the mean of the 4 floor wheels' centres (wheel centres span 559 x 635 mm in CAD x x y)",
+      "forward -y (CAD) given by --forward or --config"
+    ]
+  },
+  "bake": {
+    "budget": 260000,
+    "bakedAt": 200198,
+    "maxMb": 5,
+    "minSize": 0.004,
+    "errorMm": 1.09,
+    "config": "exodus.json",
+    "drop": [],
+    "dropNode": [
+      "CAGE (GE-25231) <1>",
+      "node:1359"
+    ],
+    "mirroredInstances": 0
+  }
+}

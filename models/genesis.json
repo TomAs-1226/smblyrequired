@@ -1,0 +1,350 @@
+{
+  "name": "genesis",
+  "source": {
+    "file": "Robot.gltf",
+    "triangles": 8528284,
+    "bytes": 190613441
+  },
+  "triangles": 210254,
+  "bytes": 4956072,
+  "frame": {
+    "length": 0.8841,
+    "width": 0.8763,
+    "height": 1.0621
+  },
+  "bbox": {
+    "min": [
+      -0.438,
+      0.0002,
+      -0.4381
+    ],
+    "max": [
+      0.4461,
+      1.0623,
+      0.4382
+    ]
+  },
+  "materials": [
+    {
+      "name": "other",
+      "colour": [
+        59,
+        97,
+        180
+      ],
+      "bumper": true
+    },
+    {
+      "name": "black",
+      "colour": [
+        34,
+        35,
+        38
+      ],
+      "bumper": false
+    },
+    {
+      "name": "aluminium",
+      "colour": [
+        196,
+        200,
+        206
+      ],
+      "bumper": false
+    },
+    {
+      "name": "poly",
+      "colour": [
+        226,
+        232,
+        238
+      ],
+      "bumper": false
+    },
+    {
+      "name": "tread",
+      "colour": [
+        22,
+        23,
+        25
+      ],
+      "bumper": false
+    },
+    {
+      "name": "steel",
+      "colour": [
+        150,
+        152,
+        156
+      ],
+      "bumper": false
+    },
+    {
+      "name": "belt",
+      "colour": [
+        24,
+        24,
+        27
+      ],
+      "bumper": false
+    },
+    {
+      "name": "print",
+      "colour": [
+        228,
+        189,
+        104
+      ],
+      "bumper": false
+    },
+    {
+      "name": "motor",
+      "colour": [
+        28,
+        28,
+        30
+      ],
+      "bumper": false
+    },
+    {
+      "name": "electronics",
+      "colour": [
+        40,
+        41,
+        45
+      ],
+      "bumper": false
+    }
+  ],
+  "dropped": [
+    {
+      "name": "#10-32 BHCS Configurable",
+      "reason": "fastener",
+      "count": 116
+    },
+    {
+      "name": "10-32 SHCS - No Thread_WCP-0267 - 1.000",
+      "reason": "fastener",
+      "count": 24
+    },
+    {
+      "name": ".5\" Hex ID 1.125\" OD Flanged Bearing (217-2734)",
+      "reason": "bearing",
+      "count": 23
+    },
+    {
+      "name": "2\" x 1\" Tube Plug 0.125\" Wall, #10-32 Tapped (WCP-0374)",
+      "reason": "hidden insert",
+      "count": 21
+    },
+    {
+      "name": "#10-32 SHCS Configurable",
+      "reason": "fastener",
+      "count": 16
+    },
+    {
+      "name": "1/2\" Hex Clamping Shaft Collar (217-2737)",
+      "reason": "spacer / standoff",
+      "count": 16
+    },
+    {
+      "name": "8mm SplineXS ID x 5/8\" OD x 1/4\" WD Spacer (10-Pack) (WCP-1405)",
+      "reason": "spacer / standoff",
+      "count": 16
+    },
+    {
+      "name": "2\" L x 3/8\" Hex x 10-32 Tapped Hex Standoff",
+      "reason": "spacer / standoff",
+      "count": 13
+    },
+    {
+      "name": "0.250\" ID x 0.625\" OD x 0.196\" WD (Flanged Bearing) (WCP-0042)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "0.375\" ID x 0.875\" OD x 0.280\" WD (Flanged Bearing) (WCP-0779)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "0.500\" ID x 1.125\" OD x 0.313\" WD (Radial Bearing) (WCP-0778)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "15mm ID x 24mm OD x 5mm WD (Radial Bearing) (WCP-0078)",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "Bearing, R4AZZ",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "Bearing, R4AZZ_1",
+      "reason": "bearing",
+      "count": 8
+    },
+    {
+      "name": "NFS-0024_250-20_thin_locknut_90566A029",
+      "reason": "fastener",
+      "count": 8
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS_3",
+      "reason": "fastener",
+      "count": 8
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS_4",
+      "reason": "fastener",
+      "count": 8
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS_5",
+      "reason": "fastener",
+      "count": 8
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS",
+      "reason": "fastener",
+      "count": 6
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS_1",
+      "reason": "fastener",
+      "count": 6
+    },
+    {
+      "name": "Screw, 10-32 X .5, SHCS_2",
+      "reason": "fastener",
+      "count": 6
+    },
+    {
+      "name": "0.250\" ID x 0.625\" OD x 0.196\" WD (Radial Bearing) (WCP-0041)",
+      "reason": "bearing",
+      "count": 4
+    },
+    {
+      "name": "13.75mm (1/2\" ThunderHex ID) x 1.125\" OD x 0.313\" WD (Flanged Bearing) (WCP-0785)",
+      "reason": "bearing",
+      "count": 4
+    },
+    {
+      "name": "250-20 x 0.5L SHCS_91251A537",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "250-20 x 3.5L SHCS_90044A316",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "Socket head cap screw 1/4-20 x 1.25",
+      "reason": "fastener",
+      "count": 4
+    },
+    {
+      "name": "6\" L x 3/8\" Hex x 10-32 Tapped Hex Standoff",
+      "reason": "spacer / standoff",
+      "count": 3
+    },
+    {
+      "name": "Shorter Spacer",
+      "reason": "spacer / standoff",
+      "count": 3
+    },
+    {
+      "name": "Bushing",
+      "reason": "bearing",
+      "count": 2
+    },
+    {
+      "name": "Climber Pivot Spacer",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Longer Spacer",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Spacer 0.0625",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Spacer 0.17",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Spacer 0.5",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Spacer 0.625",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "Spacer 1.42",
+      "reason": "spacer / standoff",
+      "count": 2
+    },
+    {
+      "name": "1/2\" ThunderHex (1.625 in)",
+      "reason": "short shaft (inside gearbox)",
+      "count": 1
+    },
+    {
+      "name": "Coral",
+      "reason": "--drop-node \"Manipulator <1> / Coral\"",
+      "count": 1
+    },
+    {
+      "name": "Hex socket head cap screw M3x0.50 x 3",
+      "reason": "fastener",
+      "count": 1
+    },
+    {
+      "name": "Socket button head screw M3x0.5 x 3",
+      "reason": "fastener",
+      "count": 1
+    },
+    {
+      "name": "Spacer 1.125",
+      "reason": "spacer / standoff",
+      "count": 1
+    }
+  ],
+  "orientation": {
+    "up": "+z",
+    "forward": "+x",
+    "cad": "axes are the export's own; frame is y up, +x forward, origin on the floor under the drivetrain centre",
+    "evidence": [
+      "up +z (CAD): 4 wheel/tread parts touch the lowest plane along it (X2 Molded Wheel), no other direction has as many",
+      "origin: floor at the wheels' lowest point, centred on the mean of the 4 floor wheels' centres (wheel centres span 584 x 584 mm in CAD x x y)",
+      "bumper: \"Robot / Part 7\" (rgb 59,97,180, encloses the wheels, 127 mm tall)",
+      "forward +x (CAD): no Front/Back part names, so the scoring side — mechanisms reach 115 mm past the wheels that way (\"Robot / Manipulator <1> / am-3949 2.25N OverMolded 500Hex Compliant Wheel V6\"), 87 mm more than any other side (+x 115, -x 28, -y 11, +y -16 mm). Override with --forward if the drive's front differs"
+    ]
+  },
+  "bake": {
+    "budget": 260000,
+    "bakedAt": 210269,
+    "maxMb": 5,
+    "minSize": 0.004,
+    "errorMm": 1.311,
+    "config": null,
+    "drop": [],
+    "dropNode": [
+      "Manipulator <1> / Coral"
+    ],
+    "mirroredInstances": 0
+  }
+}
