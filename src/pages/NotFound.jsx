@@ -46,6 +46,7 @@ export default function NotFound() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 minHeight: 44,
+                minWidth: 44,
                 color: 'var(--text-muted)',
                 fontFamily: 'var(--font-display)',
                 fontSize: '0.9rem',

@@ -260,9 +260,8 @@ export default function Impact() {
             <div className={styles.seasonHead}>
               <p className={styles.honorsLabel}>
                 <span className={styles.honorsRule} aria-hidden="true" />
-                <span>2026 season</span>
+                <span>{season} season</span>
               </p>
-              <p className={`data-tag ${styles.seasonTag}`}>SEASON {season}</p>
             </div>
 
             <Reveal className={styles.rail} stagger={0.09} y={22}>

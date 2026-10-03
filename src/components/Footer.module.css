@@ -455,8 +455,9 @@
   .navList {
     gap: 0;
   }
+  /* The whole cell, so a four-letter link is not a 35px-wide target. */
   .navLink {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     min-height: 44px;
   }

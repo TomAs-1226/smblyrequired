@@ -372,9 +372,6 @@
 .seasonHead .honorsLabel {
   margin-bottom: 0;
 }
-.seasonTag {
-  font-family: var(--font-mono);
-}
 
 /* Telemetry rail — mono month chip, event, dates, result */
 .rail {

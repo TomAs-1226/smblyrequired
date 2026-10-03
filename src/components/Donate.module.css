@@ -567,7 +567,7 @@
   .cardLink::after {
     content: '';
     position: absolute;
-    inset: -10px -6px;
+    inset: -12px -6px;
   }
 }
 
