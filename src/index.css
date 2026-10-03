@@ -294,10 +294,14 @@ button {
 
 .section {
   position: relative;
-  padding-block: clamp(72px, 12vh, 140px);
+  /* Width-driven, not height-driven. 12vh gave a tall phone ~100px a side —
+     200px of black between every pair of sections — and a short landscape
+     phone the same 72px as a laptop. The measure, not the screen height, is
+     what the gap has to balance. 390px → 68px, 1440px → 110px, max 132px. */
+  padding-block: clamp(64px, 4vw + 52px, 132px);
 }
 .section--tight {
-  padding-block: clamp(48px, 8vh, 96px);
+  padding-block: clamp(44px, 3vw + 34px, 92px);
 }
 .section--rule {
   border-top: 1px solid var(--border-hairline);
