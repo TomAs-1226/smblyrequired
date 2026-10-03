@@ -379,6 +379,19 @@ button {
 .btn .arrow {
   transition: transform var(--dur-ui) var(--ease-out);
 }
+/* A 320px phone inside a padded card leaves ~230px for a button: tighten the
+   pill so two-word labels stay on one line, and centre them if they can't. */
+.btn {
+  max-width: 100%;
+  text-align: center;
+}
+@media (max-width: 400px) {
+  .btn {
+    padding-inline: 18px;
+    gap: 8px;
+    letter-spacing: 0.035em;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .btn:hover .arrow {
     transform: translateX(4px);
