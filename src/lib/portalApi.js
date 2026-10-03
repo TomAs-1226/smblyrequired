@@ -1,4 +1,5 @@
 import { supabase, isConfigured } from './supabase'
+import { uploadType, describeAllowed } from './uploadTypes'
 
 // -----------------------------------------------------------------------------
 // Portal data access.
@@ -56,7 +57,20 @@ export async function signedUrl(bucket, path, expiresIn = 300) {
 export async function uploadFile({ bucket, path, file, metadata }) {
   if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
 
-  const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, {
+  // The bucket checks the type the browser reports, and browsers report what
+  // the OS says — see uploadTypes.js for why that refused ordinary uploads.
+  // supabase-js sends a File's own .type and ignores `contentType`, so the File
+  // is re-labelled rather than the option set. Same bytes, same checksum.
+  const { type, ok } = uploadType(bucket, file.name, file.type)
+  if (!ok) {
+    return {
+      data: null,
+      error: `${file.name} cannot go in ${bucket}. It takes ${describeAllowed(bucket)}.`,
+    }
+  }
+  const body = type === file.type ? file : new File([file], file.name, { type })
+
+  const { error: upErr } = await supabase.storage.from(bucket).upload(path, body, {
     cacheControl: '3600',
     upsert: false,
   })
@@ -167,6 +181,9 @@ export async function saveDoc({ id, slug, title, body_md, category }) {
   if (error && /refusing to store this document/i.test(error.message)) {
     return { data: null, error: error.message }
   }
+  if (error?.code === '23505') {
+    return { data: null, error: `Another doc already uses the slug "${slug}". Pick a different one.` }
+  }
   return { data, error: wrap(error) }
 }
 
@@ -221,10 +238,22 @@ export const BUCKETS = ['graphs', 'code', 'knowledge', 'media', 'public-media']
 // size and grouping here is cheap and keeps the rule in one readable place. An
 // admin reads every row through the lead-manage policy, so the totals are
 // complete for them; a lower role would legitimately see only what RLS allows.
-export async function storageSummary({ limit = 1000 } = {}) {
+//
+// Paged: Supabase caps a response at 1000 rows, so one select quietly stopped
+// counting at the 1000th file and the admin view under-reported storage.
+export async function storageSummary({ pageSize = 1000, maxRows = 50000 } = {}) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  const { data, error } = await supabase.from('files').select('bucket, byte_size').limit(limit)
-  if (error) return { data: [], error: wrap(error) }
+  let data = []
+  for (let from = 0; from < maxRows; from += pageSize) {
+    const page = await supabase
+      .from('files')
+      .select('bucket, byte_size')
+      .order('id')
+      .range(from, from + pageSize - 1)
+    if (page.error) return { data: [], error: wrap(page.error) }
+    data = data.concat(page.data ?? [])
+    if ((page.data ?? []).length < pageSize) break
+  }
 
   const by = new Map(BUCKETS.map((b) => [b, { bucket: b, objects: 0, bytes: 0 }]))
   for (const row of data ?? []) {
