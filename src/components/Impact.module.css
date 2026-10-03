@@ -289,7 +289,10 @@
      never taller than the screen it is on (dvh, so a mobile URL bar can't
      push the caption off the bottom). 78vh on a 390px phone was a 660px
      portrait slice of a landscape team photo. */
-  height: clamp(300px, min(78dvh, 75vw), 820px);
+  /* …and on a very wide screen the cap follows the width, so the band keeps
+     roughly the photo's proportions instead of becoming a 3:1 letterbox that
+     cuts the back row's heads off. */
+  height: clamp(300px, min(78dvh, 75vw), max(820px, 42vw));
   overflow: hidden;
 }
 .proofImg {

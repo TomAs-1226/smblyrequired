@@ -416,6 +416,19 @@
   }
 }
 
+/* Sponsor plates: auto-fill gave a tablet three columns and left the fourth
+   plate alone on a row. Two-up between phone and desktop, one-up on phones. */
+@media (max-width: 1000px) {
+  .plates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .plates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
   .perks li {
     font-size: 0.9375rem;
