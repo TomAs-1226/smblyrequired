@@ -27,6 +27,15 @@ export default function Graphs() {
     load()
   }, [])
 
+  // A blob: URL pins the whole page in memory until revoked; release it when
+  // the viewer closes or the panel unmounts.
+  useEffect(() => {
+    const blobUrl = viewing?.mode === 'html' ? viewing.url : null
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [viewing])
+
   // Prefer graphify's OWN rendered graph.html when it exists — it is what the
   // tool's authors intended, it stays correct when graphify changes, and it is
   // already tuned for the graphs it produces. The canvas viewer is the fallback
@@ -38,7 +47,16 @@ export default function Graphs() {
       if (g.html_file?.path) {
         const { data: url, error } = await signedUrl(g.html_file.bucket, g.html_file.path, 900)
         if (error || !url) throw new Error(error ?? 'could not sign the URL')
-        setViewing({ mode: 'html', url, meta: g })
+        // Framed from a blob: URL we label text/html, not from the signed URL.
+        // The iframe otherwise renders whatever Content-Type storage chose, and
+        // an HTML object served as text/plain or octet-stream shows its source
+        // or downloads instead of drawing the graph — the same reason
+        // HtmlViewer does this. The opaque-origin sandbox holds either way.
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const html = await res.blob()
+        const blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+        setViewing({ mode: 'html', url: blobUrl, meta: g })
         return
       }
       const f = g.files
@@ -141,7 +159,8 @@ export default function Graphs() {
         {viewing.mode === 'html' ? (
           /* graphify's own render. `sandbox="allow-scripts"` WITHOUT
              `allow-same-origin` is the load-bearing part: the file is 2 MB of
-             author-supplied markup with scripts in it, and that exact
+             author-supplied markup with scripts in it (framed from a blob: URL,
+             see open()), and that exact
              combination is what stops it reaching back into the signed-in
              session. Do not add allow-same-origin to "fix" anything. */
           <iframe
