@@ -48,7 +48,7 @@ try {
     const info = await evalJs(`JSON.stringify({settle: window.__spine.settle(${JSON.stringify(shot)}), callouts: window.__spine.callouts()})`);
     await sleep(900);
     const shotPng = await send("Page.captureScreenshot", { format: "png" });
-    writeFileSync(join(outDir, `${shot}-${width}x${height}.png`), Buffer.from(shotPng.result.data, "base64"));
+    writeFileSync(join(outDir, `${String(shot).replace(/[^a-z0-9.-]/gi, "_")}-${width}x${height}.png`), Buffer.from(shotPng.result.data, "base64"));
     console.log(shot, info);
   }
   ws.close();

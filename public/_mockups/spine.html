@@ -360,7 +360,11 @@ const REFLECT={aluminium:1.0,steel:0.95,motor:0.8,poly:1.4,print:0.35,belt:0.3,t
    el      camera elevation, radians
    explode 0..1, the teardown
    dim     per assembly, how lit it stays (1 = fully)
-   show    per assembly, how present it is (0 = gone, used to lift the lid)
+   show    per assembly, how present it is: 0 has lifted it up and away out
+           of frame. It moves rather than fades — fading switched whole
+           assemblies to transparent mid-scroll, which recompiled shaders (the
+           hitch) and broke depth sorting (the pop).
+   drive   0..1, the lap at the end
    prog    0..1, the mechanisms run the way the code drives them           */
 const SHOTS={
   title:   {side:0, yaw:-0.62,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.62,fillH:0.60},
@@ -379,7 +383,7 @@ const SHOTS={
      the code moves sits on the far side, where its label goes. */
   prog:    {side:1, yaw:-1.20,el:0.24,look:[0.06,0.30,0],  R:0.62,fill:0.82,fillH:0.68,prog:1,labelSide:'far'},
   catalyst:{side:-1,yaw:0.55, el:0.21,look:[0,0.29,0],     R:0.60,fill:0.70,fillH:0.66,prog:1},
-  lineage: {side:1, yaw:-0.72,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.78,fillH:0.66},
+  lineage: {side:1, yaw:-0.72,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.72,fillH:0.62,drive:1},
 };
 const GROUPS=['drive','floor','hopper','intake','shooter','hood'];
 const groupOfNode=n=>n==='assembly-floor'?'floor':n==='assembly-hopper'?'hopper':
@@ -387,19 +391,27 @@ const groupOfNode=n=>n==='assembly-floor'?'floor':n==='assembly-hopper'?'hopper'
 
 /* The teardown. assembly-drive and the swerve modules never move: the bake
    splits a module three ways for steering, so its gearbox sits in
-   assembly-drive and moving `module-*` tears the wheel off its own gears. */
+   assembly-drive and moving `module-*` tears the wheel off its own gears.
+
+   It comes apart top first and goes back bottom first, the order the bolts
+   come out. Each layer starts earlier and travels further than the one under
+   it, so at every point of the scroll a layer is above the one it sits on —
+   peeling the floor before the hopper, as this used to, drove one through the
+   other, and on the way back the hood landed inside a shooter still in the air. */
 const LAYERS={
-  'intake':          {dir:[1,0,0], d:0.52, at:0.00},
-  'assembly-intake': {dir:[1,0,0], d:0.34, at:0.04},
-  'assembly-floor':  {dir:[0,1,0], d:0.24, at:0.18},
-  'assembly-hopper': {dir:[0,1,0], d:0.50, at:0.32},
-  'assembly-shooter':{dir:[0,1,0], d:0.80, at:0.46},
-  'hood':            {dir:[0,1,0], d:1.08, at:0.58},
+  'hood':            {dir:[0,1,0], d:1.08, at:0.00},
+  'assembly-shooter':{dir:[0,1,0], d:0.80, at:0.12},
+  'intake':          {dir:[1,0,0], d:0.52, at:0.14},
+  'assembly-intake': {dir:[1,0,0], d:0.34, at:0.20},
+  'assembly-hopper': {dir:[0,1,0], d:0.50, at:0.24},
+  'assembly-floor':  {dir:[0,1,0], d:0.24, at:0.36},
 };
 
 /* Where each callout points, as a node and a point in the robot's frame at
    rest. The point is re-expressed in the node's own frame at load, so it rides
-   with the part through the teardown and the mechanisms. Positions come from
+   with the part through the teardown and the mechanisms. Never a roller: an
+   anchor on a spinning node orbits its axle and drags the hairline round with
+   it. Positions come from
    the source CAD: the battery, PDP 2.0, 120 A breaker and MPMs are named parts
    in Assembly 1.gltf. The CAD has no controller in it, so nothing points at one. */
 const ANCHORS={
@@ -409,17 +421,17 @@ const ANCHORS={
   shooter: ['assembly-shooter',[-0.30,0.300,0.33]],
   hood:    ['hood',            [-0.10,0.555,-0.26]],
   drive:   ['module-fr',       [0.279,0.100,0.298]],
-  flywheel:['roller-flywheel', [-0.300,0.530,0.22]],
+  flywheel:['assembly-shooter',[-0.300,0.530,0.22]],
   mhood:   ['hood',            [-0.085,0.552,0.22]],
-  feeder:  ['roller-feeder-2', [-0.10,0.370,0.22]],
+  feeder:  ['assembly-shooter',[-0.10,0.370,0.22]],
   battery: ['assembly-drive',  [0.22,0.108,0.05]],
   breaker: ['assembly-drive',  [-0.277,0.131,0.0]],
   pdp:     ['assembly-drive',  [-0.195,0.069,0.07]],
   mpm:     ['assembly-drive',  [0.036,0.062,-0.215]],
-  swerve:  ['module-fl',       [0.279,0.010,-0.330]],   // the tread's contact patch, below the deployed intake
+  swerve:  ['module-fl',       [0.279,0.010,-0.298]],   // on the steering axis, so steering never swings it
   aim:     ['hood',            [-0.10,0.555,-0.22]],
   deploy:  ['intake',          [0.31,0.395,-0.22]],
-  shot:    ['roller-flywheel', [-0.30,0.530,-0.22]],
+  shot:    ['assembly-shooter',[-0.303,0.254,-0.293]],  // a shooter Kraken X60 (CAD)
 };
 
 /* ── panels, shots and callouts from the markup ─────────────────────────── */
@@ -445,12 +457,31 @@ panels.forEach((p,pi)=>p.specs.forEach(s=>{
 function measureCallouts(){ for(const c of callouts){ c.w=c.el.offsetWidth; c.h=c.el.offsetHeight; c.side=null; } }
 
 /* ── the model ──────────────────────────────────────────────────────────── */
-let robot=null, ready=false, manifest=null;
+let robot=null, top=null, ready=false, manifest=null;
 const moving=[], spin=[], anchors={}, mats={dim:{},show:{}};
 const groupMats=Object.fromEntries(GROUPS.map(g=>[g,[]]));
 const groupNodes=Object.fromEntries(GROUPS.map(g=>[g,[]]));
 const mods=[];       // {node, wheel, axis, cad, angle}
 let hoodNode=null, intakeNode=null, intakeAxis=null;
+
+/* Polycarbonate is clear. As an alpha-blended sheet at 62% it was milky, and
+   blended sheets cannot be sorted against each other inside one mesh, so as
+   the robot turned one panel cut across another. Transmission samples what is
+   behind from the opaque pass instead of blending over it, so draw order stops
+   mattering. Phones get a faint blended sheet: the transmission pass draws the
+   opaque scene a second time. polygonOffset keeps a sheet bolted flat to a
+   plate from z-fighting with it. */
+const glassy=!narrowMQ.matches;
+
+function polycarb(){
+  const m = glassy
+    ? new THREE.MeshPhysicalMaterial({color:0xf6f8fb,metalness:0,roughness:0.015,transmission:1,
+        thickness:0.003,ior:1.585,specularIntensity:1,side:THREE.DoubleSide})
+    : new THREE.MeshStandardMaterial({color:0xeef2f8,metalness:0,roughness:0.08,transparent:true,
+        opacity:0.16,depthWrite:false,side:THREE.DoubleSide});
+  m.name='poly'; m.polygonOffset=true; m.polygonOffsetFactor=1; m.polygonOffsetUnits=1;
+  return m;
+}
 
 const [gltf, man] = await Promise.all([
   new GLTFLoader().loadAsync('/models/robot.glb'),
@@ -458,7 +489,7 @@ const [gltf, man] = await Promise.all([
 ]).catch(e=>{ console.error(e); return [null,null]; });
 if(gltf){
   manifest=man; robot=gltf.scene; rig.add(robot);
-  const top=robot.getObjectByName('robot_1')||robot;
+  top=robot.getObjectByName('robot_1')||robot;
   const cache=new Map();
   robot.traverse(o=>{
     if(!o.isMesh||!o.material) return;
@@ -467,9 +498,9 @@ if(gltf){
     const inWheel=(()=>{let x=o;while(x){if(x.name&&x.name.startsWith('wheel-'))return true;x=x.parent}return false})();
     const k=g+'|'+o.material.uuid+(inWheel?'|w':'');
     if(!cache.has(k)){
-      const m=o.material.clone();
+      let m=o.material.clone();
+      if(m.name==='poly') m=polycarb(m);
       m.envMapIntensity=REFLECT[m.name]??0.6; m.dithering=true;
-      if(m.name==='poly'){m.transparent=true;m.opacity=0.62;m.roughness=0.08;m.depthWrite=false;m.side=THREE.DoubleSide;}
       /* The CAD's tread is the vendor model's placeholder pale blue. Real
          tread is black rubber; a pale disc is what read as "weird wheels". */
       if(inWheel&&m.name==='tread'){m.color.set(0x161719);m.roughness=0.92;m.metalness=0;m.envMapIntensity=0.25;}
@@ -484,25 +515,38 @@ if(gltf){
   robot.updateMatrixWorld(true);
   for(const [name,L] of Object.entries(LAYERS)){
     const n=robot.getObjectByName(name); if(!n) continue;
-    moving.push({n,home:n.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at});
+    moving.push({n,home:n.position.clone(),dir:new THREE.Vector3(...L.dir),d:L.d,at:L.at,off:new THREE.Vector3()});
   }
-  robot.traverse(o=>{
-    if(o.name.startsWith('roller-')&&!o.name.endsWith('-geometry'))
-      spin.push({node:o,rate:o.name==='roller-flywheel'?1:o.name.includes('feeder')?0.42:0.26});
-  });
+  /* Rollers turn about the manifest's signed axis, at its belt or gear ratio
+     to the flywheel, on the channel the code drives them from. */
+  for(const r of manifest?.rollers??[]){
+    const node=robot.getObjectByName(r.node); if(!node) continue;
+    const ch=r.role==='intake'?'intake':r.role==='feeder'?'feed':r.role==='conveyor'?'conveyor':'fly';
+    spin.push({node,ch,axis:new THREE.Vector3(...r.axis).normalize(),ratio:Math.abs(r.drivenBy?.ratio??1),
+      angle:0,rest:node.quaternion.clone()});
+  }
+  /* Each anchor is two points. `live` rides on its node, so the hairline ends
+     on the part wherever it moves. `rest` is the same point with only the
+     teardown applied — no hood swing, no deploy, no steering — and the labels
+     are laid out from that, so the words hold still while the mechanism moves
+     under them. */
   for(const [k,[node,p]] of Object.entries(ANCHORS)){
     const n=robot.getObjectByName(node); if(!n) continue;
-    const a=new THREE.Object3D(); a.position.copy(n.worldToLocal(new THREE.Vector3(...p)));
-    n.add(a); anchors[k]=a;
+    const live=new THREE.Object3D(); live.position.copy(n.worldToLocal(new THREE.Vector3(...p)));
+    n.add(live);
+    anchors[k]={live, mover:moving.find(q=>q.n===n), home:n.position.clone(),
+      local:new THREE.Vector3(...p).sub(n.position)};
   }
   for(const m of manifest?.modules??[]){
     const node=robot.getObjectByName(m.steerNode), wheel=robot.getObjectByName(m.wheelNode);
     if(node&&wheel) mods.push({node,wheel,axis:new THREE.Vector3(...m.wheelAxis).normalize(),
-      cad:m.cadSteerAngle*Math.PI/180,pos:m.position,angle:0,roll:0});
+      cad:m.cadSteerAngle*Math.PI/180,pos:m.position,angle:0,vel:0,roll:0,dir:1});
   }
   hoodNode=robot.getObjectByName(manifest?.hood?.node??'hood');
   intakeNode=robot.getObjectByName(manifest?.intake?.node??'intake');
   intakeAxis=new THREE.Vector3(...(manifest?.intake?.axis??[1,0,0]));
+  /* Compile every shader now, not on the first frame that needs it. */
+  renderer.compile(scene,camera);
   ready=true;
 }
 
@@ -579,7 +623,7 @@ function frameShot(s,pi){
 function blend(i,t){
   const a=panels[i].shot, b=panels[i+1].shot, fa=frameShot(a,i), fb=frameShot(b,i+1), o={};
   for(const k of ['yaw','el','R']) o[k]=lerp(a[k],b[k],t);
-  for(const k of ['explode','prog']) o[k]=lerp(a[k]??0,b[k]??0,t);
+  for(const k of ['explode','prog','drive']) o[k]=lerp(a[k]??0,b[k]??0,t);
   o.look=a.look.map((v,i)=>lerp(v,b.look[i],t));
   o.cx=lerp(fa.cx,fb.cx,t); o.d=lerp(fa.d,fb.d,t);
   o.dim={}; o.show={};
@@ -587,44 +631,126 @@ function blend(i,t){
   return o;
 }
 
-/* ── materials: dim and show per assembly ───────────────────────────────── */
+/* ── materials: dim per assembly; removal is a move, see frame() ───────── */
 function applyLook(dim,show){
   for(const g of GROUPS){
-    const dv=dim[g], sv=show[g];
-    for(const n of groupNodes[g]) n.visible=sv>0.01;
+    for(const n of groupNodes[g]) n.visible=show[g]>0.001;   // only once it is out of frame
     for(const m of groupMats[g]){
       const b=m.userData.base;
-      m.color.copy(b.color).multiplyScalar(dv); m.envMapIntensity=b.env*dv;
-      const fading=sv<0.999, t=b.transparent||fading;
-      if(m.transparent!==t){ m.transparent=t; m.needsUpdate=true; }
-      m.opacity=b.opacity*sv; m.depthWrite=b.depthWrite&&!fading;
+      m.color.copy(b.color).multiplyScalar(dim[g]); m.envMapIntensity=b.env*dim[g];
     }
   }
 }
+/* Where a removed assembly goes: up and away from the camera, in world terms,
+   so it leaves the frame whichever way the robot is turned — straight up would
+   fly into the camera on the top-down electrical shot. Groups higher in the
+   stack leave first. */
+const REMOVE_W=new THREE.Vector3(0,2.6,-3.2);
+const REMOVE_ORDER={hood:0,shooter:0.08,hopper:0.12,intake:0.16,floor:0.22};
 
 /* ── the mechanisms, moving the way the code moves them ─────────────────── */
-let progT=0;
-const wrapNear=(target,cur)=>{ // a swerve module may flip its wheel instead of turning past 90°
+/* A robot does not oscillate; it runs a routine. Targets change in steps and
+   then hold, and each actuator chases its target the way it does on the robot:
+   - steering: a stiff loop with almost no overshoot. Detent duration 0.3 /
+     bounce 0.1 → k 438.6, c 37.7. Our tuning for a tight azimuth PID, not a
+     platform value.
+   - hood and intake deploy: a profiled move, the S-curve Motion Magic makes
+     (minimum jerk), timed from the distance at a cruise rate.
+   - wheels and rollers: first-order lag, so they spin up and coast down. */
+const ROUTINE=[ // seconds into a 12 s loop → what the code asks for from then on
+  {t:0.0, drive:'fwd', wheel:1,   intake:1, hood:15, fly:0, feed:0},
+  {t:1.9, drive:'strafe'},
+  {t:3.6, drive:'spin', wheel:0.8},
+  {t:5.2, drive:'x',    wheel:0,   hood:34, fly:1},  // lock the modules, aim, spin up
+  {t:6.7, feed:1},                                   // shoot
+  {t:8.0, feed:0, hood:15, fly:0},
+  {t:8.6, drive:'crab', wheel:1,   intake:0},
+  {t:10.6,drive:'fwd',  wheel:0},
+];
+const LOOP=12, K=438.65, C=37.70;
+const HEADING={fwd:0, strafe:Math.PI/2, crab:-0.6};
+function routineAt(t){ const o={}; for(const k of ROUTINE){ if(k.t>t) break; Object.assign(o,k); } return o; }
+const minJerk=u=>u*u*u*(10-15*u+6*u*u);
+function profiled(rate,min){
+  return {v:null,from:0,to:null,t0:0,dur:1,
+    at(to,now){
+      if(this.v===null){ this.v=this.to=to; }
+      if(to!==this.to){ this.from=this.v; this.to=to; this.t0=now; this.dur=Math.max(min,Math.abs(to-this.from)/rate); }
+      this.v=this.from+(this.to-this.from)*minJerk(clamp01((now-this.t0)/this.dur)); return this.v; }};
+}
+const lag=(v,to,tau,dt)=>v+(to-v)*(1-Math.exp(-dt/tau));
+const wrapNear=(target,cur)=>{ // a module may flip its wheel rather than turn past 90°
   let t=target; while(t-cur>Math.PI/2) t-=Math.PI; while(cur-t>Math.PI/2) t+=Math.PI; return t; };
-function runMechanisms(w,dt){
-  if(!reduced && w>0.001) progT+=dt;
-  const phase=progT%9;
-  for(const m of mods){
-    /* WPILib heading in, steer node turn out: the CAD already sits at the
-       module's cadSteerAngle, so the turn is the difference. 0–3 s crab with a
-       sweeping heading, 3–6 s spin in place (which is the CAD pose), 6–9 s strafe. */
-    const heading = phase<3 ? 0.42*Math.sin(progT*0.9) : phase<6 ? m.cad : Math.PI/2;
-    const target = wrapNear(heading-m.cad, m.angle);
-    m.angle+= (target-m.angle)*(1-Math.exp(-dt*7));
-    m.node.rotation.y=m.angle*w;
-    m.roll+=dt*w*9; m.wheel.quaternion.setFromAxisAngle(m.axis,m.roll);
+const hoodP=profiled(40,0.45), deployP=profiled(0.42,0.55);
+const SPEED={fly:30,feed:18,conveyor:14,intake:16};   // rad/s at full command, for the eye
+let progT=0, wheelV=0, roll={fly:0,feed:0,conveyor:0,intake:0};
+
+/* The lap. A closed loop off to the right and round behind, driven the way a
+   swerve drive does it: the chassis turns a full circle while it travels, and
+   every module steers to its own velocity, v + ω × r. */
+/* A teardrop: out to the right, round behind, and home — never nearer the
+   camera than where it started, so it never swells past the frame. */
+const LAP={period:10.5, start:1.4, dur:7.2, ax:0.7, bx:0.6, az:1.3};
+let lapT=0;
+function lapAt(t){
+  const u=minJerk(clamp01((t-LAP.start)/LAP.dur)), a=2*Math.PI*u;
+  return {x:LAP.ax*Math.sin(a)+LAP.bx*(1-Math.cos(a)), z:-LAP.az*(1-Math.cos(a)), h:-2*Math.PI*u};
+}
+
+function runMechanisms(w,dw,dt,yaw){
+  if(reduced){ w=0; dw=0; }
+  if(w>0.001) progT+=dt;
+  if(dw>0.001) lapT+=dt; else lapT=0;
+  const r=routineAt(progT%LOOP);
+
+  /* What the drive asks of each module: from the lap when driving, else the routine. */
+  let lap=null;
+  if(dw>0.01){
+    const t=lapT%LAP.period, e=1/120, p0=lapAt(t-e), p1=lapAt(t+e);
+    const vx=(p1.x-p0.x)/(2*e)*dw, vz=(p1.z-p0.z)/(2*e)*dw, om=(p1.h-p0.h)/(2*e)*dw;
+    const c=Math.cos(yaw), sn=Math.sin(yaw);
+    lap={vx:vx*c-vz*sn, vz:vx*sn+vz*c, om};          // world → robot frame
   }
+  const steerW=Math.max(w,dw);
+  for(const m of mods){
+    let raw=m.lastRaw??0, speed=0;
+    if(lap){
+      const vx=lap.vx+lap.om*m.pos[2], vz=lap.vz-lap.om*m.pos[0];
+      speed=Math.hypot(vx,vz);
+      if(speed>0.03) raw=Math.atan2(-vz,vx)-m.cad;   // WPILib angle, then relative to the CAD pose
+    } else {
+      raw = r.drive==='spin' ? 0 : r.drive==='x' ? Math.PI/2 : HEADING[r.drive]-m.cad;
+      speed=wheelV*0.9;
+    }
+    m.lastRaw=raw;
+    const target=wrapNear(raw,m.angle);
+    m.dir=Math.round((target-raw)/Math.PI)%2?-1:1;
+    const n=4,h=dt/n;
+    for(let i=0;i<n;i++){ m.vel+=(K*(target-m.angle)-C*m.vel)*h; m.angle+=m.vel*h; }
+    m.node.rotation.y=m.angle*steerW;
+    m.roll+=dt*speed*m.dir/0.0508*0.35;   // scaled down: true wheel speed strobes on screen
+    m.wheel.quaternion.setFromAxisAngle(m.axis,m.roll);
+  }
+  wheelV=lag(wheelV,(r.wheel??0)*w,0.25,dt);
+
+  /* Rollers: each channel spins up and coasts down; ratios from the manifest. */
+  const want={fly:(r.fly??0)*w, feed:(r.feed??0)*w, intake:(r.intake??0)*w,
+              conveyor:Math.max(r.feed??0,(r.intake??0)*0.6)*w};
+  const tau={fly:0.8,feed:0.15,intake:0.3,conveyor:0.25};
+  for(const k in roll) roll[k]=lag(roll[k],want[k],tau[k],dt);
+  for(const q of spin){
+    q.angle+=dt*roll[q.ch]*SPEED[q.ch]*q.ratio;
+    q.node.quaternion.copy(q.rest).multiply(_q.setFromAxisAngle(q.axis,q.angle));
+  }
+
   if(hoodNode){
-    const deg=13+25*(0.5-0.5*Math.cos(progT*0.8));      // Hood.java's range is 13–45°
+    const deg=hoodP.at(r.hood??15,progT);   // Hood.java's range is 13–45°
     hoodNode.rotation.z=w*(deg-(manifest?.hood?.cadAngle??11))*Math.PI/180;
   }
-  return (manifest?.intake?.travel??0.3)*(0.5-0.5*Math.cos(progT*0.55))*w;
+  const deploy=deployP.at((r.intake??0)*(manifest?.intake?.travel??0.3),progT)*w;
+  return {deploy, lap: dw>0.01 ? lapAt(lapT%LAP.period) : null};
 }
+const _q=new THREE.Quaternion();
 
 /* ── callout layout: Catalyst Console's layoutCallouts, ported ──────────── */
 /* Labels go out past the robot's edge on the side their part is on, level with
@@ -704,12 +830,15 @@ function placeCallouts(beat, settled, look, dt){
       const items=[];
       for(const c of callouts){ if(c.pi!==beat) continue;
         const a=anchors[c.anchor]; if(!a) continue;
-        a.getWorldPosition(v).project(camera);
+        v.copy(a.home); if(a.mover) v.add(a.mover.off); v.add(a.local);
+        top.localToWorld(v).project(camera);
         const p={x:(v.x+1)/2*W, y:(1-v.y)/2*H};
         if(v.z>1||p.x<0||p.x>W||p.y<0||p.y>H) continue;
+        a.live.getWorldPosition(v).project(camera);
+        const live={x:(v.x+1)/2*W, y:(1-v.y)/2*H};
         /* labelSide:'far' sends every label away from the copy. */
         const force=panels[beat].shot.labelSide==='far'?(panels[beat].shot.side>0?'right':'left'):null;
-        items.push({c,p,w:c.w,h:c.h,force});
+        items.push({c,p,live,w:c.w,h:c.h,force});
       }
       const maxW=Math.max(0,...items.map(i=>i.w));
       const area={w:W,h:H,
@@ -727,8 +856,8 @@ function placeCallouts(beat, settled, look, dt){
     c.el.style.transform=`translate(${c.x.toFixed(1)}px,${c.y.toFixed(1)}px)`;
     const ex=l.side==='left'?c.x+c.w+10:c.x-10, ey=c.y+c.h/2;
     c.line.setAttribute('x1',ex); c.line.setAttribute('y1',ey);
-    c.line.setAttribute('x2',l.p.x); c.line.setAttribute('y2',l.p.y);
-    c.dot.setAttribute('cx',l.p.x); c.dot.setAttribute('cy',l.p.y);
+    c.line.setAttribute('x2',l.live.x); c.line.setAttribute('y2',l.live.y);
+    c.dot.setAttribute('cx',l.live.x); c.dot.setAttribute('cy',l.live.y);
     c.line.style.opacity=c.dot.style.opacity=1;
   }
   for(const c of callouts) if(!shown.has(c)){
@@ -738,7 +867,8 @@ function placeCallouts(beat, settled, look, dt){
 
 /* ── the frame ──────────────────────────────────────────────────────────── */
 const titleEl=document.getElementById('title');
-let s=0, spool=0, visible=true;
+let s=0, swayAmp=1, visible=true;
+const rmv=new THREE.Vector3();
 new IntersectionObserver(([e])=>{visible=e.isIntersecting}).observe(document.getElementById('spine'));
 const clock=new THREE.Clock();
 
@@ -765,21 +895,30 @@ function frame(dt,draw=true){
 
   /* Materials, teardown, mechanisms. */
   applyLook(look.dim,look.show);
-  const deploy=runMechanisms(look.prog,dt);
+  const mech=runMechanisms(look.prog,look.drive,dt,rig.rotation.y);
+  /* Removal direction, world → robot frame, so it is "up and away from the
+     camera" whatever the robot's turn. */
+  rmv.copy(REMOVE_W).applyAxisAngle(THREE.Object3D.DEFAULT_UP,-rig.rotation.y);
   for(const q of moving){
     const local=clamp01((look.explode-q.at)/(1-q.at));
-    q.n.position.copy(q.home).addScaledVector(q.dir,smooth(local)*q.d);
-    if(q.n===intakeNode) q.n.position.addScaledVector(intakeAxis,deploy);
+    q.off.copy(q.dir).multiplyScalar(smooth(local)*q.d);
+    q.n.position.copy(q.home).add(q.off);
+    const g=groupOfNode(q.n.name), o=REMOVE_ORDER[g]??0;
+    const gone=clamp01(((1-look.show[g])-o)/(1-o));
+    q.n.position.addScaledVector(rmv,gone*gone);          // eases in: lifts off, then accelerates away
+    if(q.n===intakeNode) q.n.position.addScaledVector(intakeAxis,mech.deploy);
   }
-  spool+=((0.3+0.7*look.prog)-spool)*dt*1.5;
-  if(!reduced) for(const r of spin) r.node.rotation.z+=dt*r.rate*spool*26;
+  rig.position.set(mech.lap?mech.lap.x*look.drive:0, 0, mech.lap?mech.lap.z*look.drive:0);
 
   /* Turn: the shot's yaw, a slow sway that stops while labels are up, and
      whatever the reader dragged, easing back. */
   const beat=Math.round(s), settled=Math.abs(s-beat)<0.18 && panels[beat].specs.length>0;
   if(!dragging){ spinUser+=spinVel; spinVel*=0.9; spinUser*=Math.exp(-dt*0.6); }
-  const sway=reduced?0:Math.sin(performance.now()/5200)*0.07*(settled?0.15:1);
-  rig.rotation.y=look.yaw+sway+spinUser;
+  /* The sway stops entirely while labels are up — smoothly, so stopping it
+     does not itself jolt the robot. */
+  swayAmp+=((settled?0:1)-swayAmp)*(1-Math.exp(-dt*1.5));
+  const sway=reduced?0:Math.sin(performance.now()/5200)*0.07*swayAmp;
+  rig.rotation.y=look.yaw+sway+spinUser+(mech.lap?mech.lap.h*look.drive:0);
 
   /* Camera: on a sphere round the look point, with the principal point moved
      so the subject lands at cx. Shifting the view rather than the robot keeps
@@ -806,10 +945,16 @@ renderer.setAnimationLoop(()=>{ const dt=Math.min(0.05,clock.getDelta()); if(vis
    the same frame function until it rests. Nothing calls it in a real browser. */
 window.__spine={
   get ready(){ return ready },
+  /* `name` is a panel, or a number of panels from the top ("3.5" is halfway
+     from the fourth shot to the fifth) for looking at a transition. */
   settle(name,steps=200){
-    const p=panels.find(x=>x.name===name)||panels[0];
-    const r=p.el.getBoundingClientRect();
-    scrollTo(0, scrollY + panelKey(r) - readingLine());
+    /* "lineage:500" settles for 500 frames, to look further into a loop. */
+    if(String(name).includes(':')){ const [nm,k]=String(name).split(':'); name=nm; steps=Number(k)||steps; }
+    const n=Number(name), keys=panels.map(x=>scrollY+panelKey(x.el.getBoundingClientRect()));
+    let y;
+    if(Number.isFinite(n)){ const i=Math.min(keys.length-2,Math.floor(n)); y=keys[i]+(n-i)*(keys[i+1]-keys[i]); }
+    else y=keys[Math.max(0,panels.findIndex(x=>x.name===name))];
+    scrollTo(0, y - readingLine());
     for(let k=0;k<steps;k++) frame(1/60,k===steps-1);
     return {s:+s.toFixed(3), shown:callouts.filter(c=>c.el.dataset.on==='true').length};
   },
