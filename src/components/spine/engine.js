@@ -8,7 +8,7 @@
 // The choreography is data (shots.js); the copy is data (src/data/spine.js).
 
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { createStudio, blob, loadRobot, loadHub, rigRobot, profiled, lag } from '../robot/robotRig'
 import {
   SHOTS, GROUPS, groupOfNode, LAYERS, REMOVE_W, REMOVE_ORDER, ANCHORS,
   ROUTINE, ROUTINE_LOOP, HEADING, HUB_AT, FUEL_START, FUEL_ROWS, SHOT_SPOTS,
@@ -18,100 +18,12 @@ import { createAutonomy } from './autonomy'
 const SVG = 'http://www.w3.org/2000/svg'
 const FOV = 30
 const TAN = Math.tan((FOV * Math.PI) / 360)
-/* Per material class, how much of the studio it reflects. */
-const REFLECT = { aluminium: 1.0, steel: 0.95, motor: 0.8, poly: 0.35, print: 0.35, belt: 0.3, tread: 0.3, electronics: 0.55, black: 0.4, other: 0.5 }
-/* Steering: a stiff loop with almost no overshoot. Detent duration 0.3 / bounce 0.1 → k 438.6,
-   c 37.7 — our tuning for a tight azimuth PID, not a platform value. */
-const K = 438.65
-const C = 37.7
-/* rad/s at full command — for the eye; true speeds strobe on screen. */
-const SPEED = { fly: 30, feed: 18, conveyor: 14, intake: 16 }
 /* 40 gap + the widest label (~210) + 24 margin, with room to spare. */
 const LABEL_COL = 280
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v))
 const smooth = (t) => t * t * (3 - 2 * t)
 const lerp = (a, b, t) => a + (b - a) * t
-const minJerk = (u) => u * u * u * (10 - 15 * u + 6 * u * u)
-const lag = (v, to, tau, dt) => v + (to - v) * (1 - Math.exp(-dt / tau))
-/* A module may flip its wheel rather than turn past 90°. */
-const wrapNear = (target, cur) => {
-  let t = target
-  while (t - cur > Math.PI / 2) t -= Math.PI
-  while (cur - t > Math.PI / 2) t += Math.PI
-  return t
-}
-/* A profiled move — the S-curve Motion Magic makes (minimum jerk), timed from distance at a rate. */
-function profiled(rate, min) {
-  return {
-    v: null, from: 0, to: null, t0: 0, dur: 1,
-    at(to, now) {
-      if (this.v === null) this.v = this.to = to
-      if (to !== this.to) {
-        this.from = this.v
-        this.to = to
-        this.t0 = now
-        this.dur = Math.max(min, Math.abs(to - this.from) / rate)
-      }
-      this.v = this.from + (this.to - this.from) * minJerk(clamp01((now - this.t0) / this.dur))
-      return this.v
-    },
-  }
-}
-
-/* A studio to reflect: raw CAD under plain lights looks like grey plastic, because metal is only
-   ever the room it reflects. Softboxes over a graded shell, baked once into an environment map. */
-function studioEnvironment(renderer) {
-  const room = new THREE.Scene()
-  const spent = []
-  const add = (g, m) => { spent.push(g, m); const x = new THREE.Mesh(g, m); room.add(x); return x }
-  const shell = new THREE.SphereGeometry(10, 48, 24)
-  const pos = shell.getAttribute('position')
-  const tone = new Float32Array(pos.count * 3)
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i) / 10
-    const v = y < 0 ? 0.03 + 0.27 * Math.pow(Math.max(0, 1 + y / 0.7), 1.6) : 0.2 + 0.25 * Math.pow(y, 0.8)
-    tone[i * 3] = tone[i * 3 + 1] = tone[i * 3 + 2] = v
-  }
-  shell.setAttribute('color', new THREE.BufferAttribute(tone, 3))
-  add(shell, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide }))
-  const sb = (w, h, i, hex, x, y, z) => {
-    const pl = add(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(i), side: THREE.DoubleSide }))
-    pl.position.set(x, y, z)
-    pl.lookAt(0, 0.4, 0)
-  }
-  sb(5, 2.5, 5.0, 0xffffff, -1, 7, 2)
-  sb(9, 1.2, 2.6, 0xffffff, 0, 2.0, 8)
-  sb(1.4, 6, 3.2, 0xf0f3f9, -8, 3, 0.5)
-  sb(1.4, 6, 1.6, 0xf0f3f9, 8, 3, -1.5)
-  sb(8, 1.2, 2.4, 0xe0e7f4, 0, 3.4, -8)
-  const pm = new THREE.PMREMGenerator(renderer)
-  const t = pm.fromScene(room, 0.04)
-  pm.dispose()
-  spent.forEach((s) => s.dispose())
-  return t.texture
-}
-
-/* A soft contact shadow: a driving robot with nothing under it floats. */
-function blob(scene, size, alpha) {
-  const c = document.createElement('canvas')
-  c.width = c.height = 128
-  const x = c.getContext('2d')
-  const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64)
-  gr.addColorStop(0, `rgba(0,0,0,${alpha})`)
-  gr.addColorStop(0.55, `rgba(0,0,0,${alpha * 0.55})`)
-  gr.addColorStop(1, 'rgba(0,0,0,0)')
-  x.fillStyle = gr
-  x.fillRect(0, 0, 128, 128)
-  const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(size, size),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, toneMapped: false }),
-  )
-  m.rotation.x = -Math.PI / 2
-  m.renderOrder = -1
-  scene.add(m)
-  return m
-}
 
 /**
  * Start the spine.
@@ -135,23 +47,9 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   }
 
   /* ── renderer, studio, rig ─────────────────────────────────────────── */
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' })
-  /* NeutralToneMapping needs three r162+; on older builds the constant is undefined and every shader
-     silently compiles with no tone mapping at all. */
-  renderer.toneMapping = THREE.NeutralToneMapping
-  renderer.toneMappingExposure = 1.05
-  renderer.outputColorSpace = THREE.SRGBColorSpace
-  const scene = new THREE.Scene()
-  scene.environment = studioEnvironment(renderer)
-  const camera = new THREE.PerspectiveCamera(FOV, 1, 0.05, 60)
+  const { renderer, scene, camera } = createStudio(canvas, { fov: FOV })
   const rig = new THREE.Group()
   scene.add(rig)
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x0b0b0c, 0.15))
-  const key = new THREE.DirectionalLight(0xffffff, 1.6)
-  key.position.set(-2.2, 5, 3.4)
-  const rim = new THREE.DirectionalLight(0xdae3f4, 2.2)
-  rim.position.set(2.4, 3.2, -5)
-  scene.add(key, rim)
 
   /* ── panels and callouts, from the markup ──────────────────────────── */
   const panels = [...root.querySelectorAll('[data-shot]')].map((el) => ({
@@ -236,137 +134,67 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   listen(canvas, 'pointercancel', endDrag)
 
   /* ── the model ─────────────────────────────────────────────────────── */
-  let robot = null
+  let robot = null // the shared rig (robotRig.js), once loaded
   let top = null
   let ready = false
   let manifest = null
   const moving = []
-  const spin = []
   const anchors = {}
-  const groupMats = Object.fromEntries(GROUPS.map((g) => [g, []]))
-  const groupNodes = Object.fromEntries(GROUPS.map((g) => [g, []]))
-  const mods = []
+  let groupMats = {}
+  let groupNodes = {}
   let hoodNode = null
   let intakeNode = null
   let intakeAxis = null
   let ending = null
-
-  /* Polycarbonate is clear, so it is mostly what is behind it plus a thin specular sheen: it reflects
-     the studio at about a third the strength of metal (REFLECT.poly) and transmits everything else.
-     As an alpha-blended sheet it read milky, and blended sheets cannot be
-     sorted against each other inside one mesh, so as the robot turned one panel cut across another.
-     Transmission samples what is behind from the opaque pass instead of blending over it, so draw
-     order stops mattering. Phones get a faint blended sheet: the transmission pass draws the opaque
-     scene a second time. polygonOffset keeps a sheet bolted flat to a plate from z-fighting with it. */
+  /* Phones get the cheaper polycarbonate: the transmission pass draws the opaque scene a second time. */
   const glassy = !narrowMQ.matches
-  const polycarb = () => {
-    const m = glassy
-      ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.01, transmission: 1, thickness: 0, ior: 1.585, specularIntensity: 0.55, side: THREE.DoubleSide })
-      : new THREE.MeshStandardMaterial({ color: 0xeef2f8, metalness: 0, roughness: 0.08, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide })
-    m.name = 'poly'
-    m.polygonOffset = true
-    m.polygonOffsetFactor = 1
-    m.polygonOffsetUnits = 1
-    return m
-  }
 
-  function adopt(gltf, man) {
+  function adopt(root, man) {
     manifest = man
-    robot = gltf.scene
-    rig.add(robot)
-    top = robot.getObjectByName('robot_1') || robot
-    const cache = new Map()
-    robot.traverse((o) => {
-      if (!o.isMesh || !o.material) return
-      let a = o
-      while (a.parent && a.parent !== top) a = a.parent
-      const g = groupOfNode(a.name)
-      let inWheel = false
-      for (let x = o; x; x = x.parent) if (x.name?.startsWith('wheel-')) inWheel = true
-      const k = `${g}|${o.material.uuid}${inWheel ? '|w' : ''}`
-      if (!cache.has(k)) {
-        let m = o.material.clone()
-        if (m.name === 'poly') m = polycarb()
-        m.envMapIntensity = REFLECT[m.name] ?? 0.6
-        m.dithering = true
-        /* The CAD's tread is the vendor model's placeholder pale blue; real tread is black rubber. */
-        if (inWheel && m.name === 'tread') { m.color.set(0x161719); m.roughness = 0.92; m.metalness = 0; m.envMapIntensity = 0.25 }
-        m.userData.base = { color: m.color.clone(), env: m.envMapIntensity }
-        cache.set(k, m)
-        groupMats[g].push(m)
-      }
-      o.material = cache.get(k)
-    })
-    for (const c of top.children) if (c.name) groupNodes[groupOfNode(c.name)].push(c)
+    rig.add(root)
+    robot = rigRobot(root, man, { glassy, groupOf: groupOfNode })
+    ;({ top, hoodNode, intakeNode, intakeAxis } = robot)
+    groupMats = Object.fromEntries(GROUPS.map((g) => [g, robot.groupMats[g] ?? []]))
+    groupNodes = Object.fromEntries(GROUPS.map((g) => [g, robot.groupNodes[g] ?? []]))
 
-    robot.updateMatrixWorld(true)
+    root.updateMatrixWorld(true)
     for (const [name, L] of Object.entries(LAYERS)) {
-      const n = robot.getObjectByName(name)
+      const n = root.getObjectByName(name)
       if (n) moving.push({ n, home: n.position.clone(), dir: new THREE.Vector3(...L.dir), d: L.d, at: L.at, off: new THREE.Vector3() })
-    }
-    /* Rollers turn about the manifest's signed axis, at its belt or gear ratio to the flywheel, on the
-       channel the code drives them from. */
-    for (const r of manifest?.rollers ?? []) {
-      const node = robot.getObjectByName(r.node)
-      if (!node) continue
-      const ch = r.role === 'intake' ? 'intake' : r.role === 'feeder' ? 'feed' : r.role === 'conveyor' ? 'conveyor' : 'fly'
-      spin.push({ node, ch, axis: new THREE.Vector3(...r.axis).normalize(), ratio: Math.abs(r.drivenBy?.ratio ?? 1), angle: 0, rest: node.quaternion.clone() })
     }
     /* Each anchor is two points. `live` rides on its node, so the hairline ends on the part wherever
        it moves. `rest` is the same point with only the teardown applied — no hood swing, no deploy,
        no steering — and the labels are laid out from that, so the words hold still while the
        mechanism moves under them. */
     for (const [k, [node, p]] of Object.entries(ANCHORS)) {
-      const n = robot.getObjectByName(node)
+      const n = root.getObjectByName(node)
       if (!n) continue
       const live = new THREE.Object3D()
       live.position.copy(n.worldToLocal(new THREE.Vector3(...p)))
       n.add(live)
       anchors[k] = { live, mover: moving.find((q) => q.n === n), home: n.position.clone(), local: new THREE.Vector3(...p).sub(n.position) }
     }
-    for (const m of manifest?.modules ?? []) {
-      const node = robot.getObjectByName(m.steerNode)
-      const wheel = robot.getObjectByName(m.wheelNode)
-      if (node && wheel) mods.push({ node, wheel, axis: new THREE.Vector3(...m.wheelAxis).normalize(), cad: (m.cadSteerAngle * Math.PI) / 180, pos: m.position, angle: 0, vel: 0, roll: 0, dir: 1 })
-    }
-    hoodNode = robot.getObjectByName(manifest?.hood?.node ?? 'hood')
-    intakeNode = robot.getObjectByName(manifest?.intake?.node ?? 'intake')
-    intakeAxis = new THREE.Vector3(...(manifest?.intake?.axis ?? [1, 0, 0]))
     ending = createAutonomy({ scene, manifest, hubAt: HUB_AT, spots: FUEL_START, rows: FUEL_ROWS, shots: SHOT_SPOTS })
     /* Compile every shader now, not on the first frame that needs it. */
     renderer.compile(scene, camera)
     ready = true
   }
 
-  Promise.all([
-    new GLTFLoader().loadAsync(`${models}robot.glb`),
-    fetch(`${models}robot.json`).then((r) => r.json()),
-  ]).then(([gltf, man]) => { if (!disposed) adopt(gltf, man) })
+  loadRobot(models)
+    .then(({ root, manifest: man }) => { if (!disposed) adopt(root, man) })
     .catch((e) => console.error('spine: the robot did not load', e))
 
   /* ── the HUB, contact shadows and FUEL ─────────────────────────────── */
-  /* The HUB is cut from FIRST's official field model (tools/hub-from-field.mjs). The cut loses the
-     field's palette texture, so each part is painted here: the funnel — the only piece above 1.3 m —
-     in the blue alliance's colour, the body in dark painted steel. */
   let hub = null
-  new GLTFLoader().loadAsync(`${models}hub.glb`).then((g) => {
+  loadHub(models).then((h) => {
     if (disposed) return
-    hub = g.scene
+    hub = h
     hub.visible = false
-    const box = new THREE.Box3()
-    hub.traverse((o) => {
-      if (!o.isMesh) return
-      box.setFromObject(o)
-      o.material = box.min.y > 1.3
-        ? new THREE.MeshStandardMaterial({ color: 0x24589c, metalness: 0.35, roughness: 0.42 })
-        : new THREE.MeshStandardMaterial({ color: 0x3a3f47, metalness: 0.5, roughness: 0.5 })
-    })
     scene.add(hub)
   }).catch((e) => console.warn('spine: no HUB, so the ending shoots at nothing', e))
   const shadow = blob(scene, 1.35, 0.75)
   const hubShadow = blob(scene, 2.1, 0.6)
   hubShadow.visible = false
-  const _q = new THREE.Quaternion()
 
   /* The shot solver, said out loud: one live callout while the robot aims and fires. */
   const solverEl = document.createElement('div')
@@ -459,7 +287,6 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   let endLive = false // the ending has started since the reader last left it
   let wheelV = 0
   let endCmd = null // the ending's pose and commands, from last frame's update
-  const roll = { fly: 0, feed: 0, conveyor: 0, intake: 0 }
   const hubAt = new THREE.Vector3(...HUB_AT)
   const routineAt = (t) => { const o = {}; for (const k of ROUTINE) { if (k.t > t) break; Object.assign(o, k) } return o }
   function runMechanisms(w, dw, dt, yaw, baseYaw) {
@@ -488,48 +315,22 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
       const sn = Math.sin(yaw)
       drive = { vx: vx * c - vz * sn, vz: vx * sn + vz * c, om } // world → robot frame
     }
-    const steerW = Math.max(w, dw)
-    for (const m of mods) {
-      let raw = m.lastRaw ?? 0
-      let speed = 0
-      if (drive) {
-        const vx = drive.vx + drive.om * m.pos[2]
-        const vz = drive.vz - drive.om * m.pos[0]
-        speed = Math.hypot(vx, vz)
-        if (speed > 0.03) raw = Math.atan2(-vz, vx) - m.cad // WPILib angle, then relative to the CAD pose
-      } else {
-        raw = r.drive === 'spin' ? 0 : r.drive === 'x' ? Math.PI / 2 : HEADING[r.drive] - m.cad
-        speed = wheelV * 0.9
-      }
-      m.lastRaw = raw
-      const target = wrapNear(raw, m.angle)
-      m.dir = Math.round((target - raw) / Math.PI) % 2 ? -1 : 1
-      const n = 4
-      const h = dt / n
-      for (let i = 0; i < n; i++) { m.vel += (K * (target - m.angle) - C * m.vel) * h; m.angle += m.vel * h }
-      m.node.rotation.y = m.angle * steerW
-      m.roll += ((dt * speed * m.dir) / 0.0508) * 0.35 // scaled down: true wheel speed strobes on screen
-      m.wheel.quaternion.setFromAxisAngle(m.axis, m.roll)
-    }
+    robot.steer(drive, dt, {
+      weight: Math.max(w, dw),
+      rawFor: (m) => (r.drive === 'spin' ? 0 : r.drive === 'x' ? Math.PI / 2 : HEADING[r.drive] - m.cad),
+      speed: wheelV * 0.9,
+    })
     wheelV = lag(wheelV, (r.wheel ?? 0) * w, 0.25, dt)
 
     /* Rollers spin up and coast down per channel; ratios from the manifest. */
     /* In the ending the intake rollers run only while collecting; in the routine, whenever it is out. */
     const intakeRun = r.rollers ?? r.intake ?? 0
-    const want = { fly: (r.fly ?? 0) * mw, feed: (r.feed ?? 0) * mw, intake: intakeRun * mw, conveyor: Math.max(r.feed ?? 0, intakeRun * 0.6) * mw }
-    const tau = { fly: 0.8, feed: 0.15, intake: 0.3, conveyor: 0.25 }
-    for (const k in roll) roll[k] = lag(roll[k], want[k], tau[k], dt)
-    for (const q of spin) {
-      q.angle += dt * roll[q.ch] * SPEED[q.ch] * q.ratio
-      q.node.quaternion.copy(q.rest).multiply(_q.setFromAxisAngle(q.axis, q.angle))
-    }
+    robot.rollers({ fly: (r.fly ?? 0) * mw, feed: (r.feed ?? 0) * mw, intake: intakeRun * mw, conveyor: Math.max(r.feed ?? 0, intakeRun * 0.6) * mw }, dt)
 
     const cad = manifest?.hood?.cadAngle ?? 11
     let hoodDeg = cad
-    if (hoodNode) {
-      hoodDeg += mw * (hoodP.at(r.hood ?? 15, mechT) - cad) // Hood.java's range is 13–45°
-      hoodNode.rotation.z = ((hoodDeg - cad) * Math.PI) / 180
-    }
+    hoodDeg += mw * (hoodP.at(r.hood ?? 15, mechT) - cad) // Hood.java's range is 13–45°
+    robot.setHood(hoodDeg)
     const deploy = deployP.at((r.intake ?? 0) * (manifest?.intake?.travel ?? 0.3), mechT) * mw
     return { deploy, hoodDeg, pose }
   }
