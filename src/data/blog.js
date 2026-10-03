@@ -32,6 +32,52 @@ export const posts = [
     ],
   },
   {
+    slug: 'catalyst-2-a-robot-that-explains-itself',
+    date: '2026-10',
+    title: 'Inside Catalyst 2.0: a robot that explains itself',
+    tag: 'Software',
+    author: 'Team 5805',
+    excerpt:
+      'Two ideas run through FRC Catalyst 2.0: the robot should refuse what it was never told it could do, and every decision it makes should come with a reason.',
+    body: [
+      'Catalyst started as a box of mechanisms — elevators, arms, flywheels and rollers, each configured through a builder instead of rewritten every season. Catalyst 2.0 keeps all of that, ten mechanism types in all, and grows it into a library for the whole robot.',
+      'The first idea is the superstructure: a state machine for the entire robot. You declare the states — stow, intake, aim, shoot — and the transitions between them, once. Ask for a transition you never declared and it is refused, with the reason. And a state only counts as reached when the mechanisms actually get there: the hopper out, the hood on angle, the flywheel at speed. Not when a timer runs out.',
+      'The second is autonomy that explains itself. Catalyst’s autonomy cores read the match, pick the next job and hand back a decision with its reason — line up, collect, score. They command nothing themselves. Every decision is advice the robot acts on, never a lock on the driver.',
+      'Around those sit the rest of 2.0: Physics Core, which fuses wheel and IMU velocity with a confidence and scores slip and tipping while never driving anything itself; a solver for shooting on the move; first-class Systemcore support, with five CAN buses planned around their shared controllers; and a robot that declares its own spec sheet, so Catalyst Console can draw it to scale.',
+      'You can watch both ideas run on Numbers on the Catalyst page — the robot collecting and scoring on its own with its reasons beside it, and the state machine refusing a shot it was never allowed to take.',
+    ],
+  },
+  {
+    slug: 'catalyst-console-2',
+    date: '2026-09',
+    title: 'Catalyst Console 2.0: it reads, it never writes',
+    tag: 'Software',
+    author: 'Team 5805',
+    excerpt:
+      'The dashboard our drivers watch is built on three rules: it never controls the robot, nothing it does may impede driving, and it never invents a number.',
+    body: [
+      'Catalyst Console is the driver-station dashboard that watches a Catalyst robot run. It is a reading, not a control: telemetry comes in, and nothing goes back out.',
+      'Three rules shape everything in it. It never controls the robot. Nothing it does may impede driving. And it never invents a number — if the robot did not say it, Console does not show it.',
+      'Before a match, Park shows the robot in 3D from its own CAD, posed live from telemetry, with what matters called out. Once the robot enables, Drive takes over: the field, the REBUILT hub schedule worked out from the game manual and FMS, the swerve modules, Physics Core and the shot. Behind them sit live tuning, the CAN bus and readable Driver Station logs, and Systemcore and battery health at a glance.',
+      'Console 2.0 runs on Windows and macOS. A robot running Catalyst 2.0 declares its own spec sheet — frame, bumpers, every motor and camera — and Console reads it, so the robot on screen is drawn to the robot’s own numbers.',
+    ],
+  },
+  {
+    slug: 'meet-x1',
+    date: '2026-09',
+    title: 'Meet X1, where Catalyst drives first',
+    tag: 'Engineering',
+    author: 'Team 5805',
+    excerpt:
+      'Before a Catalyst feature goes on a competition robot, it runs on X1: a 28 × 26 in swerve drivebase with no mechanisms, on purpose.',
+    body: [
+      'Catalyst X1 is our test drivebase — a robot, not a product. It is a 28 × 26 in swerve chassis on Falcon 500s and Phoenix 6, with a Systemcore controller and one Limelight 4 at the front.',
+      'It is the machine FRC Catalyst 2.x is brought up on. Every feature the library offers a drivebase is wired in — swerve, pose estimation with vision, Physics Core, aiming on the move — and every one of them reports to Catalyst Console. Nothing that needs a mechanism is pretended: X1 has none, so it shows none.',
+      'A session at the shop runs the same way every time. A preflight check prints pass, warn or fail for the link, the e-stop, the battery, CAN, the gyro, the camera and more, and nothing enables until the fails are fixed. A recorder turns every enabled stretch into a run file, and a report sets the day’s runs side by side, so a change is judged by numbers rather than by feel.',
+      'That loop is why X1 exists. A feature that has been driven, recorded and compared on X1 is one we trust on Numbers.',
+    ],
+  },
+  {
     slug: 'farewell-leviticus',
     date: '2026-09',
     title: 'Retiring Leviticus',
