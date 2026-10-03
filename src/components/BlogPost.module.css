@@ -318,7 +318,7 @@
     border-radius: 17px;
   }
   .postNav {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .navNext {
     text-align: left;

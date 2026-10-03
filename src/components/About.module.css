@@ -55,7 +55,7 @@
 /* --- KPI rail (right, 5 col) --- */
 .kpis {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-5) var(--sp-4);
   padding: var(--sp-5);
   background: var(--surface-1);
@@ -370,20 +370,20 @@
    ========================================================================= */
 @media (max-width: 900px) {
   .top {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-6);
   }
   .heading {
     max-width: none;
   }
   .firstRow {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 600px) {
   .pillarGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .pillarGrid > *:nth-child(2),
   .pillarGrid > *:nth-child(4) {

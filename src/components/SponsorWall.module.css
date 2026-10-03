@@ -115,7 +115,7 @@
   list-style: none;
   display: grid;
   /* auto-fit: one major sponsor takes the full row, two sit side by side */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), minmax(0, 1fr)));
   gap: clamp(16px, 2vw, 28px);
 }
 .majorItem {
@@ -146,7 +146,7 @@
 .familyList {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), minmax(0, 1fr)));
   gap: 0 clamp(16px, 2vw, 28px);
 }
 .familyItem {
@@ -220,7 +220,7 @@
    ========================================================================= */
 @media (max-width: 900px) {
   .head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-5);
     align-items: start;
   }

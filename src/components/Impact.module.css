@@ -546,7 +546,7 @@
    ========================================================================= */
 @media (max-width: 900px) {
   .head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-5);
     align-items: start;
   }
@@ -554,7 +554,7 @@
     max-width: none;
   }
   .seasonGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-7);
   }
   .yearGroup {
@@ -567,7 +567,7 @@
   /* Three record stats as three compact rows — numeral left, label right —
      instead of three full-width blocks a screen tall. */
   .statsRow {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
   .stat {
@@ -592,7 +592,7 @@
   }
   /* Year stacks above its rows */
   .yearGroup {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-4);
     padding-left: var(--sp-5);
   }
@@ -603,7 +603,7 @@
     left: calc(var(--sp-5) * -1 + 1px);
   }
   .row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-2);
     align-items: start;
   }

@@ -499,7 +499,7 @@
   .sectionHead,
   .run,
   .cta {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-5);
     align-items: start;
   }
@@ -512,17 +512,17 @@
   }
   /* three phases never split 2 + 1 — they go straight to a single column */
   .phases {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 640px) {
   .lanes,
   .phases {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .runStats {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--sp-4);
   }
   .heroActions,
@@ -538,6 +538,19 @@
   }
   .railResult {
     grid-column: 2;
+  }
+}
+
+/* Narrow phones: buttons stack full-width rather than wrapping their labels
+   onto two lines inside a pill, and the closing card gives back its padding. */
+@media (max-width: 480px) {
+  .heroActions,
+  .ctaActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cta {
+    padding: 36px 20px;
   }
 }
 

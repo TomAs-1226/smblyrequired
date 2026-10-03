@@ -269,7 +269,7 @@
    ========================================================================= */
 @media (max-width: 900px) {
   .head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-4);
     align-items: start;
   }
@@ -280,7 +280,7 @@
 
 @media (max-width: 720px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

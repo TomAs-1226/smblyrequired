@@ -144,7 +144,7 @@
    ========================================================================= */
 @media (max-width: 1000px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-6);
   }
   .intro {
@@ -161,7 +161,7 @@
 
 @media (max-width: 600px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   /* On one column the lead tile no longer needs to span rows */
   .grid > *:first-child {

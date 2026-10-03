@@ -513,7 +513,7 @@
    ========================================================================= */
 @media (max-width: 1040px) {
   .board {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: auto;
   }
   /* Gift card leads, full-width across both columns */
@@ -531,7 +531,7 @@
 
 @media (max-width: 900px) {
   .head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: var(--sp-6);
   }
@@ -542,13 +542,13 @@
 
 @media (max-width: 720px) {
   .stepGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (max-width: 600px) {
   .board {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .cardCorporate .cardActions {
     flex-direction: column;
@@ -556,6 +556,13 @@
   }
   .cardCta {
     width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  /* The icon column cost the note a third of a narrow phone's width. */
+  .tax {
+    flex-direction: column;
+    gap: var(--sp-3);
   }
 }
 

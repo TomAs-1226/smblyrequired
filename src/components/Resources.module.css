@@ -206,7 +206,7 @@
    ========================================================================= */
 @media (max-width: 720px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -171,7 +171,7 @@
 .benefitsList {
   list-style: none;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-3) var(--sp-5);
   align-content: start;
 }
@@ -245,21 +245,21 @@
 /* ---- Responsive ---- */
 @media (max-width: 920px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(32px, 6vw, 48px);
   }
   .heading {
     max-width: none;
   }
   .benefits {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-5);
   }
 }
 
 @media (max-width: 560px) {
   .benefitsList {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-3);
   }
   .telemetryHead {

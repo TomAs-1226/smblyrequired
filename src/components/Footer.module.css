@@ -36,7 +36,7 @@
 /* ---- Columns: heavy left, two tighter right ---------------------------- */
 .grid {
   display: grid;
-  grid-template-columns: 1.6fr 0.9fr 1.2fr;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
   gap: clamp(36px, 5vw, 88px);
   align-items: start;
 }
@@ -438,7 +438,7 @@
 /* ---- Responsive --------------------------------------------------------- */
 @media (max-width: 900px) {
   .grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   /* Brand spans the full top row, Navigate + Connect sit beneath it */
   .brandCol {
@@ -486,12 +486,12 @@
 
 @media (max-width: 560px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sp-6);
   }
   /* Nine short links read fine two-up; one long column was a screen of them. */
   .navList {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: var(--sp-4);
   }
   .brandCol {

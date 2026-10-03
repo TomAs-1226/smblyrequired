@@ -425,7 +425,7 @@
    ========================================================================= */
 @media (max-width: 1040px) {
   .feature {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .featureMedia {
     min-height: clamp(260px, 50vw, 420px);
@@ -439,7 +439,7 @@
 
 @media (max-width: 900px) {
   .grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-rows: auto;
   }
   .cardLead {
@@ -452,7 +452,7 @@
 
 @media (max-width: 640px) {
   .statStrip {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--sp-5) var(--sp-4);
     padding: var(--sp-5) var(--sp-4);
   }
@@ -464,10 +464,37 @@
     display: none;
   }
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
   }
   .cardLead {
     grid-column: auto;
+  }
+  /* Nine stacked cards were 1,500px of scrolling. On a phone each one is a
+     row instead: icon beside the words, arrow in the corner. */
+  .card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    gap: var(--sp-3);
+    padding: 20px 60px 20px 20px;
+  }
+  .cardIcon {
+    width: 40px;
+    height: 40px;
+  }
+  .cardMain {
+    margin-top: 0;
+    gap: var(--sp-1);
+  }
+  .cardLabel,
+  .cardLead .cardLabel,
+  .cardTall .cardLabel {
+    font-size: 1.3rem;
+  }
+  .cardGo {
+    top: 20px;
+    right: 16px;
   }
   .ctaActions {
     width: 100%;

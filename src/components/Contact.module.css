@@ -178,7 +178,7 @@
 }
 .row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-4);
 }
 .field {
@@ -365,7 +365,7 @@
 /* ---- Responsive ------------------------------------------------------- */
 @media (max-width: 880px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: clamp(40px, 8vw, 64px);
   }
   .ask {
@@ -378,7 +378,7 @@
 
 @media (max-width: 480px) {
   .row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .mentorList {
     flex-direction: column;

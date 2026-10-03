@@ -374,7 +374,7 @@
    ========================================================================= */
 @media (max-width: 760px) {
   .head {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: var(--sp-4);
   }
@@ -385,7 +385,7 @@
     display: none;
   }
   .event {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: var(--sp-3);
   }
