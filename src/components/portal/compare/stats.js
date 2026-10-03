@@ -82,13 +82,13 @@ export function num(v) {
 }
 
 /**
- * `team_event_stats.score_stddev` is `stddev_pop` — it divides by n, not n-1.
+ * Population SD -> sample SD, for a spread computed by dividing by n.
  *
- * That is the right choice for describing a set you have all of, and the wrong
- * one for estimating the spread of a robot's performance from a handful of
- * matches, which is what we are doing. At n = 3 the population form understates
- * the true spread by about 22%, and understating spread is precisely the error
- * that makes noise look like a winner. Corrected on the way in.
+ * NOT applied to `team_event_stats.score_stddev`: that has been `stddev_samp`
+ * since migration 0009 (and still is in 0013). Correcting it again inflated
+ * every spread by sqrt(n/(n-1)) — about 22% at n = 3 — which widened the
+ * standard errors and made Compare under-call real differences. Kept for a
+ * caller that genuinely holds a population SD.
  */
 export function toSampleSd(popSd, n) {
   const s = num(popSd)
@@ -514,7 +514,14 @@ export function deriveColumn({ team, roster, stats, check, entries, loaded }) {
   // outside the other. They differ in real data, they differ in the direction
   // that flatters the average, and printing matches_scouted next to an average
   // computed from fewer rows is the quietest lie this panel could tell.
-  const scoredN = rows.reduce((k, e) => k + (num(e?.data?.total_score) != null ? 1 : 0), 0)
+  //
+  // Match entries only, as in the view (0009 keeps the pit estimate apart from
+  // avg_score). Counting every loaded entry let a pit visit or a strategy note
+  // that carried total_score inflate n — and with it the thin-data gate and the
+  // standard errors. The view's own scored_matches is preferred when present.
+  const scoredN =
+    num(stats?.scored_matches) ??
+    matchEntries.reduce((k, e) => k + (num(e?.data?.total_score) != null ? 1 : 0), 0)
 
   const matches = Number(stats?.matches_scouted ?? matchEntries.length) || 0
   const { fields } = aggregateEntries(matchEntries)
@@ -528,8 +535,8 @@ export function deriveColumn({ team, roster, stats, check, entries, loaded }) {
     scouts: Number(stats?.scouts_contributing ?? 0) || 0,
     lastSeen: stats?.last_seen ?? null,
     avg: num(stats?.avg_score),
-    // Corrected from the view's population SD — see toSampleSd().
-    sd: toSampleSd(stats?.score_stddev, scoredN),
+    // Already a sample SD (stddev_samp, 0009/0013) — used as-is.
+    sd: num(stats?.score_stddev),
     min: num(stats?.min_score),
     max: num(stats?.max_score),
     breakdowns: Number(stats?.breakdowns ?? 0) || 0,
