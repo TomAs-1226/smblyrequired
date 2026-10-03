@@ -8,15 +8,23 @@
   background: linear-gradient(0deg, var(--bg-void) 35%, transparent);
   display: flex;
   transform: translateY(120%);
-  transition: transform var(--spring-drawer-dur) var(--spring-drawer);
+  opacity: 0;
+  transition: transform var(--spring-drawer-dur) var(--spring-drawer),
+    opacity var(--dur-fast) var(--ease-out);
   pointer-events: none;
 }
 .dock .btn {
   width: 100%;
-  pointer-events: auto;
+  min-height: 48px;
 }
 .show {
   transform: translateY(0);
+  opacity: 1;
+}
+/* Only a shown dock catches taps; a parked one must never sit invisibly over
+   the page's own buttons. */
+.show .btn {
+  pointer-events: auto;
 }
 
 @media (min-width: 860px) {
@@ -30,10 +38,6 @@
    can't catch taps the way an opacity-only hide would. */
 @media (prefers-reduced-motion: reduce) {
   .dock {
-    opacity: 0;
     transition: opacity var(--dur-fast) var(--ease-out);
-  }
-  .show {
-    opacity: 1;
   }
 }
