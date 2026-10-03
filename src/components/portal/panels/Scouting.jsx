@@ -13,7 +13,7 @@ import {
 import FormRenderer, { missingRequired } from '../scouting/FormRenderer'
 import MatchTimer from '../scouting/MatchTimer'
 import NexusLive from '../live/NexusLive'
-import SyncBadge from '../SyncBadge'
+import SyncBadge, { SyncProblems } from '../SyncBadge'
 import { Loading, Empty, ErrorState } from '../ui'
 import styles from '../Portal.module.css'
 import scout from '../scouting/Scouting.module.css'
@@ -227,6 +227,7 @@ export default function Scouting() {
           </span>
         )}
       </div>
+      <SyncProblems />
 
       {/* Scouting window closed — say so plainly and stop the form being filled
           for nothing. The database refuses the entry regardless; this is the

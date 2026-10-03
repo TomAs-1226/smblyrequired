@@ -120,33 +120,24 @@ const MAX_DETECTIONS = 8
 // indistinguishable from a hang.
 const MODEL_LOAD_TIMEOUT_MS = 15000
 
-// --- Offline: what the queue does and does not cover --------------------------
+// --- Offline: how a photo survives no signal ---------------------------------
 //
-// Saving a photo is TWO writes, not one:
-//   1. the bytes    -> Storage object + a `files` row   (portalApi.uploadFile)
-//   2. the link     -> a `robot_photos` row referencing files.id
+// Saving a photo is THREE writes: the bytes (a Storage object), a `files` index
+// row, and the `robot_photos` link to the team. Online, this component does the
+// first two itself (portalApi.uploadFile) so the scout sees the upload finish.
+// Whatever cannot be done now goes to the offline queue's `robot_photo` kind
+// (src/lib/queuePush.js), which accepts either shape:
 //
-// src/lib/offlineQueue.js covers step 2 and only step 2. Its `push()` does
-// `supabase.from(table).insert(row.payload)`, so the payload handed to
-// `enqueue('robot_photo', …)` must BE a valid `robot_photos` row — it is
-// inserted verbatim. Handing it a `{ bucket, path, file }` envelope would queue
-// a row the database rejects with 22P02/42703, which that queue classifies as
-// terminal, i.e. the photo would be discarded rather than retried.
+//   upload failed, no signal   -> { ...link, _upload: { file, bucket, path, … } }
+//                                 the queue uploads, indexes and links later
+//   upload landed, link failed -> { ...link, file_id }
+//                                 the queue only inserts the link
 //
-// So the order here is: upload the bytes, then either insert the link directly
-// or hand the link to the queue. That makes the link durable and idempotent
-// (client_uuid is unique; a duplicate delivery is treated as success), and it
-// is a correct use of the existing queue rather than a second one.
-//
-// TODO(offlineQueue): step 1 has no offline path. There is no queue `kind` that
-// uploads to Storage, and the queue cannot invent one — its whole push model is
-// "insert this row". Until offlineQueue.js grows a storage-aware handler (a
-// `robot_photo_upload` kind that puts the Blob in IndexedDB, uploads it on
-// drain, then chains the robot_photos insert with the resulting file_id), a
-// photo taken with genuinely no connectivity CANNOT be banked. This component
-// therefore refuses to lose it: the frame stays on screen with a plain message
-// and the scout can retry. Do NOT work around this by building a second queue
-// here — extend that one.
+// Every step is idempotent (fixed path + upsert, unique (bucket, path), unique
+// client_uuid), so a retry after a half-finished drain completes rather than
+// duplicating. Both shapes once failed: the queue rejected a link-only row as
+// "no file attached" and retried it forever, and a photo taken with no signal
+// could not be banked at all.
 
 // A failed upload should not read as "you did something wrong". These are the
 // shapes a dead or captive-portal network produces.
@@ -706,13 +697,38 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
     })
 
     if (upErr || !fileRow) {
-      // See the TODO(offlineQueue) note above: there is no queue kind that can
-      // carry image bytes, so this is the one case that cannot be banked. Say
-      // so in words a scout can act on rather than surfacing "Failed to fetch".
+      // No signal: bank the whole photo — bytes included — in the offline queue.
+      // Its `robot_photo` handler uploads the file, writes the `files` row and
+      // links it on the next drain, each step safe to re-run. The path is fixed
+      // now, so a retry lands on the same object instead of a duplicate.
       if (!isOnline() || looksLikeNetworkFailure(upErr)) {
-        fail(
-          'No connection, so the photo could not be uploaded. It is still on screen — move somewhere with signal and press Use again. Do not leave this team until it saves.'
-        )
+        try {
+          await enqueue('robot_photo', {
+            client_uuid: clientUuid,
+            event_key: eventKey,
+            team_number: Number(teamNumber),
+            angle: angle.id,
+            quality: pending.quality,
+            taken_by: user.id,
+            _upload: {
+              file,
+              bucket: 'media',
+              path,
+              title: `Team ${teamNumber} — ${angle.label}`,
+              kind: 'photo',
+              season: new Date().getFullYear(),
+              sha256,
+            },
+          })
+          finish('queued')
+        } catch (err) {
+          // IndexedDB refused it (private mode, storage full). Now it genuinely
+          // cannot be kept, so the frame stays on screen with that said plainly.
+          console.warn('[capture] could not bank the photo offline:', err?.message ?? err)
+          fail(
+            'No connection, and this phone would not store the photo to send later. It is still on screen — move somewhere with signal and press Use again. Do not leave this team until it saves.'
+          )
+        }
       } else {
         fail(upErr ?? 'The upload did not complete.')
       }

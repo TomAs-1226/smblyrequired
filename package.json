@@ -11,6 +11,7 @@
     "fetch:tba": "node scripts/fetch-tba.mjs",
     "deploy": "node scripts/fetch-tba.mjs && vite build && npx gh-pages -d dist -m \"Deploy site\"",
     "test:markdown": "node scripts/test/markdown-safety.mjs",
+    "test:queue": "node scripts/test/offline-queue.mjs",
     "test:db": "node scripts/test/run-db-tests.mjs"
   },
   "dependencies": {

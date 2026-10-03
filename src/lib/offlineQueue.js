@@ -15,11 +15,14 @@
 // The contract that makes retries safe is `client_uuid`: generated here, on the
 // device, before the row exists anywhere else, and UNIQUE in the database
 // (migration 0005). If a row was accepted but the response was lost, the retry
-// collides — and a collision is SUCCESS, not an error. Getting that backwards
-// is what turns "sync failed, tap retry" into a silently doubled dataset.
+// collides — and a collision on client_uuid is SUCCESS, not an error. Getting
+// that backwards is what turns "sync failed, tap retry" into a silently doubled
+// dataset. A collision on any OTHER unique constraint is not proof of delivery;
+// queuePush.js tells them apart, and owns every other server answer too.
 // =============================================================================
 
 import { supabase, isConfigured } from './supabase'
+import { pushRow } from './queuePush'
 
 const DB_NAME = 'frc5805-offline'
 const DB_VERSION = 1
@@ -146,12 +149,38 @@ export async function pendingCount() {
 
 export async function getState() {
   const rows = await pending()
+  const stuck = rows.filter(isStuck)
   return {
     online: isOnline(),
     syncing,
     pending: rows.length,
-    failing: rows.filter((r) => r.attempts >= 3).length,
+    failing: stuck.length,
     oldest: rows[0]?.created_at ?? null,
+    // What is stuck and why, without the payload (a photo row carries its bytes).
+    // A count alone told a scout something was wrong and nothing about what, so
+    // an entry refused for being outside the scouting window just sat there.
+    problems: stuck.map(describe),
+  }
+}
+
+// Stuck = the server has said no in a way a retry will not change, or it has
+// failed often enough that the scout should be told rather than reassured.
+function isStuck(row) {
+  return row.terminal === true || row.attempts >= 3
+}
+
+function describe(row) {
+  const p = row.payload ?? {}
+  return {
+    client_uuid: row.client_uuid,
+    kind: row.kind,
+    entryKind: p.kind ?? null,
+    team: p.team_number ?? null,
+    match: p.match_number ?? null,
+    recordedAt: p.recorded_at ?? row.created_at,
+    attempts: row.attempts,
+    terminal: row.terminal === true,
+    error: row.last_error,
   }
 }
 
@@ -188,8 +217,13 @@ let drainAgain = false
  * Push everything pending. Safe to call concurrently — overlapping calls
  * collapse into one pass plus at most one follow-up, so a burst of saves does
  * not start a burst of competing drains against the same rows.
+ *
+ * `force` is for a person tapping "sync now": it ignores the backoff and retries
+ * terminal rows too. A tap is a decision to try again — the scout may have just
+ * been told by a lead that the window is reopened — and silently skipping the
+ * rows they are looking at would read as the button being broken.
  */
-export async function drain() {
+export async function drain({ force = false } = {}) {
   if (!isConfigured || !isOnline()) return { pushed: 0, failed: 0, skipped: true }
   if (syncing) {
     drainAgain = true
@@ -205,10 +239,18 @@ export async function drain() {
     const rows = await pending()
     for (const row of rows) {
       // Backoff is checked per row so one permanently-broken entry cannot block
-      // the sixty good ones queued behind it.
-      if (row.attempts > 0 && !backoffElapsed(row)) continue
+      // the sixty good ones queued behind it. Terminal rows wait for a person.
+      if (!force && row.terminal) continue
+      if (!force && row.attempts > 0 && !backoffElapsed(row)) continue
 
-      const result = await push(row)
+      let result
+      try {
+        result = await pushRow(supabase, row, HANDLERS[row.kind])
+      } catch (err) {
+        // A thrown fetch (DNS, captive portal, aborted request) is a transport
+        // failure, never a verdict on the data — always retryable.
+        result = { ok: false, error: String(err?.message ?? err) }
+      }
       if (result.ok) {
         await tx('readwrite', (s) => s.delete(row.client_uuid))
         pushed += 1
@@ -220,6 +262,7 @@ export async function drain() {
             attempts: row.attempts + 1,
             last_error: result.error,
             last_attempt: new Date().toISOString(),
+            terminal: result.terminal === true,
           })
         )
       }
@@ -244,113 +287,6 @@ function backoffElapsed(row) {
   const wait = BACKOFF_MS[Math.min(row.attempts, BACKOFF_MS.length - 1)]
   if (!row.last_attempt) return true
   return Date.now() - new Date(row.last_attempt).getTime() >= wait
-}
-
-async function push(row) {
-  const handler = HANDLERS[row.kind]
-  if (!handler) return { ok: false, error: `unknown kind ${row.kind}` }
-
-  if (handler.kind === 'storage') return pushStorage(row, handler)
-
-  const { error } = await supabase.from(handler.table).insert(row.payload)
-
-  if (!error) return { ok: true }
-
-  // 23505 = unique_violation on client_uuid. The row is already on the server;
-  // this is a duplicate delivery of a message that succeeded, which is exactly
-  // what the client_uuid column exists to make detectable. Treating it as an
-  // error here would strand the row in the queue forever and show the scout a
-  // permanent failure for data that is safely stored.
-  if (error.code === '23505') return { ok: true, deduped: true }
-
-  // 42501 / RLS denial and 22P02 / malformed input will never succeed on retry.
-  // Surface them as terminal so the UI can offer to discard rather than
-  // pretending a hundred more attempts might help.
-  if (error.code === '42501' || error.code === '22P02' || error.code === '23514') {
-    return { ok: false, error: `${error.code}: ${error.message}`, terminal: true }
-  }
-
-  return { ok: false, error: error.message }
-}
-
-/**
- * Three-step push: bytes → files row → domain row.
- *
- * Every step has to be independently re-runnable, because the queue can be
- * interrupted between any two of them — the phone goes back in a pocket, the
- * signal drops, the tab is closed. So each step treats "it is already there" as
- * success rather than as a conflict:
- *
- *   storage   upsert:true, so a half-finished upload simply completes
- *   files     unique(bucket,path) — on collision, read back the existing id
- *   domain    unique(client_uuid) — on collision, the row already landed
- *
- * The order matters and is not negotiable: the domain row references the files
- * row, which references bytes that must already exist. Reversed, a crash leaves
- * a row pointing at a file nobody uploaded, which reads as data loss to anyone
- * looking at it later.
- */
-async function pushStorage(row, handler) {
-  const { _upload, ...record } = row.payload
-  if (!_upload?.file) return { ok: false, error: 'queued photo has no file attached', terminal: true }
-
-  const { bucket, path, title, kind, season, sha256 } = _upload
-
-  // 1. bytes
-  const { error: upErr } = await supabase.storage
-    .from(bucket)
-    .upload(path, _upload.file, { cacheControl: '3600', upsert: true })
-  if (upErr && !/exists/i.test(upErr.message ?? '')) {
-    return { ok: false, error: `upload: ${upErr.message}` }
-  }
-
-  // 2. index row
-  let fileId = record.file_id
-  if (!fileId) {
-    const { data: userRes } = await supabase.auth.getUser()
-    const { data: fileRow, error: fErr } = await supabase
-      .from('files')
-      .insert({
-        bucket,
-        path,
-        title: title ?? path.split('/').pop(),
-        kind: kind ?? 'photo',
-        season: season ?? null,
-        byte_size: _upload.file.size ?? null,
-        sha256: sha256 ?? null,
-        uploaded_by: userRes?.user?.id ?? null,
-      })
-      .select('id')
-      .single()
-
-    if (fErr) {
-      if (fErr.code === '23505') {
-        // A previous attempt got this far. Recover the id rather than failing —
-        // the unique constraint is doing exactly what it exists to do.
-        const { data: existing } = await supabase
-          .from('files')
-          .select('id')
-          .eq('bucket', bucket)
-          .eq('path', path)
-          .maybeSingle()
-        if (!existing) return { ok: false, error: 'files row conflicted but could not be read back' }
-        fileId = existing.id
-      } else {
-        return { ok: false, error: `files: ${fErr.message}` }
-      }
-    } else {
-      fileId = fileRow.id
-    }
-  }
-
-  // 3. domain row
-  const { error: dErr } = await supabase.from(handler.table).insert({ ...record, file_id: fileId })
-  if (!dErr) return { ok: true }
-  if (dErr.code === '23505') return { ok: true, deduped: true }
-  if (dErr.code === '42501' || dErr.code === '22P02' || dErr.code === '23514') {
-    return { ok: false, error: `${dErr.code}: ${dErr.message}`, terminal: true }
-  }
-  return { ok: false, error: dErr.message }
 }
 
 // Periodic retry while the app is open. Cheap when the queue is empty (a single
