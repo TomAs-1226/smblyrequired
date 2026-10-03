@@ -2,7 +2,7 @@
 /**
  * The Content-Type each upload is sent with.
  *
- *   npm run test:uploads
+ *   npm run test:portal   (or: node scripts/test/upload-types.mjs)
  *
  * Buckets enforce allowed_mime_types (migration 0002) against what the browser
  * reports, and Windows reports .zip as application/x-zip-compressed while .md,

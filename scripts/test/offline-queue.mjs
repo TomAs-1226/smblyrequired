@@ -2,7 +2,7 @@
 /**
  * What the offline queue does with each server answer.
  *
- *   npm run test:queue
+ *   npm run test:portal   (or: node scripts/test/offline-queue.mjs)
  *
  * These are the rules that decide whether a scout's entry is kept, retried, or
  * dropped from the phone — and dropping is irreversible. Two of them were wrong

@@ -4,8 +4,9 @@
 // Split out of offlineQueue.js so it takes the Supabase client as an argument
 // and imports nothing that needs a browser or Vite: the rules in here decide
 // whether a scout's data is kept, retried, or dropped, and they are tested in
-// plain Node by scripts/test/offline-queue.mjs. offlineQueue.js owns IndexedDB,
-// scheduling and listeners; this file owns the meaning of every response.
+// plain Node by scripts/test/offline-queue.mjs (npm run test:portal).
+// offlineQueue.js owns IndexedDB, scheduling and listeners; this file owns the
+// meaning of every response.
 //
 // Every function returns { ok, ... } and never throws for a server answer.
 // =============================================================================
