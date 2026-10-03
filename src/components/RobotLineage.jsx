@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -6,6 +6,7 @@ import Section from './Section'
 import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Icon from './Icon'
+import RobotViewer from './RobotViewer'
 import { robots, lineageNote } from '../data/robots'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotLineage.module.css'
@@ -98,7 +99,7 @@ export default function RobotLineage() {
 }
 
 function Row({ robot, index, total }) {
-  const { name, book, season, year, game, status, result, blurb, image, current, subtitle, specs } =
+  const { name, book, season, game, status, result, blurb, current, subtitle, specs } =
     robot
   const champion = status === 'champion'
   const build = status === 'build'
@@ -118,36 +119,7 @@ function Row({ robot, index, total }) {
         .join(' ')}
     >
       <div className={styles.mediaCol}>
-        {image ? (
-          <figure className={styles.frame}>
-            {/* Staged well: spotlight + blueprint backdrop, subject grounded
-                with a soft reflection so it sits in space, never pasted. */}
-            <div className={styles.stage}>
-              <span className={styles.spot} aria-hidden="true" />
-              <span className={styles.grid} aria-hidden="true" />
-              <div className={styles.subject}>
-                <img
-                  className={styles.photo}
-                  src={image}
-                  alt={`${name} — Team 5805's ${year} ${game} robot`}
-                  loading="lazy"
-                  decoding="async"
-                />
-                <span className={styles.shadow} aria-hidden="true" />
-              </div>
-            </div>
-          </figure>
-        ) : (
-          <figure className={`${styles.frame} ${styles.plateFrame}`}>
-            <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
-              <span className={styles.spot} />
-              <span className={styles.grid} />
-              <span className={`num-ghost ${styles.plateGhost}`}>{romanFor(index)}</span>
-              <span className={styles.plateYear}>{year}</span>
-              <span className={styles.plateBook}>{book}</span>
-            </div>
-          </figure>
-        )}
+        <Media robot={robot} index={index} />
       </div>
 
       <div className={styles.textCol}>
@@ -167,7 +139,6 @@ function Row({ robot, index, total }) {
           </h3>
           {current && (
             <span className={styles.current}>
-              <span className={styles.currentDot} aria-hidden="true" />
               Current robot
             </span>
           )}
@@ -214,6 +185,77 @@ function Row({ robot, index, total }) {
         </span>
       </div>
     </article>
+  )
+}
+
+/* The robot's CAD on a turntable when there is one, with its photo a tap away; the photo alone when
+   that is all there is (Leviticus's CAD does not survive export); a plate when there is neither. The
+   viewer stays mounted under the photo, so switching back is instant. */
+function Media({ robot, index }) {
+  const { name, year, game, image, model, book } = robot
+  const [view, setView] = useState(model ? 'cad' : 'photo')
+  /* No WebGL, or the model would not load: the photo stands in, and the switch goes. */
+  const [failed, setFailed] = useState(false)
+  const alt = `${name} — Team 5805's ${year} ${game} robot`
+
+  if ((!model || failed) && !image) {
+    return (
+      <figure className={`${styles.frame} ${styles.plateFrame}`}>
+        <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
+          <span className={styles.spot} />
+          <span className={styles.grid} />
+          <span className={`num-ghost ${styles.plateGhost}`}>{romanFor(index)}</span>
+          <span className={styles.plateYear}>{year}</span>
+          <span className={styles.plateBook}>{book}</span>
+        </div>
+      </figure>
+    )
+  }
+
+  const photo = image && (
+    <div className={styles.subject}>
+      <img className={styles.photo} src={image} alt={alt} loading="lazy" decoding="async" />
+      <span className={styles.shadow} aria-hidden="true" />
+    </div>
+  )
+
+  if (!model || failed) {
+    return (
+      <figure className={styles.frame}>
+        {/* Staged well: spotlight + blueprint backdrop, subject grounded with a soft reflection. */}
+        <div className={styles.stage}>
+          <span className={styles.spot} aria-hidden="true" />
+          <span className={styles.grid} aria-hidden="true" />
+          {photo}
+        </div>
+      </figure>
+    )
+  }
+
+  return (
+    <figure className={`${styles.frame} ${styles.cadFrame}`}>
+      <div className={styles.stage} data-view={view}>
+        <span className={styles.spot} aria-hidden="true" />
+        <span className={styles.grid} aria-hidden="true" />
+        <div className={styles.viewerLayer} inert={view === 'photo' ? '' : undefined}>
+          <RobotViewer model={model} label={`${alt}, from its CAD. Drag to turn it.`} onFail={() => setFailed(true)} />
+        </div>
+        {image && (
+          <>
+            <div className={styles.photoLayer} inert={view === 'cad' ? '' : undefined}>{photo}</div>
+            <div className={styles.switch} role="group" aria-label={`${name}: CAD or photo`} data-view={view}>
+              <span className={styles.switchThumb} aria-hidden="true" />
+              <button type="button" aria-pressed={view === 'cad'} onClick={() => setView('cad')}>
+                CAD
+              </button>
+              <button type="button" aria-pressed={view === 'photo'} onClick={() => setView('photo')}>
+                Photo
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </figure>
   )
 }
 

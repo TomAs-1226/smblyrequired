@@ -176,7 +176,6 @@ export default function Contact() {
         <div className={styles.formWrap}>
           <div className={styles.formHeader}>
             <span className="pill">
-              <span className={styles.live} aria-hidden="true" />
               Start a conversation
             </span>
           </div>

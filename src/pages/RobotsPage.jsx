@@ -1,12 +1,12 @@
 import RobotLineage from '../components/RobotLineage'
-import SwerveDemo from '../components/SwerveDemo'
+import Testbeds from '../components/Testbeds'
 
-// The robot lineage (readable, vertical) + the interactive swerve explainer.
+// The robot lineage, each with its CAD on a turntable where there is one, then the bench.
 export default function RobotsPage() {
   return (
     <>
       <RobotLineage />
-      <SwerveDemo />
+      <Testbeds />
     </>
   )
 }

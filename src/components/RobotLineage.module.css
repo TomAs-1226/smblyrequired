@@ -361,39 +361,12 @@
 
 /* Pulsing cyan "Current robot" badge */
 .current {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--font-display);
+  font-size: 0.78rem;
   font-weight: 600;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid var(--border-accent);
-  padding: 7px 13px;
-  border-radius: var(--r-pill);
+  color: var(--brand-gold);
   white-space: nowrap;
-}
-.currentDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  flex: none;
-  animation: lineagePulse 1.8s ease-in-out infinite;
-}
-@keyframes lineagePulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.55;
-  }
 }
 
 /* Subtitle — tasteful descriptor line under the name. */
@@ -502,6 +475,99 @@
 }
 
 /* =========================================================================
+   CAD stage — the robot on a turntable (RobotViewer), its photo a tap away.
+   ========================================================================= */
+.cadFrame .stage {
+  min-height: clamp(320px, 46vh, 520px);
+}
+.viewerLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+/* The photo lies over the turntable and cross-fades; the viewer underneath keeps running, so switching
+   back costs nothing. visibility waits for the fade before it hides. */
+.photoLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: clamp(18px, 2.6vw, 38px) clamp(14px, 2.2vw, 30px) clamp(14px, 2vw, 26px);
+  background: var(--surface-sunken);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--dur-panel) var(--ease-out), visibility 0s linear var(--dur-panel);
+}
+.stage[data-view='photo'] .photoLayer {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-panel) var(--ease-out), visibility 0s;
+}
+
+/* CAD | Photo: a small segmented pill, its thumb sliding under the active side. */
+.switch {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(8, 9, 11, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.switch button {
+  position: relative;
+  z-index: 1;
+  min-width: 64px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: none;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.switch button[aria-pressed='true'] {
+  color: var(--text-primary);
+}
+.switch button:active {
+  transform: scale(0.94);
+}
+.switch button:focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 2px;
+  color: var(--text-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .switch button:hover {
+    color: var(--text-primary);
+  }
+}
+.switchThumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.switch[data-view='photo'] .switchThumb {
+  transform: translateX(100%);
+}
+
+/* =========================================================================
    Responsive — stack image above text, single column
    ========================================================================= */
 @media (max-width: 860px) {
@@ -534,13 +600,13 @@
     min-height: 240px;
     padding: var(--sp-4) var(--sp-3) var(--sp-3);
   }
+  .cadFrame .stage {
+    min-height: 300px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .currentDot {
-    animation: none;
-  }
-  /* Photo keeps its grade + grounding but no transform-based reveal. */
+    /* Photo keeps its grade + grounding but no transform-based reveal. */
   .photo {
     filter: saturate(0.95) contrast(1.04) brightness(0.98)
       drop-shadow(0 22px 26px rgba(6, 19, 37, 0.55));
@@ -548,6 +614,8 @@
   .photo,
   .shadow,
   .spot,
+  .photoLayer,
+  .switchThumb,
   .nameLink,
   .detailLink,
   .detailLink :global(.arrow) {

@@ -7,6 +7,7 @@ import Eyebrow from './Eyebrow'
 import SplitHeading from './SplitHeading'
 import Reveal from './Reveal'
 import Icon from './Icon'
+import RobotViewer from './RobotViewer'
 import { robots } from '../data/robots'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotDetail.module.css'
@@ -62,7 +63,7 @@ export default function RobotDetail({ slug }) {
 
   if (!robot) return <NotFound slug={slug} />
 
-  const { name, book, season, year, game, status, result, blurb, image, current, subtitle } = robot
+  const { name, book, season, year, game, status, result, blurb, image, current, subtitle, model } = robot
   const champion = status === 'champion'
   const build = status === 'build'
   const prev = index > 0 ? robots[index - 1] : null
@@ -83,8 +84,21 @@ export default function RobotDetail({ slug }) {
       </a>
 
       <div className={styles.layout}>
-        {/* --- Media: real photo (never cropped) or typographic plate --- */}
+        {/* --- Media: the CAD on a turntable, the real photo (never cropped), or a plate --- */}
         <div className={styles.mediaCol} ref={mediaRef}>
+          {model && (
+            <figure className={`${styles.frame} ${champion ? styles.isChampion : ''}`}>
+              <div className={`${styles.stage} ${styles.cadStage}`}>
+                <span className={styles.spot} aria-hidden="true" />
+                <span className={styles.grid} aria-hidden="true" />
+                <RobotViewer model={model} label={`${name} — Team 5805's ${year} ${game} robot, from its CAD. Drag to turn it.`} />
+              </div>
+              <figcaption className={styles.frameCap}>
+                <span className={styles.frameTick} aria-hidden="true" />
+                {name} · CAD · {year}
+              </figcaption>
+            </figure>
+          )}
           {image ? (
             <figure className={`${styles.frame} ${champion ? styles.isChampion : ''}`}>
               {/* Staged well: spotlight + blueprint backdrop, subject grounded
@@ -107,7 +121,7 @@ export default function RobotDetail({ slug }) {
                 {name} · {game} · {year}
               </figcaption>
             </figure>
-          ) : (
+          ) : model ? null : (
             <figure className={`${styles.frame} ${styles.plateFrame}`}>
               <div className={`${styles.stage} ${styles.plate}`} aria-hidden="true">
                 <span className={styles.spot} />
@@ -152,7 +166,6 @@ export default function RobotDetail({ slug }) {
             </p>
             {current && (
               <span className={styles.current}>
-                <span className={styles.currentDot} aria-hidden="true" />
                 Current robot
               </span>
             )}

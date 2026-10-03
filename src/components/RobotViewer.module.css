@@ -1,0 +1,62 @@
+/* The turntable stage. It fills whatever frame it is put in; the frame owns the shape and the bezel. */
+
+.viewer {
+  position: absolute;
+  inset: 0;
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  /* Vertical swipes still scroll the page on a phone; sideways drags turn the robot. */
+  touch-action: pan-y;
+  opacity: 0;
+  transition: opacity var(--dur-ambient) var(--ease-out);
+}
+.canvas:active {
+  cursor: grabbing;
+}
+.viewer[data-state='ready'] .canvas {
+  opacity: 1;
+}
+
+/* A hairline that fills as the model downloads, then fades. */
+.load {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transition: opacity var(--dur-panel) var(--ease-out);
+}
+.load span {
+  display: block;
+  height: 100%;
+  background: var(--brand-gold);
+  transform-origin: left;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+.viewer[data-state='ready'] .load,
+.viewer[data-state='idle'] .load,
+.viewer[data-state='failed'] .load {
+  opacity: 0;
+}
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    transition: none;
+  }
+}

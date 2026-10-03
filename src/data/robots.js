@@ -3,6 +3,8 @@
 // roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
 // Phocas for 2018 and 2020.)
 // status: 'season' (in-season) | 'champion' (won/podium) | 'build' (in progress)
+// model: the robot's CAD on a turntable (public/models, baked by tools/display-cad.mjs). A robot
+//   with a model and a photo shows the model first and offers the photo; with neither, a plate.
 
 export const lineageNote =
   'A new machine every season since 2016 — and since 2025, each one named for a Book of the Bible, a nod to our Santa Margarita roots.'
@@ -24,6 +26,7 @@ export const robots = [
     ],
     blurb: 'Our 2025 REEFSCAPE machine — an elevator-based, side-loaded cycler that climbed deep. Ventura County Regional champions.',
     image: null,
+    model: { file: 'genesis.glb' },
   },
   {
     name: 'Exodus',
@@ -41,6 +44,7 @@ export const robots = [
     ],
     blurb: 'The offseason breakout — a back-loaded cycler with a deep climb. Beach Blitz champions and a SoCal Showdown finalist banner.',
     image: 'photos/exodus.jpg',
+    model: { file: 'exodus.glb' },
   },
   {
     name: 'Leviticus',
@@ -76,6 +80,29 @@ export const robots = [
     ],
     blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, wired by our electrical subteam and programmed on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',
     image: null,
+    // Catalyst Console's bake of the same CAD: about a third of the landing page's model, plenty
+    // for a turntable.
+    model: { file: 'robot-preview.glb' },
     current: true,
+  },
+]
+
+// Not a competition robot, so not a Book: the drivebase every Catalyst release is driven on first.
+// Its numbers are the ones it publishes to Catalyst Console (Robot/Chassis/*, Drivetrain/*).
+export const testbeds = [
+  {
+    name: 'Catalyst X1',
+    kicker: 'On the bench',
+    subtitle: 'Our swerve test drivebase',
+    specs: [
+      { label: 'Frame', value: '28 × 26 in, four swerve modules' },
+      { label: 'Drive', value: 'Falcon 500s on Phoenix 6' },
+      { label: 'Brain', value: 'Systemcore · Catalyst 2.0' },
+      { label: 'Vision', value: 'One Limelight 4, front centre' },
+    ],
+    blurb:
+      'X1 is where Catalyst 2.0 drives first. Every feature the library gives a drivebase — swerve, pose estimation, vision, aiming on the move — runs here before it goes on a competition robot, and reports live to Catalyst Console. No mechanisms, on purpose: nothing it shows is pretended.',
+    link: { href: '#/catalyst', label: 'About Catalyst' },
+    model: { kind: 'drivebase' },
   },
 ]

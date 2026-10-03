@@ -329,39 +329,12 @@
 
 /* Pulsing cyan "Current robot" badge */
 .current {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--font-display);
+  font-size: 0.78rem;
   font-weight: 600;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid var(--border-accent);
-  padding: 7px 13px;
-  border-radius: var(--r-pill);
+  color: var(--brand-gold);
   white-space: nowrap;
-}
-.currentDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  flex: none;
-  animation: detailPulse 1.8s ease-in-out infinite;
-}
-@keyframes detailPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.55;
-  }
 }
 
 .blurb {
@@ -582,10 +555,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .currentDot {
-    animation: none;
-  }
-  .back,
+    .back,
   .back span,
   .pagerLink,
   .pagerArrow,
@@ -595,4 +565,13 @@
   .spot {
     transition: none;
   }
+}
+
+/* The CAD turntable: taller than a photo well, and the viewer fills it. A photo, when there is one too,
+   follows below it. */
+.cadStage {
+  min-height: clamp(360px, 58vh, 640px);
+}
+.mediaCol > .frame + .frame {
+  margin-top: var(--sp-5);
 }
