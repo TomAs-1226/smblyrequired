@@ -9,6 +9,7 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  min-height: 44px; /* a real tap target, not a 22px line of text */
   margin-top: var(--sp-2);
   font-family: var(--font-display);
   font-weight: 600;
@@ -89,6 +90,78 @@
 .bylineIcon {
   color: var(--accent-data);
   flex: none;
+}
+
+/* =========================================================================
+   The robot a post is about — full content width, before the words.
+   Double bezel like the rest of the site: a hairline tray, a rounded core.
+   ========================================================================= */
+.robot {
+  margin-top: clamp(32px, 5vw, 56px);
+}
+.robotTray {
+  padding: 8px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px var(--border-hairline);
+}
+.robotCore {
+  position: relative; /* RobotViewer is absolutely positioned and fills this */
+  aspect-ratio: 16 / 9;
+  border-radius: 21px;
+  overflow: hidden;
+  background:
+    radial-gradient(70% 60% at 50% 34%, rgba(46, 125, 246, 0.16), transparent 70%),
+    radial-gradient(120% 90% at 50% 30%, var(--surface-2), var(--bg-void) 72%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  isolation: isolate;
+}
+/* A photo is never cropped: the whole robot, letterboxed on the dark core. */
+.robotImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.robotCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-1) var(--sp-4);
+  margin-top: var(--sp-2);
+  padding-inline: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.robotLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  color: var(--accent-data);
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.robotLinkArrow {
+  transition: transform var(--spring-fast-dur) var(--spring-fast);
+}
+@media (hover: hover) and (pointer: fine) {
+  .robotLink:hover {
+    color: var(--accent-gold-hi);
+  }
+  .robotLink:hover .robotLinkArrow {
+    transform: translateX(3px);
+  }
+}
+.robotLink:focus-visible {
+  color: var(--accent-gold-hi);
+}
+.robotLink:focus-visible .robotLinkArrow {
+  transform: translateX(3px);
+}
+.robotLink:active {
+  transform: scale(0.97);
 }
 
 /* =========================================================================
@@ -234,6 +307,16 @@
    Responsive
    ========================================================================= */
 @media (max-width: 640px) {
+  .robotCore {
+    aspect-ratio: 4 / 3;
+  }
+  .robotTray {
+    padding: 6px;
+    border-radius: 22px;
+  }
+  .robotCore {
+    border-radius: 17px;
+  }
   .postNav {
     grid-template-columns: 1fr;
   }
@@ -251,7 +334,9 @@
   .backArrow,
   .navCard,
   .navArrowPrev,
-  .navArrowNext {
+  .navArrowNext,
+  .robotLink,
+  .robotLinkArrow {
     transition: none;
   }
 }

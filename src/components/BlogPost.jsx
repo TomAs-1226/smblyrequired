@@ -2,7 +2,9 @@ import Section from './Section'
 import Icon from './Icon'
 import Reveal from './Reveal'
 import SplitHeading from './SplitHeading'
+import RobotViewer from './RobotViewer'
 import { posts, postBySlug } from '../data/blog'
+import { robots } from '../data/robots'
 import styles from './BlogPost.module.css'
 
 const MONTHS = [
@@ -23,6 +25,8 @@ const TAG_ICON = {
   Engineering: 'code',
   Build: 'wrench',
   Outreach: 'megaphone',
+  Robots: 'wrench',
+  Software: 'code',
 }
 
 export default function BlogPost({ slug }) {
@@ -48,6 +52,8 @@ export default function BlogPost({ slug }) {
   }
 
   const { label, iso } = formatDate(post.date)
+  // A post can be about one robot (the farewell posts): show it before the words.
+  const robot = post.robot ? robots.find((r) => r.name.toLowerCase() === post.robot) : null
 
   // Posts are newest-first; prev = newer, next = older.
   const idx = posts.findIndex((p) => p.slug === post.slug)
@@ -82,6 +88,37 @@ export default function BlogPost({ slug }) {
           By {post.author}
         </p>
       </header>
+
+      {robot && (robot.model || robot.image) && (
+        <figure className={styles.robot}>
+          <div className={styles.robotTray}>
+            <div className={styles.robotCore}>
+              {robot.model ? (
+                <RobotViewer model={robot.model} label={`${robot.name}, the ${robot.season} robot, on a turntable`} />
+              ) : (
+                <img
+                  className={styles.robotImg}
+                  src={robot.image}
+                  alt={`${robot.name}, the ${robot.season} robot`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
+          </div>
+          <figcaption className={styles.robotCaption}>
+            <span>
+              {robot.name} · {robot.season}
+            </span>
+            {robot.retired && (
+              <a className={styles.robotLink} href={`#/robots/${robot.name.toLowerCase()}`}>
+                {robot.name} on the Robots page
+                <Icon name="arrowRight" size={15} className={styles.robotLinkArrow} />
+              </a>
+            )}
+          </figcaption>
+        </figure>
+      )}
 
       {/* --- Article body --- */}
       <Reveal className={styles.article} stagger={0.06} y={20} as="article">

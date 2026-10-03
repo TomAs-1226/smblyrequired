@@ -25,6 +25,8 @@ const TAG_ICON = {
   Engineering: 'code',
   Build: 'wrench',
   Outreach: 'megaphone',
+  Robots: 'wrench',
+  Software: 'code',
 }
 
 export default function BlogIndex() {
