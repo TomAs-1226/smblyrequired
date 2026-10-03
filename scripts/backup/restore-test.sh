@@ -62,44 +62,11 @@ psql "$BASE_URL/postgres" -v ON_ERROR_STOP=1 -q \
 #      this — but on a fresh cluster every `CREATE POLICY ... TO authenticated`
 #      in the dump fails without them.
 #   2. load auth.users DATA first, so the profiles FK has something to point at.
-#   3. load the public schema last.
-psql "$SCRATCH_DB" -v ON_ERROR_STOP=1 -q <<'SQL' || fail "could not stub the auth schema"
-do $stub$
-begin
-  if not exists (select 1 from pg_roles where rolname = 'anon') then
-    create role anon nologin noinherit;
-  end if;
-  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
-    create role authenticated nologin noinherit;
-  end if;
-  if not exists (select 1 from pg_roles where rolname = 'service_role') then
-    create role service_role nologin noinherit bypassrls;
-  end if;
-end
-$stub$;
-
-create schema if not exists auth;
--- The FULL Supabase auth.users column set. A minimal stub fails because the
--- --data-only dump emits `COPY auth.users (instance_id, aud, role, …)` naming
--- every column, and a COPY into a table missing any of them errors out. This
--- list was taken from an actual Supabase dump; it is stable across projects.
-create table if not exists auth.users (
-  instance_id uuid, id uuid primary key, aud varchar(255), role varchar(255),
-  email varchar(255), encrypted_password varchar(255), email_confirmed_at timestamptz,
-  invited_at timestamptz, confirmation_token varchar(255), confirmation_sent_at timestamptz,
-  recovery_token varchar(255), recovery_sent_at timestamptz, email_change_token_new varchar(255),
-  email_change varchar(255), email_change_sent_at timestamptz, last_sign_in_at timestamptz,
-  raw_app_meta_data jsonb, raw_user_meta_data jsonb, is_super_admin boolean,
-  created_at timestamptz, updated_at timestamptz, phone text, phone_confirmed_at timestamptz,
-  phone_change text, phone_change_token varchar(255), phone_change_sent_at timestamptz,
-  email_change_token_current varchar(255), email_change_confirm_status smallint,
-  banned_until timestamptz, reauthentication_token varchar(255), reauthentication_sent_at timestamptz,
-  is_sso_user boolean, deleted_at timestamptz, is_anonymous boolean
-);
-create or replace function auth.uid() returns uuid language sql stable
-  as $fn$ select null::uuid $fn$;
-grant usage on schema auth to anon, authenticated, service_role;
-SQL
+#   3. load the public schema.
+#   4. apply post-restore.sql, for the parts of the schema the dump omits.
+HERE="$(dirname "$(readlink -f "$0")")"
+psql "$SCRATCH_DB" -v ON_ERROR_STOP=1 -q -f "$HERE/restore-stub.sql" \
+  || fail "could not stub the auth schema"
 
 if ! gunzip -c "$SNAPSHOT/auth_users.sql.gz" | psql "$SCRATCH_DB" -v ON_ERROR_STOP=1 -q -f -; then
   fail "could not load auth.users — the identity map is unusable"
@@ -108,6 +75,18 @@ fi
 if ! gunzip -c "$SNAPSHOT/db.sql.gz" | psql "$SCRATCH_DB" -v ON_ERROR_STOP=1 -q -f -; then
   fail "restore failed — THE DUMP IS NOT RESTORABLE"
 fi
+
+# What the public-only, --no-acl dump cannot carry: the signup trigger on
+# auth.users and the grants that keep profiles.role unwritable. A restore that
+# skips this looks complete and quietly stops onboarding anyone new, so the
+# rehearsal runs it and checks it took — the real restore has to do the same.
+POST_RESTORE="$HERE/post-restore.sql"
+[[ -f "$POST_RESTORE" ]] || fail "post-restore.sql is missing next to this script"
+psql "$SCRATCH_DB" -v ON_ERROR_STOP=1 -q -f "$POST_RESTORE" \
+  || fail "post-restore.sql failed — a restored project would not onboard new members"
+has_trigger="$(psql "$SCRATCH_DB" -tA -c \
+  "select count(*) from pg_trigger where tgname = 'on_auth_user_created' and tgrelid = 'auth.users'::regclass;")"
+[[ "$has_trigger" == "1" ]] || fail "the signup trigger is missing after post-restore.sql"
 
 # --- 3. did the data actually arrive? ----------------------------------------
 # A dump of an empty database restores perfectly. Structural success is not
@@ -182,10 +161,15 @@ if [[ -n "${SUPABASE_URL:-}" && -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
   printf 'apikey: %s\nAuthorization: Bearer %s\n' \
     "$SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY" > "$hdr"
 
-  if curl -fsS -X PATCH \
+  # return=representation, not minimal: a PATCH whose filter matches nothing is
+  # still a 2xx, so success alone used to log "marked verified" for a stamp with
+  # no supabase->server row (or a different manifest) and changed nothing. The
+  # body is the list of rows actually updated; "[]" means none were.
+  if patched="$(curl -fsS -X PATCH \
        "$SUPABASE_URL/rest/v1/backup_runs?manifest_sha=eq.$MANIFEST_SHA&leg=eq.supabase-%3Eserver" \
-       -H @"$hdr" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' \
-       -d "{\"restore_tested_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" >/dev/null
+       -H @"$hdr" -H 'Content-Type: application/json' -H 'Prefer: return=representation' \
+       -d "{\"restore_tested_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}")" \
+     && [[ -n "$patched" && "$patched" != "[]" ]]
   then
     log "    marked verified in the portal"
   else

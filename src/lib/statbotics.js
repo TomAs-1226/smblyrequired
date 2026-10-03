@@ -25,6 +25,9 @@ function extractEpa(row) {
     e?.total_points ??
     e?.unitless ??
     (typeof e === 'number' ? e : null)
+  // Number(null) is 0: an EPA shape we do not recognise used to come out as a
+  // team rated zero rather than as no rating.
+  if (candidate == null) return null
   const n = Number(candidate)
   return Number.isFinite(n) ? n : null
 }

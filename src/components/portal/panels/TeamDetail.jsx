@@ -209,6 +209,9 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
   const [teamLoading, setTeamLoading] = useState(false)
   const [teamError, setTeamError] = useState(null)
   const reqRef = useRef(0)
+  // Re-runs the event effect for the same key. The error screen's retry used to
+  // call setEventKey(eventKey), which React ignores when the value is unchanged.
+  const [eventNonce, setEventNonce] = useState(0)
 
   const [ai, setAi] = useState({ running: false, done: false, error: null, payload: null })
   const [lightbox, setLightbox] = useState(null) // index into ordered photo list
@@ -260,7 +263,7 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
     return () => {
       alive = false
     }
-  }, [eventKey])
+  }, [eventKey, eventNonce])
 
   // Re-seat the selected team when the event (or the deep-link prop) changes.
   useEffect(() => {
@@ -373,8 +376,13 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
 
   const runAi = useCallback(async () => {
     if (!eventKey || !team) return
+    // loadTeam bumps reqRef on every team change; a summary that comes back for
+    // a team no longer on screen is dropped instead of being shown under the
+    // new one.
+    const req = reqRef.current
     setAi({ running: true, done: false, error: null, payload: null })
     const res = await askAi('scouting_summary', { eventKey, teamNumber: team })
+    if (req !== reqRef.current) return
     // Two envelopes: askAi returns invoke()'s parsed body without unwrapping the
     // edge function's own { data, error }, so the summary sits at res.data.data.
     const payload = res.data?.data ?? res.data
@@ -419,7 +427,7 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
       ) : eventLoading ? (
         <Loading rows={5} label="Loading teams" />
       ) : eventError && !roster.length ? (
-        <ErrorState error={eventError} onRetry={() => setEventKey(eventKey)} />
+        <ErrorState error={eventError} onRetry={() => setEventNonce((n) => n + 1)} />
       ) : !roster.length ? (
         <Empty icon="users" title="No teams cached for this event">
           Pull the team list from The Blue Alliance on the Scout tab first — ideally before you lose
@@ -441,6 +449,18 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
           ) : (
             detail && (
               <>
+                {/* detail is always set once a load finishes, so a failed read
+                    used to render as "no match data" — indistinguishable from a
+                    team nobody has scouted. Say that something did not load. */}
+                {teamError && (
+                  <div className={styles.adminAlert} role="alert">
+                    <Icon name="alert" size={16} />
+                    <span>Some of this team's data did not load: {teamError}</span>
+                    <button type="button" className="btn btn--ghost" onClick={loadTeam}>
+                      Try again
+                    </button>
+                  </div>
+                )}
                 <Header team={team} info={teamInfo} stat={detail.stat} />
                 <Performance stat={detail.stat} />
                 <OfficialNumbers tba={detail.tba} />
@@ -658,7 +678,7 @@ function OfficialNumbers({ tba }) {
                   {m.alliance}
                 </span>
                 <span className={css.tbaScore}>
-                  {m.us_score != null ? `${m.us_score}–${m.them_score}` : 'TBD'}
+                  {m.us_score != null && m.us_score >= 0 ? `${m.us_score}–${m.them_score}` : 'TBD'}
                 </span>
                 {m.outcome && (
                   <span className={`${css.tbaOutcome} ${css[`tbaOutcome_${m.outcome}`] ?? ''}`}>

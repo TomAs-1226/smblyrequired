@@ -21,26 +21,82 @@ function wrap(error) {
   return error.message
 }
 
+// --- last-known copies for a phone with no signal ----------------------------
+//
+// The write path is offline-first, but the screen a scout writes FROM was not:
+// reloading the Scout tab in an arena with no signal lost the active form, the
+// event list and the team list, and the page said "No active match form" — so
+// nothing could be recorded even though the queue was ready to hold it. The
+// reads below keep their last good answer on the device and fall back to it
+// only when the request never reached the server (no PostgREST error code). A
+// refusal from the server (RLS, a bad filter) is never papered over.
+const CACHE_PREFIX = 'frc5805.cache.'
+
+function remember(key, data) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ at: Date.now(), data }))
+  } catch {
+    // Storage full or blocked: the live answer is still returned, just not kept.
+  }
+}
+
+function recall(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+// Wraps a read that resolves { data, error } with a raw supabase error.
+async function withLastKnown(key, read, empty) {
+  let data = null
+  let error = null
+  try {
+    ;({ data, error } = await read())
+  } catch (err) {
+    error = { message: String(err?.message ?? err) }
+  }
+  if (!error) {
+    remember(key, data ?? empty)
+    return { data: data ?? empty, error: null }
+  }
+  if (!error.code) {
+    const kept = recall(key)
+    if (kept) return { data: kept.data, error: null, offline: true, savedAt: kept.at }
+  }
+  return { data: empty, error: wrap(error) }
+}
+
 // --- events & teams (TBA-backed cache) ---------------------------------------
 
 export async function listEvents(year) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('events')
-    .select('key, name, short_name, city, state_prov, start_date, end_date, week')
-    .eq('year', year)
-    .order('start_date')
-  return { data: data ?? [], error: wrap(error) }
+  return withLastKnown(
+    `events.${year}`,
+    () =>
+      supabase
+        .from('events')
+        .select('key, name, short_name, city, state_prov, start_date, end_date, week')
+        .eq('year', year)
+        .order('start_date'),
+    []
+  )
 }
 
 export async function listEventTeams(eventKey) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('event_teams')
-    .select('team_number, nickname, city, state_prov, rookie_year')
-    .eq('event_key', eventKey)
-    .order('team_number')
-  return { data: data ?? [], error: wrap(error) }
+  return withLastKnown(
+    `event_teams.${eventKey}`,
+    () =>
+      supabase
+        .from('event_teams')
+        .select('team_number, nickname, city, state_prov, rookie_year')
+        .eq('event_key', eventKey)
+        .order('team_number'),
+    []
+  )
 }
 
 /**
@@ -55,23 +111,38 @@ export async function syncFromTba(action, params = {}) {
   const { data, error } = await supabase.functions.invoke('tba-proxy', {
     body: { action, ...params },
   })
-  if (error) return { data: null, error: wrap(error) }
+  if (error) return { data: null, error: await functionError(error) }
   if (data?.error) return { data: null, error: data.error }
   return { data: data?.data ?? data, error: null }
+}
+
+// supabase-js turns any non-2xx from an edge function into FunctionsHttpError
+// and keeps the body only on error.context. Every function here answers
+// failures as { error } with a non-2xx status (_shared/auth.ts), so without
+// reading the body a lead pressing "Pull events" saw "Edge Function returned a
+// non-2xx status code" instead of "TBA_KEY is not configured" or "lead only".
+async function functionError(error) {
+  const body = await error?.context?.json?.().catch(() => null)
+  if (body?.error) return String(body.error)
+  return wrap(error)
 }
 
 // --- forms --------------------------------------------------------------------
 
 export async function activeForm(season, kind) {
   if (!isConfigured) return { data: null, error: NOT_CONFIGURED }
-  const { data, error } = await supabase
-    .from('scout_forms')
-    .select('id, season, kind, name, description, fields')
-    .eq('season', season)
-    .eq('kind', kind)
-    .eq('is_active', true)
-    .maybeSingle()
-  return { data, error: wrap(error) }
+  return withLastKnown(
+    `form.${season}.${kind}`,
+    () =>
+      supabase
+        .from('scout_forms')
+        .select('id, season, kind, name, description, fields')
+        .eq('season', season)
+        .eq('kind', kind)
+        .eq('is_active', true)
+        .maybeSingle(),
+    null
+  )
 }
 
 export async function listForms(season) {
@@ -221,6 +292,13 @@ export async function saveScoutSettings(patch) {
     .eq('id', 1)
     .select()
     .single()
+  // RLS does not raise on an UPDATE it filters out — the row simply is not
+  // matched, and .single() then reports PGRST116 "JSON object requested,
+  // multiple (or no) rows returned". For this singleton that only ever means
+  // the caller lacks the role, so say that.
+  if (error?.code === 'PGRST116') {
+    return { data: null, error: 'Only a lead, mentor or admin can change scouting settings.' }
+  }
   return { data, error: wrap(error) }
 }
 
@@ -265,27 +343,47 @@ export async function recordEntry({
   })
 }
 
+// Supabase answers at most 1000 rows per request by default, whatever .limit()
+// asks for. The event CSV export asks for 5000 and Analytics for 4000, and both
+// silently got the newest 1000 — an export missing most of an event, with
+// nothing in the file to say so. Larger reads are fetched in pages.
+const PAGE_ROWS = 1000
+
 export async function listEntries({ eventKey, teamNumber, kind, limit = 200 } = {}) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  let q = supabase
-    .from('scout_entries')
-    // Embeds the scout's name so a CSV export and the entry lists read "Alex
-    // Rivera", not a UUID. The join is member+ under the roster read policy,
-    // which every caller of this already is. `scout_name` is flattened onto the
-    // row so consumers don't have to reach through the nested object.
-    .select(
-      'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at, scout:profiles!scout_entries_scout_id_fkey(full_name)'
-    )
-    .order('recorded_at', { ascending: false })
-    .limit(limit)
-  if (eventKey) q = q.eq('event_key', eventKey)
-  if (teamNumber) q = q.eq('team_number', teamNumber)
-  if (kind) q = q.eq('kind', kind)
-  const { data, error } = await q
+  const page = (from, to) => {
+    let q = supabase
+      .from('scout_entries')
+      // Embeds the scout's name so a CSV export and the entry lists read "Alex
+      // Rivera", not a UUID. The join is member+ under the roster read policy,
+      // which every caller of this already is. `scout_name` is flattened onto the
+      // row so consumers don't have to reach through the nested object.
+      .select(
+        'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at, scout:profiles!scout_entries_scout_id_fkey(full_name)'
+      )
+      .order('recorded_at', { ascending: false })
+      // Tie-break so consecutive pages neither repeat nor skip a row that
+      // shares a timestamp with its neighbour.
+      .order('id')
+      .range(from, to)
+    if (eventKey) q = q.eq('event_key', eventKey)
+    if (teamNumber) q = q.eq('team_number', teamNumber)
+    if (kind) q = q.eq('kind', kind)
+    return q
+  }
+
+  let data = []
+  for (let from = 0; from < limit; from += PAGE_ROWS) {
+    const to = Math.min(limit, from + PAGE_ROWS) - 1
+    const { data: rows, error } = await page(from, to)
+    if (error) return { data: [], error: wrap(error) }
+    data = data.concat(rows ?? [])
+    if ((rows ?? []).length < to - from + 1) break
+  }
   // Flatten the join so callers see a plain `scout_name` string (null when the
   // scout row was removed — the entry survives, its author is just unknown).
-  const rows = (data ?? []).map((r) => ({ ...r, scout_name: r.scout?.full_name ?? null }))
-  return { data: rows, error: wrap(error) }
+  const rows = data.map((r) => ({ ...r, scout_name: r.scout?.full_name ?? null }))
+  return { data: rows, error: null }
 }
 
 // How many pit/strategy passes this scout has left on a team today, via the
@@ -408,8 +506,10 @@ export async function triggerRepoSync(id) {
   const { data, error } = await supabase.functions.invoke('repo-sync', {
     body: id ? { force: true, id } : { force: true },
   })
-  if (error) return { data: null, error: wrap(error) }
-  return { data, error: data?.error ?? null }
+  if (error) return { data: null, error: await functionError(error) }
+  if (data?.error) return { data: null, error: data.error }
+  // Same {data, error} envelope as the other functions; unwrapped like them.
+  return { data: data?.data ?? data, error: null }
 }
 
 // --- AI -----------------------------------------------------------------------

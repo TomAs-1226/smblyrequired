@@ -128,6 +128,17 @@ These are real, were found the hard way, and are easy to reintroduce.
    stub-auth-and-roles → auth data → public. Verified by actually doing it; do
    not "simplify" it back to one file.
 
+11. **A public-only, `--no-acl` dump also drops the signup trigger and every
+   grant.** `on_auth_user_created` lives on `auth.users`, not in `public`, and
+   `--no-acl` discards every GRANT/REVOKE. A project restored from the dump
+   alone looks complete but silently stops onboarding: new signups get no
+   profile row (so `set_member_role()` answers "no such member" and they can
+   never be approved), and `profiles.role` loses its column-level lock, one of
+   the two independent guards on it. `scripts/backup/post-restore.sql` puts both
+   back, and `restore-test.sh` applies it and fails if the trigger is missing.
+   Found by restoring a dump into a scratch DB and inspecting it, not by
+   reading the dump script.
+
 ## Security posture
 
 - The repo is **public**. The Supabase **anon key ships in the bundle** and that
@@ -156,16 +167,19 @@ These are real, were found the hard way, and are easy to reintroduce.
 npm run dev            # local dev server
 npm run build          # production build -> dist/
 npm run test:markdown  # 21 XSS cases + 12 feature cases for the kb renderer
-npm run test:db        # apply migrations to a throwaway local DB, run the RLS suite
+npm run test:portal    # offline queue, upload types, CSV export, analytics maths (node, no network)
+npm run test:db        # apply every migration to a throwaway local DB, run the 3 SQL suites
 npm run deploy         # fetch TBA data, build, push dist/ to gh-pages
 ```
 
 **Run `npm run test:db` after touching anything in `supabase/migrations/`.** It
-needs a local PostgreSQL 15+ and never touches a Supabase project. The 21
-assertions in `supabase/local-test/01_rls_tests.sql` are the actual proof that
-the access model holds — that a member cannot escalate, that `anon` reads
-nothing, that the last admin cannot be deleted. Reading the policies is not the
-same as testing them; two real holes were found this way.
+needs a local PostgreSQL 15+ and never touches a Supabase project. The 46
+assertions across the three suites in `supabase/local-test/` (`01_rls_tests.sql`
+for the access model, `02_scouting_tests.sql` and `03_portal_tests.sql` for the
+scouting and portal rules) are the actual proof that the access model holds —
+that a member cannot escalate, that `anon` reads nothing, that the last admin
+cannot be deleted. Reading the policies is not the same as testing them; two
+real holes were found this way.
 
 The two `VITE_SUPABASE_*` variables must be present **at build time** — Vite
 inlines them. A build without them still succeeds; the portal simply renders its

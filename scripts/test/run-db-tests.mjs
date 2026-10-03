@@ -72,22 +72,26 @@ run([`-c`, `drop database if exists ${DB};`, '-c', `create database ${DB};`], {
   label: 'create database',
 })
 
-const files = [
-  'supabase/local-test/00_stub.sql',
-  'supabase/migrations/0001_identity.sql',
-  'supabase/migrations/0002_storage.sql',
-  'supabase/migrations/0003_content.sql',
-  'supabase/migrations/0004_audit_backup.sql',
-  'supabase/migrations/0005_scouting.sql',
-]
+// Every migration, in numeric order, read from the directory. A hand-kept list
+// here fell five migrations behind (0006-0012 were never applied by this
+// runner), so picklists, scouting control, vision and the coverage views went
+// untested while the suite still printed a green count. The production path
+// (`supabase db push`) applies the whole directory; so must this.
+const migrations = readdirSync(path.join(ROOT, 'supabase/migrations'))
+  .filter((f) => /^\d{4}_.*\.sql$/.test(f))
+  .sort()
+  .map((f) => `supabase/migrations/${f}`)
+
+const files = ['supabase/local-test/00_stub.sql', ...migrations]
 
 for (const f of files) {
   run(['-q'], { db: DB, file: path.join(ROOT, f), label: f })
   console.log(`  applied  ${f}`)
 }
 
-// 02 depends on the users seeded by 01, so the order here is load-bearing.
-const suites = ['01_rls_tests.sql', '02_scouting_tests.sql']
+// 02 depends on the users seeded by 01, and 03 on both, so the order here is
+// load-bearing.
+const suites = ['01_rls_tests.sql', '02_scouting_tests.sql', '03_portal_tests.sql']
 console.log('\nrunning suites\n')
 let out = ''
 for (const s of suites) {

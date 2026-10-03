@@ -52,6 +52,17 @@ export default function Compare() {
   const [entries, setEntries] = useState(() => new Map())
   const [pending, setPending] = useState(() => new Set())
   const fetched = useRef(new Set())
+  // Which event the panel is on right now, and whether it is still mounted —
+  // read by in-flight entry requests to decide whether their answer still
+  // belongs on screen. See the entries effect for why this is not a cleanup.
+  const currentEvent = useRef(eventKey)
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   const [query, setQuery] = useState('')
   const [flipped, setFlipped] = useState(() => new Set())
@@ -96,8 +107,10 @@ export default function Compare() {
   useEffect(() => {
     if (!eventKey) return
     localStorage.setItem('frc5805.event', eventKey)
+    currentEvent.current = eventKey
     fetched.current = new Set()
     setEntries(new Map())
+    setPending(new Set())
     setAi({ running: false, results: null })
     // Selection is remembered per event. Walking back to this tab between
     // matches and finding your five teams still there is most of the value.
@@ -118,33 +131,37 @@ export default function Compare() {
   // Entries are what make the dynamic rows possible and what give the score
   // rows their true n. Fetched once per team and kept — a column that has been
   // loaded stays loaded while you swap the others around it.
+  //
+  // Deliberately no `alive` cleanup. The effect re-runs every time the
+  // selection changes, and a cleanup cancelled the PREVIOUS batch: pick team A,
+  // then B before A's request returned, and A's answer was thrown away while A
+  // stayed marked fetched — a column spinning forever. A result is dropped only
+  // when it no longer belongs: the panel unmounted, or the event changed.
   useEffect(() => {
     if (!eventKey) return
     const missing = selected.filter((t) => !fetched.current.has(t))
     if (!missing.length) return
-    let alive = true
+    const forEvent = eventKey
     for (const team of missing) fetched.current.add(team)
     setPending((p) => new Set([...p, ...missing]))
-    ;(async () => {
-      await Promise.all(
-        missing.map(async (team) => {
-          // Every kind, not just 'match'. The score aggregate in the view spans
-          // whatever entries carry a total_score, and counting a different set
-          // here is how the sample size on screen stops matching the average
-          // printed above it.
-          const { data } = await listEntries({ eventKey, teamNumber: team, limit: 300 })
-          if (!alive) return
+    for (const team of missing) {
+      // Every kind is loaded — pit and note answers feed the dynamic rows — but
+      // the score rows count match entries only, as the view does (0009).
+      listEntries({ eventKey: forEvent, teamNumber: team, limit: 300 }).then(({ data, error }) => {
+        if (!mounted.current || currentEvent.current !== forEvent) return
+        if (error) {
+          // Let a later selection change retry it rather than pinning a
+          // column to "no entries" because one request failed.
+          fetched.current.delete(team)
+        } else {
           setEntries((m) => new Map(m).set(team, data))
-          setPending((p) => {
-            const next = new Set(p)
-            next.delete(team)
-            return next
-          })
+        }
+        setPending((p) => {
+          const next = new Set(p)
+          next.delete(team)
+          return next
         })
-      )
-    })()
-    return () => {
-      alive = false
+      })
     }
   }, [eventKey, selected])
 

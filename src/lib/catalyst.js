@@ -83,7 +83,10 @@ export function buildCatalyst({ stats = [], entries = [] } = {}) {
   const teams = stats.map((s) => {
     const avg = num(s.avg_score)
     const n = num(s.scored_matches) ?? 0
-    const std = num(s.score_stddev) ?? 0
+    // stddev_samp is null at n = 1 — one match says nothing about consistency.
+    // Defaulting it to 0 scored a one-match team as perfectly consistent (100)
+    // and handed it "Most consistent" on Analytics.
+    const std = num(s.score_stddev)
 
     // Catalyst Rating: shrinkage-adjusted expected points per match. With no
     // matches it is null (unrated) rather than a fabricated zero.
@@ -94,7 +97,7 @@ export function buildCatalyst({ stats = [], entries = [] } = {}) {
     // Consistency 0–100 from the coefficient of variation: a team that puts up
     // the same number every match is worth more to an alliance than one that
     // averages the same on a coin flip.
-    const cv = avg && avg > 0 ? std / avg : null
+    const cv = n >= 2 && std != null && avg && avg > 0 ? std / avg : null
     const consistency = cv == null ? null : Math.max(0, Math.min(100, Math.round(100 * (1 - cv))))
 
     const trend = teamTrend(byTeam.get(s.team_number) ?? [])
@@ -159,8 +162,11 @@ export function predictMatch(redCRs, blueCRs, base) {
   const red = fill(redCRs)
   const blue = fill(blueCRs)
   // A one-alliance-sigma gap (three teams, so ~std·√3) should read around 70–75%.
+  // That is 1/(1+e^-1) ≈ 73% with a divisor of 1·scale. The divisor was 0.55,
+  // which put one sigma at ~86%: twice as sure as this comment intended, on a
+  // number a strategy lead reads as a probability.
   const scale = Math.max(1, (base.std || 10) * Math.sqrt(3))
-  const p = 1 / (1 + Math.exp(-(red - blue) / (0.55 * scale)))
+  const p = 1 / (1 + Math.exp(-(red - blue) / scale))
   return {
     red: round1(red),
     blue: round1(blue),

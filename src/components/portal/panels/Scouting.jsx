@@ -13,7 +13,7 @@ import {
 import FormRenderer, { missingRequired } from '../scouting/FormRenderer'
 import MatchTimer from '../scouting/MatchTimer'
 import NexusLive from '../live/NexusLive'
-import SyncBadge from '../SyncBadge'
+import SyncBadge, { SyncProblems } from '../SyncBadge'
 import { Loading, Empty, ErrorState } from '../ui'
 import styles from '../Portal.module.css'
 import scout from '../scouting/Scouting.module.css'
@@ -53,23 +53,41 @@ export default function Scouting() {
   const [photoCount, setPhotoCount] = useState(0)
   const [passesLeft, setPassesLeft] = useState(null)
   const [control, setControl] = useState(null)
+  // True when the form on screen is the copy kept on this phone because the
+  // server could not be reached. Said out loud so nobody mistakes it for live.
+  const [formOffline, setFormOffline] = useState(false)
 
   // The active event and scouting window are leadership's to set (migration
   // 0010). A scout follows them: the event picker locks to the active event, and
   // saving is blocked when the window is closed. This is the friendly mirror of
   // the database trigger — the trigger is what actually enforces it.
+  //
+  // Re-read every minute and whenever the tab comes back. It used to be read
+  // once on mount, and scouts keep this tab open all day: a page opened at 07:55
+  // stayed "Scouting closed" after the 08:00 window opened, and a lead changing
+  // the active event was invisible until a reload.
+  const isLead = atLeast('lead')
   useEffect(() => {
     let alive = true
-    scoutControl().then(({ data }) => {
-      if (!alive || !data) return
-      setControl(data)
-      // Snap the scout to the active event unless they are a lead who may roam.
-      if (data.active_event_key && !atLeast('lead')) setEventKey(data.active_event_key)
-    })
+    const refresh = () =>
+      scoutControl().then(({ data }) => {
+        if (!alive || !data) return
+        setControl(data)
+        // Snap the scout to the active event unless they are a lead who may roam.
+        if (data.active_event_key && !isLead) setEventKey(data.active_event_key)
+      })
+    refresh()
+    const timer = setInterval(refresh, 60_000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [atLeast])
+  }, [isLead])
 
   const lockedToEvent = control?.active_event_key && !atLeast('lead')
   const scoutingClosed = control?.lock_enabled && control?.open_now === false
@@ -91,20 +109,26 @@ export default function Scouting() {
     }
   }, [teamNumber, mode, eventKey, saved])
 
+  // Reading the cached event list is a member's job; pulling it from TBA is a
+  // lead's. The error screen's "Try again" used to call the TBA pull, which a
+  // scout is not allowed to run — so retrying a dropped connection failed again
+  // with a different, more confusing error.
+  const loadEvents = useCallback(async (isAlive = () => true) => {
+    setLoading(true)
+    const { data: evs, error: err } = await listEvents(SEASON)
+    if (!isAlive()) return
+    setEvents(evs)
+    setError(err)
+    setLoading(false)
+  }, [])
+
   useEffect(() => {
     let alive = true
-    ;(async () => {
-      setLoading(true)
-      const { data: evs, error: err } = await listEvents(SEASON)
-      if (!alive) return
-      setEvents(evs)
-      setError(err)
-      setLoading(false)
-    })()
+    loadEvents(() => alive)
     return () => {
       alive = false
     }
-  }, [])
+  }, [loadEvents])
 
   // The chosen event persists across reloads. A scout who backgrounds the app
   // between matches should not have to re-pick it forty times a day.
@@ -127,8 +151,10 @@ export default function Scouting() {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const { data: f } = await activeForm(SEASON, mode)
-      if (alive) setForm(f)
+      const { data: f, offline } = await activeForm(SEASON, mode)
+      if (!alive) return
+      setForm(f)
+      setFormOffline(Boolean(offline))
     })()
     return () => {
       alive = false
@@ -150,6 +176,7 @@ export default function Scouting() {
   const pullTeams = useCallback(async () => {
     if (!eventKey) return
     setSyncing(true)
+    setError(null)
     const { error: err } = await syncFromTba('event_teams', { eventKey })
     if (err) setError(err)
     else {
@@ -211,8 +238,12 @@ export default function Scouting() {
     }
   }
 
+  // Pit and strategy passes are capped per team per day in the database; once
+  // the allowance is spent, a save would only queue an entry the server refuses.
+  const limitReached = mode !== 'match' && passesLeft != null && passesLeft <= 0
+
   if (loading) return <Loading rows={4} label="Loading events" />
-  if (error && !events.length) return <ErrorState error={error} onRetry={pullEvents} />
+  if (error && !events.length) return <ErrorState error={error} onRetry={() => loadEvents()} />
 
   return (
     <div className={styles.stack}>
@@ -227,6 +258,7 @@ export default function Scouting() {
           </span>
         )}
       </div>
+      <SyncProblems />
 
       {/* Scouting window closed — say so plainly and stop the form being filled
           for nothing. The database refuses the entry regardless; this is the
@@ -291,6 +323,14 @@ export default function Scouting() {
             {teams.length
               ? `${teams.length} teams cached for this event.`
               : 'No teams cached yet — pull them before you lose signal at the venue.'}
+          </p>
+        )}
+        {/* A failed TBA pull with events already on screen used to vanish:
+            the error state only rendered when there were no events at all. */}
+        {error && events.length > 0 && (
+          <p className={styles.error} role="alert">
+            <Icon name="alert" size={15} />
+            {error}
           </p>
         )}
       </section>
@@ -456,6 +496,12 @@ export default function Scouting() {
           </Empty>
         ) : (
           <>
+            {formOffline && (
+              <p className={styles.uploadNote}>
+                No connection — showing the form saved on this phone. Entries still save here and
+                sync when signal returns.
+              </p>
+            )}
             <FormRenderer fields={form.fields} value={data} onChange={setData} />
 
             <label className={styles.field}>
@@ -488,12 +534,14 @@ export default function Scouting() {
                 type="button"
                 className={scout.saveBtn}
                 onClick={save}
-                disabled={scoutingClosed}
+                disabled={scoutingClosed || limitReached}
               >
-                <Icon name={scoutingClosed ? 'alert' : 'check'} size={20} />
+                <Icon name={scoutingClosed || limitReached ? 'alert' : 'check'} size={20} />
                 {scoutingClosed
                   ? 'Scouting closed'
-                  : `Save ${mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}`}
+                  : limitReached
+                    ? 'Daily limit reached'
+                    : `Save ${mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}`}
               </button>
             </div>
           </>

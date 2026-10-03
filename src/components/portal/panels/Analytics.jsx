@@ -327,10 +327,15 @@ function Predictor({ teams, base, nick }) {
   const [red, setRed] = useState(['', '', ''])
   const [blue, setBlue] = useState(['', '', ''])
 
-  const lookup = (arr) => arr.map((n) => (n.trim() ? crOf.get(n.trim()) ?? null : undefined)).filter((v) => v !== undefined)
+  // Three slots a side, always. An empty or unrated slot is null, which
+  // predictMatch fills with the field mean. Dropping empty slots instead summed
+  // two red teams against nothing and called it ~99% red; and "two teams in
+  // total" let a prediction run with one side empty.
+  const lookup = (arr) => arr.map((n) => (n.trim() ? (crOf.get(n.trim()) ?? null) : null))
   const redCRs = lookup(red)
   const blueCRs = lookup(blue)
-  const ready = redCRs.length + blueCRs.length >= 2
+  const entered = (arr) => arr.filter((n) => n.trim()).length
+  const ready = entered(red) > 0 && entered(blue) > 0
   const result = ready ? predictMatch(redCRs, blueCRs, base) : null
 
   const setSlot = (side, idx) => (e) => {

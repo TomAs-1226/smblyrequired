@@ -391,8 +391,11 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
     let alive = true
     setEntryCount(null)
     ;(async () => {
-      const { data } = await formEntryCount(form?.id)
-      if (alive) setEntryCount(data)
+      const { data, error } = await formEntryCount(form?.id)
+      // On a failed count, stay unknown (null) rather than taking the 0 that
+      // comes back with the error — 0 unlocked every key on a form that may
+      // hold thousands of entries, on nothing more than a dropped request.
+      if (alive) setEntryCount(error ? null : data)
     })()
     return () => {
       alive = false
@@ -408,7 +411,14 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
     el?.focus()
   }, [blocks.length])
 
-  const hasEntries = (entryCount ?? 0) > 0
+  // Unknown counts as "has entries" for a saved form: the cautious answer the
+  // comment above promises, while loading and after a failed count alike. An
+  // unsaved form cannot have entries.
+  const hasEntries = entryCount == null ? Boolean(form?.id) : entryCount > 0
+  const countPhrase =
+    entryCount == null
+      ? 'Entries may have'
+      : `${entryCount} ${entryCount === 1 ? 'entry has' : 'entries have'}`
 
   const keyLock = useCallback(
     (blk) => {
@@ -732,7 +742,7 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
             </p>
             {hasEntries && (
               <p>
-                {entryCount} {entryCount === 1 ? 'entry has' : 'entries have'} already been recorded
+                {countPhrase} already been recorded
                 against this form. Those keep the old key.
               </p>
             )}
@@ -753,7 +763,7 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
       body: (
         <>
           <p>
-            {entryCount} {entryCount === 1 ? 'entry has' : 'entries have'} already been recorded
+            {countPhrase} already been recorded
             against this form, stored under{' '}
             <code className={b.code}>{blk.field.key}</code>.
           </p>
@@ -1013,7 +1023,7 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
             <p className={`${b.note} ${b.noteLock}`}>
               <Icon name="pin" size={15} />
               <span>
-                {entryCount} {entryCount === 1 ? 'entry has' : 'entries have'} been recorded on this
+                {countPhrase} been recorded on this
                 form, so the keys of the fields already in it are locked. Labels, help text, order
                 and any block you add now are still free to change.
               </span>

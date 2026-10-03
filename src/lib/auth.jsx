@@ -33,6 +33,14 @@ export function AuthProvider({ children }) {
   // in with a limited recovery session and fires PASSWORD_RECOVERY; the only
   // sane thing to show then is "set your new password", not the dashboard.
   const [recovery, setRecovery] = useState(false)
+  // Why the profile is missing, when it is. Without this a failed fetch left
+  // `role` null, which reads exactly like "not approved yet" — so a network blip
+  // told a signed-in admin they were not on the roster.
+  const [profileError, setProfileError] = useState(null)
+  // Bumped to make the profile effect run again for the SAME user: after a
+  // failed fetch, when a pending member asks "am I approved yet?", and whenever
+  // an auth event re-enters the loading state (see apply below).
+  const [profileNonce, setProfileNonce] = useState(0)
   const mounted = useRef(true)
 
   useEffect(() => {
@@ -61,7 +69,16 @@ export function AuthProvider({ children }) {
     const apply = (next) => {
       if (!mounted.current) return
       const nextId = next?.user?.id ?? null
-      if (nextId && nextId !== loadedFor.current) setProfileLoading(true)
+      // Entering the loading state must also guarantee a fetch that will leave
+      // it. Keying the profile effect on userId alone did not: after a failed
+      // fetch (loadedFor still null) the next TOKEN_REFRESHED for the same user
+      // set loading, userId did not change, the effect never re-ran, and the
+      // portal sat on "Checking your session…" until a hard reload. The nonce
+      // makes every entry into loading come with its own fetch.
+      if (nextId && nextId !== loadedFor.current) {
+        setProfileLoading(true)
+        setProfileNonce((n) => n + 1)
+      }
       // Signed out: drop the marker so signing back in re-fetches.
       if (!nextId) loadedFor.current = null
       setSession(next)
@@ -95,33 +112,52 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!isConfigured || !userId) {
       setProfile(null)
+      setProfileError(null)
       setProfileLoading(false)
       return
     }
     let cancelled = false
     ;(async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, grad_year, subteam, role')
-        .eq('id', userId)
-        .maybeSingle()
+      let data = null
+      let error = null
+      try {
+        ;({ data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, grad_year, subteam, role')
+          .eq('id', userId)
+          .maybeSingle())
+      } catch (err) {
+        error = err
+      }
       if (cancelled || !mounted.current) return
       if (error) {
-        console.warn('[portal] could not load profile:', error.message)
-        setProfile(null)
+        console.warn('[portal] could not load profile:', error.message ?? error)
+        // Keep the profile we already had for this same user: a refresh that
+        // fails mid-session must not demote the screen to "awaiting approval".
+        // Another user's profile is never kept. Deliberately NOT marking this
+        // user as loaded — the next auth event or a retry fetches again.
+        setProfile((p) => (p?.id === userId ? p : null))
+        setProfileError('Could not load your profile. Check your connection and try again.')
         setProfileLoading(false)
-        // Deliberately NOT marking this user as loaded — a failed fetch should
-        // be retried on the next auth event, not remembered as done.
         return
       }
       setProfile(data ?? null)
+      setProfileError(null)
       loadedFor.current = userId
       setProfileLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [userId])
+  }, [userId, profileNonce])
+
+  // Re-read the profile without a page reload. A pending member is waiting for
+  // exactly one thing — an admin approving them — and used to have to know to
+  // refresh the browser to find out it had happened.
+  const refreshProfile = useCallback(() => {
+    if (!isConfigured) return
+    setProfileNonce((n) => n + 1)
+  }, [])
 
   const signIn = useCallback(async (email, password) => {
     if (!isConfigured) return { error: 'The portal is not configured yet.' }
@@ -134,18 +170,34 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
+        // Sign-in only. signInWithOtp creates the account when the email is new,
+        // which turned this form into a public signup form whenever the
+        // dashboard's "Allow new users to sign up" was left on — and docs/PORTAL.md
+        // says accounts are made by a lead, not by the act of asking for a link.
+        shouldCreateUser: false,
         // Land back on the portal route. PKCE appends `?code=` ahead of the
         // hash, so the router still resolves `#/portal` correctly.
         emailRedirectTo: `${window.location.origin}${window.location.pathname}#/portal`,
       },
     })
+    // An unknown address answers otp_disabled ("Signups not allowed for otp").
+    // Reported as sent, like the password-reset path: the screen already says
+    // "if this email has an account", and anything else would let the public
+    // form test which students have accounts.
+    if (error && (error.code === 'otp_disabled' || /signups not allowed/i.test(error.message ?? ''))) {
+      return { error: null }
+    }
     return { error: readableAuthError(error) }
   }, [])
 
+  // The profile is cleared by the SIGNED_OUT event (userId goes null), not here.
+  // Clearing it eagerly meant a sign-out that failed left a live session with no
+  // profile — which renders as "you're not on the roster yet".
   const signOut = useCallback(async () => {
-    if (!isConfigured) return
-    await supabase.auth.signOut()
-    setProfile(null)
+    if (!isConfigured) return { error: null }
+    const { error } = await supabase.auth.signOut()
+    if (error) console.warn('[portal] sign-out did not complete:', error.message)
+    return { error: readableAuthError(error) }
   }, [])
 
   // Works for accounts that have no password yet — Supabase sends the same
@@ -171,6 +223,9 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(() => {
     const role = profile?.role ?? null
+    // Only surfaced when there is no profile at all. A failed refresh behind a
+    // profile we already hold is invisible on purpose: the screen stays right.
+    const shownProfileError = profile ? null : profileError
     return {
       configured: isConfigured,
       loading,
@@ -181,7 +236,10 @@ export function AuthProvider({ children }) {
       signedIn: Boolean(session),
       // A signed-in account with no approved role yet. This is the expected
       // state right after signup and needs its own UI — it is not an error.
-      awaitingApproval: Boolean(session) && (!role || role === 'pending'),
+      // A profile that failed to LOAD is not this state, and is excluded.
+      awaitingApproval: Boolean(session) && !shownProfileError && (!role || role === 'pending'),
+      profileError: shownProfileError,
+      refreshProfile,
       atLeast: (minimum) => roleAtLeast(role, minimum),
       recovery,
       signIn,
@@ -190,7 +248,19 @@ export function AuthProvider({ children }) {
       sendPasswordReset,
       updatePassword,
     }
-  }, [loading, session, profile, recovery, signIn, signInWithLink, signOut, sendPasswordReset, updatePassword])
+  }, [
+    loading,
+    session,
+    profile,
+    profileError,
+    recovery,
+    refreshProfile,
+    signIn,
+    signInWithLink,
+    signOut,
+    sendPasswordReset,
+    updatePassword,
+  ])
 
   // The set-password overlay pre-empts everything else. Rendering it here rather
   // than threading `recovery` through Portal keeps the whole flow in files the

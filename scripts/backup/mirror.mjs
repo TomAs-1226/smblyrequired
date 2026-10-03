@@ -251,7 +251,26 @@ async function main() {
   const expected = new Map()
   let checksumsAvailable = true
   {
-    const { data, error } = await supabase.from('files').select('bucket, path, sha256')
+    // Paged. Supabase caps a PostgREST response at 1000 rows by default, so a
+    // single select silently stopped at the 1000th file: everything past it was
+    // copied with nothing to compare against, counted as unverified, and the run
+    // went `partial` every night from then on with no hint why.
+    const PAGE = 1000
+    let data = []
+    let error = null
+    for (let from = 0; ; from += PAGE) {
+      const page = await supabase
+        .from('files')
+        .select('bucket, path, sha256')
+        .order('id')
+        .range(from, from + PAGE - 1)
+      if (page.error) {
+        error = page.error
+        break
+      }
+      data = data.concat(page.data ?? [])
+      if ((page.data ?? []).length < PAGE) break
+    }
     if (error) {
       // Previously this only warned. That was the worst bug in this script: with
       // `expected` empty, every `expected.get()` returns undefined, the mismatch

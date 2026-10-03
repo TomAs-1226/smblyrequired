@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../Icon'
 import { useAuth } from '../../../lib/auth'
 import { supabase } from '../../../lib/supabase'
-import { listEvents, teamStats, askAi } from '../../../lib/scoutingApi'
+import {
+  listEvents,
+  teamStats,
+  askAi,
+  movePicklistEntry,
+  respacePicklistTier,
+  setPicklistLock,
+} from '../../../lib/scoutingApi'
 import { sortEntries, planMove, locate } from './position'
 import { parseProposal } from './aiProposal'
 import { Loading, Empty, ErrorState } from '../ui'
@@ -33,8 +40,12 @@ const DEFAULT_TIERS = [
 ]
 
 export default function PickList() {
-  const { atLeast } = useAuth()
+  const { atLeast, user } = useAuth()
   const canEdit = atLeast('lead')
+  // A refused write (most often: someone else locked the list a moment ago) is
+  // shown above the board. It used to go into `state.error` and then load()
+  // cleared it in the same tick, so the explanation never appeared at all.
+  const [actionError, setActionError] = useState(null)
 
   const [eventKey, setEventKey] = useState(() => localStorage.getItem('frc5805.event') ?? '')
   const [events, setEvents] = useState([])
@@ -164,25 +175,29 @@ export default function PickList() {
     const tierLabel = tiers.find((t) => t.key === toTier)?.label ?? toTier
     setAnnounce(`Team ${entry.team_number} moved to ${tierLabel}, position ${index + 1} of ${size}`)
 
+    // Through scoutingApi rather than inline queries: those writes stamp
+    // updated_by (the table's "every change is attributed" promise was never
+    // kept from this screen), and the re-space sends only the ordering columns,
+    // so it cannot write a stale copy of someone's note back over a fresh one.
+    setActionError(null)
     const { error } = plan.respace
-      ? await supabase.from('picklist_entries').upsert(
-          plan.rows.map((r) => ({ ...r, tier: toTier })),
-          { onConflict: 'id' }
-        )
-      : await supabase
-          .from('picklist_entries')
-          .update({ tier: toTier, position: plan.position })
-          .eq('id', entry.id)
+      ? await respacePicklistTier({
+          picklistId: list.id,
+          rows: plan.rows.map((r) => ({ ...r, tier: toTier })),
+          userId: user?.id,
+        })
+      : await movePicklistEntry({
+          id: entry.id,
+          tier: toTier,
+          position: plan.position,
+          userId: user?.id,
+        })
 
     if (error) {
-      // Locked lists are rejected by a trigger (migration 0006). Say which,
-      // rather than a generic failure — the fix is different for each.
-      setState((s) => ({
-        ...s,
-        error: /locked/i.test(error.message)
-          ? 'This list is locked. Unlock it to make changes.'
-          : error.message,
-      }))
+      // Already readable: lockAware() forwards the trigger's own message and
+      // hint for a locked list (migration 0006). Reload to drop the optimistic
+      // move and pick up whatever state made the write fail.
+      setActionError(error)
       load()
     }
   }
@@ -275,19 +290,22 @@ export default function PickList() {
     )
   }
 
+  // setPicklistLock records who froze the list (locked_by was never set from
+  // here) and clears both stamps on unlock. A failure is shown, not swallowed —
+  // a lead who believes the list is frozen when it is not is the worst case.
   async function toggleLock() {
     if (!list) return
-    const next = !list.is_locked
-    const { data, error } = await supabase
-      .from('picklists')
-      .update({
-        is_locked: next,
-        locked_at: next ? new Date().toISOString() : null,
-      })
-      .eq('id', list.id)
-      .select()
-      .single()
-    if (!error) setList(data)
+    setActionError(null)
+    const { data, error } = await setPicklistLock({
+      id: list.id,
+      locked: !list.is_locked,
+      userId: user?.id,
+    })
+    if (error) {
+      setActionError(error)
+      return
+    }
+    setList(data)
   }
 
   // --- render ------------------------------------------------------------------
@@ -351,6 +369,13 @@ export default function PickList() {
           </>
         )}
       </div>
+
+      {actionError && (
+        <div className={portal.adminAlert} role="alert">
+          <Icon name="alert" size={16} />
+          <span>{actionError}</span>
+        </div>
+      )}
 
       {aiError && <p className={styles.aiError}>{aiError}</p>}
 

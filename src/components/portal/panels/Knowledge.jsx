@@ -29,8 +29,12 @@ export default function Knowledge() {
       <Editor
         initial={editing}
         onCancel={() => setEditing(null)}
-        onSaved={() => {
+        onSaved={(doc) => {
           setEditing(null)
+          // Follow the doc to its saved slug. The slug is editable, and the
+          // reader looks docs up by it — reopening the old one after a rename
+          // said "That doc no longer exists" about the doc just saved.
+          if (openSlug && doc?.slug) setOpenSlug(doc.slug)
           load()
         }}
       />
@@ -124,9 +128,29 @@ function Reader({ slug, onBack, onEdit, canEdit }) {
     [state.doc]
   )
 
+  // Both states keep a way back to the list. Neither had one, and the rail link
+  // for this tab does not reset it, so a failed load was a dead end.
+  const back = (
+    <button type="button" className={styles.backBtn} onClick={onBack}>
+      <Icon name="arrowLeft" size={15} />
+      All docs
+    </button>
+  )
   if (state.loading) return <Loading rows={6} label="Loading doc" />
-  if (state.error) return <ErrorState error={state.error} />
-  if (!state.doc) return <Empty title="That doc no longer exists" />
+  if (state.error)
+    return (
+      <div className={styles.stack}>
+        {back}
+        <ErrorState error={state.error} />
+      </div>
+    )
+  if (!state.doc)
+    return (
+      <div className={styles.stack}>
+        {back}
+        <Empty title="That doc no longer exists" />
+      </div>
+    )
 
   return (
     <article className={styles.stack}>
@@ -180,7 +204,7 @@ function Editor({ initial, onCancel, onSaved }) {
     if (busy) return
     setBusy(true)
     setError(null)
-    const { error: err } = await saveDoc({
+    const { data: saved, error: err } = await saveDoc({
       id: initial.id,
       slug,
       title: title.trim(),
@@ -192,7 +216,7 @@ function Editor({ initial, onCancel, onSaved }) {
       setError(err)
       return
     }
-    onSaved()
+    onSaved(saved)
   }
 
   return (
