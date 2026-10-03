@@ -91,7 +91,7 @@ export default function Contact() {
         {/* ---- LEFT: the primary ask + details + mentors ------------------ */}
         <Reveal className={styles.ask} y={28} stagger={0.08}>
           <p className={`lead ${styles.lead}`}>
-            Every robot we build is <strong>100% student-funded and student-built</strong>. Your
+            Every robot we build is <strong>student-built and community-funded</strong>. Your
             partnership puts tools in their hands and engineers in the making.
           </p>
 
@@ -153,7 +153,7 @@ export default function Contact() {
                 <Icon name="pin" size={18} />
               </span>
               <span className={styles.dBody}>
-                <span className={styles.dLabel}>Build space</span>
+                <span className={styles.dLabel}>Mailing address</span>
                 <span className={styles.dText}>{contact.address}</span>
               </span>
             </li>

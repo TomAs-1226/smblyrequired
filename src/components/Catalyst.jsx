@@ -1,223 +1,222 @@
-import { useRef } from 'react'
-import { useGSAP } from '@gsap/react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import Section from './Section'
-import Eyebrow from './Eyebrow'
-import SplitHeading from './SplitHeading'
+import { useState } from 'react'
 import Reveal from './Reveal'
-import Icon from './Icon'
-import MagneticButton from './MagneticButton'
-import { catalyst } from '../data/catalyst'
-import { prefersReducedMotion } from '../lib/prefersReducedMotion'
+import {
+  catalyst, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
+} from '../data/catalyst'
 import styles from './Catalyst.module.css'
 
-gsap.registerPlugin(ScrollTrigger, useGSAP)
+// The Catalyst page: what the library is, the two lines a team can install today, what 2.0 adds (by
+// the names the code uses), and the tools around it. Every claim comes from src/data/catalyst.js,
+// which says where each one was checked.
 
-/* Illustrative FRC Catalyst builder snippet — invented but plausible. Tokenized
-   into typed spans so the "editor" can syntax-tint without a real highlighter:
-   k = keyword (cyan), s = string/number (gold-ish), c = comment (muted),
-   f = call/identifier emphasis, p = punctuation/plain. */
-const C = {
-  k: (t) => ({ t, c: 'k' }),
-  s: (t) => ({ t, c: 's' }),
-  cm: (t) => ({ t, c: 'c' }),
-  f: (t) => ({ t, c: 'f' }),
-  p: (t) => ({ t, c: 'p' }),
+/* A small Java tint — enough to read the README's example, not a highlighter. */
+const TOKENS = /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*")|(\b\d+(?:\.\d+)?\b)|(\b(?:new|true|false|null)\b)|(\b[A-Z][A-Za-z0-9_]*\b)|(\.[a-z][A-Za-z0-9_]*(?=\())/g
+function Java({ code }) {
+  const out = []
+  let last = 0
+  for (const m of code.matchAll(TOKENS)) {
+    if (m.index > last) out.push(code.slice(last, m.index))
+    const cls = m[1] ? styles.tComment : m[2] ? styles.tString : m[3] ? styles.tNumber : m[4] ? styles.tKeyword : m[5] ? styles.tType : styles.tCall
+    out.push(<span key={m.index} className={cls}>{m[0]}</span>)
+    last = m.index + m[0].length
+  }
+  out.push(code.slice(last))
+  return out
 }
-const code = [
-  [C.cm('// 150+ lines of motor, PID, sim + feedforward scaffolding —')],
-  [C.cm('// rebuilt every season. With Catalyst, it is this:')],
-  [],
-  [C.k('Elevator'), C.p(' lift = '), C.f('Catalyst'), C.p('.'), C.f('elevator'), C.p('()')],
-  [C.p('  .'), C.f('motors'), C.p('('), C.s('20'), C.p(', '), C.s('21'), C.p(') '), C.cm('// CAN IDs, leader + follower')],
-  [C.p('  .'), C.f('gearing'), C.p('('), C.s('12.0'), C.p(').'), C.f('drum'), C.p('('), C.s('1.751'), C.p(')')],
-  [C.p('  .'), C.f('motionMagic'), C.p('('), C.s('120'), C.p(', '), C.s('200'), C.p(') '), C.cm('// vel, accel')],
-  [C.p('  .'), C.f('gravityFF'), C.p('('), C.s('0.34'), C.p(').'), C.f('simulated'), C.p('()')],
-  [C.p('  .'), C.f('softLimits'), C.p('('), C.s('0.0'), C.p(', '), C.s('1.65'), C.p(')')],
-  [C.p('  .'), C.f('build'), C.p('();')],
-]
 
-export default function Catalyst() {
-  const panel = useRef(null)
+function Arrow() {
+  return <i className={styles.btnIcon} aria-hidden="true">↗</i>
+}
 
-  useGSAP(
-    () => {
-      if (prefersReducedMotion()) return
-      const el = panel.current
-      if (!el) return
-      // Editor lines type-in line-by-line as the panel scrolls into view.
-      const lines = el.querySelectorAll(`.${styles.codeLine}`)
-      gsap.from(lines, {
-        autoAlpha: 0,
-        x: -14,
-        duration: 0.5,
-        ease: 'power3.out',
-        stagger: 0.06,
-        scrollTrigger: { trigger: el, start: 'top 80%', once: true },
-      })
-      // The cursor blink sits on after the last line lands.
-      gsap.fromTo(
-        el.querySelector(`.${styles.caret}`),
-        { autoAlpha: 0 },
-        {
-          autoAlpha: 1,
-          duration: 0.2,
-          delay: lines.length * 0.06 + 0.3,
-          scrollTrigger: { trigger: el, start: 'top 80%', once: true },
-        }
-      )
-    },
-    { scope: panel }
-  )
-
-  const { metric, features, stack } = catalyst
-
+function CopyField({ value, label }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      /* No clipboard (insecure context): the URL is selectable text anyway. */
+    }
+  }
   return (
-    <Section id="catalyst" className={styles.section}>
-      <div className={`blueprint ${styles.field}`} aria-hidden="true" />
+    <div className={styles.copy}>
+      <code className={styles.copyValue} aria-label={label}>{value}</code>
+      <button type="button" className={styles.copyBtn} onClick={copy} data-copied={copied || undefined}>
+        <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
+      </button>
+    </div>
+  )
+}
 
-      {/* --- Header: eyebrow (no number) + display headline + mono spec + lead --- */}
-      <header className={styles.head}>
-        <div className={styles.headLede}>
-          <Eyebrow>Open source · built by 5805</Eyebrow>
-          <SplitHeading as="h2" className={styles.heading}>
-            We build tools, not just robots.
-          </SplitHeading>
-          <Reveal className={styles.headBody} stagger={0.1} y={24}>
-            <p className={styles.tagline}>{catalyst.tagline}</p>
-            <p className="lead">{catalyst.description}</p>
-          </Reveal>
-        </div>
-
-        <Reveal className={styles.headMeta} y={20}>
-          <span className={styles.repoName}>
-            <Icon name="code" size={18} className={styles.repoIcon} />
-            {catalyst.name}
-          </span>
-          <span className="data-tag">JAVA // PHOENIX 6 // WPILIB 2026</span>
-          <span className={`data-tag data-tag--gold ${styles.licenseTag}`}>
-            MIT // STUDENT IP · TEAM-OWNED
-          </span>
-        </Reveal>
-      </header>
-
-      {/* --- Signature: editor panel (left, wide) + reduction metric (right) --- */}
-      <div className={styles.signature}>
-        <div className={styles.editor} ref={panel}>
-          <div className={styles.editorBar}>
-            <span className={styles.dots} aria-hidden="true">
-              <i /><i /><i />
-            </span>
-            <span className={styles.editorFile}>Elevator.java</span>
-            <span className={styles.editorBadge}>FRC CATALYST</span>
-          </div>
-          <pre className={styles.code} aria-label="Example FRC Catalyst elevator builder">
-            <code>
-              {code.map((line, i) => (
-                <span className={styles.codeLine} key={i}>
-                  <span className={styles.gutter} aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <span className={styles.codeText}>
-                    {line.length === 0 ? (
-                      ' '
-                    ) : (
-                      line.map((tok, j) => (
-                        <span className={styles[`tok_${tok.c}`]} key={j}>
-                          {tok.t}
-                        </span>
-                      ))
-                    )}
-                  </span>
-                </span>
-              ))}
-              <span className={styles.caret} aria-hidden="true" />
-            </code>
-          </pre>
-        </div>
-
-        <Reveal className={styles.metric} y={28}>
-          <span className={styles.metricLabel}>{metric.label}</span>
-          <span className={styles.metricRow}>
-            <span className={styles.metricFrom}>{metric.from}</span>
-            <Icon name="arrowRight" size={34} className={styles.metricArrow} />
-            <span className={styles.metricTo}>{metric.to}</span>
-          </span>
-          <span className={styles.metricNote}>
-            Same elevator. One fluent builder, fully simulated and tuned.
-          </span>
-          <span className={styles.metricSpark} aria-hidden="true" />
-        </Reveal>
+function ConsoleShowcase() {
+  const [shot, setShot] = useState(0)
+  const c = catalystConsole
+  return (
+    <section className={styles.block} aria-labelledby="cat-console">
+      <div className={styles.blockHead}>
+        <p className={styles.kicker}>Catalyst Console {c.version} · {c.platforms}</p>
+        <h2 id="cat-console" className={styles.h2}>The dashboard our drivers watch.</h2>
+        <p className={styles.lede}>{c.lede}</p>
       </div>
 
-      {/* --- Features: non-uniform 4-up (1 lead / 3 stacked rail) --- */}
-      <div className={styles.features}>
-        <p className={styles.featuresLabel}>
-          <span className={styles.featuresRule} aria-hidden="true" />
-          <span>What ships in the box</span>
-        </p>
-        <Reveal className={styles.featureGrid} stagger={0.1} y={32}>
-          {features.map((f, i) => (
-            <article
-              className={`${styles.feature} ${i === 0 ? styles.featureLead : ''}`}
-              key={f.title}
+      <div className={styles.device}>
+        <div className={styles.deviceCore}>
+          {c.shots.map((s, i) => (
+            <img
+              key={s.src}
+              src={s.src}
+              alt={s.alt}
+              className={styles.shot}
+              data-on={i === shot || undefined}
+              loading="lazy"
+              width="1600"
+              height="1000"
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className={styles.consoleBar}>
+        <div className={styles.switch} role="tablist" aria-label="Console views">
+          {c.shots.map((s, i) => (
+            <button
+              key={s.src}
+              type="button"
+              role="tab"
+              aria-selected={i === shot}
+              className={styles.switchBtn}
+              onClick={() => setShot(i)}
             >
-              <span className={styles.featureIcon}>
-                <Icon name={f.icon} size={i === 0 ? 30 : 22} />
-              </span>
-              <span className={styles.featureNum} aria-hidden="true">
-                {i + 1}
-              </span>
-              <h3 className={styles.featureTitle}>{f.title}</h3>
-              <p className={styles.featureBody}>{f.body}</p>
+              {i === 0 ? 'Park' : 'Drive'}
+            </button>
+          ))}
+        </div>
+        <p className={styles.shotCaption}>{c.shots[shot].caption}</p>
+      </div>
+
+      <div className={styles.consoleFoot}>
+        <ul className={styles.ticks}>
+          {c.features.map((f) => <li key={f}>{f}</li>)}
+        </ul>
+        <div className={styles.consoleCta}>
+          <a className={styles.btn} href={c.url} target="_blank" rel="noreferrer noopener">
+            Download Console <Arrow />
+          </a>
+          <p className={styles.fine}>{c.note}</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default function Catalyst() {
+  return (
+    <div className={styles.page}>
+      {/* ── the library ─────────────────────────────────────────────── */}
+      <header className={styles.hero}>
+        <div className={styles.heroCopy}>
+          <p className={styles.kicker}>
+            <b>Open source</b> · {catalyst.license} licence
+          </p>
+          <h1 className={styles.h1}>{catalyst.name}</h1>
+          <p className={styles.tagline}>{catalyst.tagline}</p>
+          <p className={styles.lede}>{catalyst.description}</p>
+          <div className={styles.row}>
+            <a className={styles.btn} href={catalyst.docsUrl} target="_blank" rel="noreferrer noopener">
+              Read the docs <Arrow />
+            </a>
+            <a className={`${styles.btn} ${styles.quiet}`} href={catalyst.repoUrl} target="_blank" rel="noreferrer noopener">
+              GitHub
+            </a>
+          </div>
+        </div>
+        <figure className={styles.code}>
+          <div className={styles.codeCore}>
+            <div className={styles.codeTop} aria-hidden="true">
+              <span /><span /><span />
+              <em>Elevator.java</em>
+            </div>
+            <pre className={styles.pre}><code><Java code={catalystExample.code} /></code></pre>
+          </div>
+          <figcaption className={styles.fine}>{catalystExample.caption}</figcaption>
+        </figure>
+      </header>
+
+      {/* ── the two lines ───────────────────────────────────────────── */}
+      <section className={styles.block} aria-labelledby="cat-lines">
+        <div className={styles.blockHead}>
+          <p className={styles.kicker}>Install</p>
+          <h2 id="cat-lines" className={styles.h2}>Two lines, one library.</h2>
+          <p className={styles.lede}>
+            Paste a URL into WPILib’s <em>Manage Vendor Libraries → Install new libraries (online)</em>.{' '}
+            <a className={styles.inline} href={catalyst.versionsUrl} target="_blank" rel="noreferrer noopener">Which one?</a>
+          </p>
+        </div>
+        <Reveal className={styles.lines} stagger={0.08} y={24}>
+          {catalystLines.map((l) => (
+            <article key={l.id} className={styles.card} data-line={l.id}>
+              <div className={styles.cardCore}>
+                <div className={styles.lineTop}>
+                  <span className={styles.pill}>{l.label}</span>
+                  <span className={styles.version}>{l.version}</span>
+                </div>
+                <h3 className={styles.h3}>{l.title}</h3>
+                <ul className={styles.chips}>
+                  {l.platform.map((p) => <li key={p}>{p}</li>)}
+                </ul>
+                <p className={styles.note}>{l.note}</p>
+                <CopyField value={l.vendordep} label={`Vendordep URL for ${l.version}`} />
+                <a className={styles.inline} href={l.docs} target="_blank" rel="noreferrer noopener">
+                  {l.id === 'beta' ? 'Beta docs' : 'Docs'} ↗
+                </a>
+              </div>
             </article>
           ))}
         </Reveal>
-      </div>
+      </section>
 
-      {/* --- Stack chips + CTAs + community credit --- */}
-      <div className={styles.foot}>
-        <div className={styles.stack}>
-          <span className={styles.stackLabel}>Built on</span>
-          <ul className={styles.stackList}>
-            {stack.map((s) => (
-              <li className={`data-tag ${styles.stackChip}`} key={s}>
-                {s}
-              </li>
-            ))}
-          </ul>
+      {/* ── what 2.0 adds ───────────────────────────────────────────── */}
+      <section className={styles.block} aria-labelledby="cat-pillars">
+        <div className={styles.blockHead}>
+          <p className={styles.kicker}>Catalyst 2.0</p>
+          <h2 id="cat-pillars" className={styles.h2}>Not just mechanisms any more.</h2>
+          <p className={styles.lede}>
+            2.0 is a second revision for a new control system — and it grew from a box of mechanisms
+            into a library for the whole robot.
+          </p>
         </div>
+        <Reveal className={styles.pillars} stagger={0.05} y={20}>
+          {catalystPillars.map((p) => (
+            <article key={p.title} className={styles.pillar}>
+              <h3 className={styles.h3}>{p.title}</h3>
+              <p className={styles.note}>{p.body}</p>
+              <ul className={styles.names}>
+                {p.names.map((n) => <li key={n}>{n}</li>)}
+              </ul>
+            </article>
+          ))}
+        </Reveal>
+      </section>
 
-        <div className={styles.ctas}>
-          <MagneticButton
-            as="a"
-            href={catalyst.docsUrl}
-            className="btn btn--cyan"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Read the docs
-            <Icon name="arrowRight" className="arrow" />
-          </MagneticButton>
-          <MagneticButton
-            as="a"
-            href={catalyst.repoUrl}
-            className="btn btn--ghost"
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on GitHub
-            <Icon name="external" size={18} />
-          </MagneticButton>
-        </div>
+      {/* ── the tools around it ─────────────────────────────────────── */}
+      <ConsoleShowcase />
 
-        <p className={styles.credit}>
-          <Icon name="heart" size={16} className={styles.creditIcon} />
-          Released free and open-source — our contribution back to the FRC
-          community, so any team can build faster.
-        </p>
-      </div>
-    </Section>
+      <section className={styles.block} aria-label="More Catalyst tools">
+        <Reveal className={styles.pair} stagger={0.08} y={24}>
+          {[catalystApp, catalystTools].map((t) => (
+            <article key={t.name} className={styles.card}>
+              <div className={styles.cardCore}>
+                <p className={styles.kicker}>{t.name}{t.version ? ` ${t.version}` : ''}{t.platforms ? ` · ${t.platforms}` : ''}</p>
+                <p className={styles.note}>{t.lede}</p>
+                <a className={`${styles.btn} ${styles.quiet}`} href={t.url} target="_blank" rel="noreferrer noopener">
+                  {t.version ? 'Download' : 'Open the tools'}
+                </a>
+              </div>
+            </article>
+          ))}
+        </Reveal>
+      </section>
+    </div>
   )
 }

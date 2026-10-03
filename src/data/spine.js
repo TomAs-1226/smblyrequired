@@ -22,7 +22,7 @@ export const spinePanels = [
     shot: 'team',
     kicker: 'Built by students',
     title: `${numberWord(rosterCount)} people\nmade this.`,
-    body: 'Every season starts with an empty shop and a blank assembly. Months later there is a 120-pound machine that nobody has built before.',
+    body: 'Every season starts with an empty shop. Months later there is a machine on the field that students built, wired and programmed — and drove.',
     facts: [
       { value: String(rosterCount), label: 'Students' },
       { value: String(subteams.length), label: 'Subteams' },
@@ -32,7 +32,7 @@ export const spinePanels = [
   {
     shot: 'explode',
     caption: true,
-    kicker: 'This season · Numbers',
+    kicker: 'Offseason 2026 · Numbers',
     title: 'Every part has someone’s *name* on it.',
     specs: [
       { anchor: 'intake', name: 'Intake', value: 'Slides out 300 mm' },
@@ -48,8 +48,8 @@ export const spinePanels = [
     tight: true,
     kicker: 'Mechanisms',
     index: '01',
-    title: 'Designed in CAD.\nBuilt by hand.',
-    body: 'The mechanisms subteam turns a game manual into hardware. This shooter went from a sketch to an Onshape assembly to the robot — its hood rides on the flywheel’s own axis, so a single pivot sets every shot.',
+    title: 'Built by hand.\nUnderstood to the bolt.',
+    body: 'Numbers is our build of Team 581’s 2026 design — the best way we know to learn how a great robot works. The mechanisms subteam cut, assembled and tuned it, down to a hood that rides on the flywheel’s own axis, so one pivot sets every shot.',
     specs: [
       { anchor: 'flywheel', name: 'Flywheel', value: '4 in stainless, 552 mm wide' },
       { anchor: 'mhood', name: 'Hood', value: 'Pivots on the flywheel axis' },
@@ -77,7 +77,7 @@ export const spinePanels = [
     kicker: 'Programming',
     index: '03',
     title: 'Nothing moves until someone writes it.',
-    body: 'Swerve kinematics, the shot solver that sets the hood from distance, the intake’s deploy — all Java, written by students, running on SystemCore, FIRST’s new generation of robot controller.',
+    body: 'Swerve kinematics, the shot solver that sets the hood from distance, the intake’s deploy — rebuilt in Java on our own library, for Systemcore, FIRST’s new generation of robot controller.',
     specs: [
       { anchor: 'swerve', name: 'Swerve', value: 'Each module steers itself' },
       { anchor: 'aim', name: 'Hood', value: 'Angle solved from distance' },
@@ -90,14 +90,14 @@ export const spinePanels = [
     right: true,
     kicker: 'Open source',
     title: 'We wrote the\nlibrary *too*.',
-    body: 'That code runs on FRC Catalyst, the open-source Java library we write: mechanisms, swerve and a state machine for the whole robot. Catalyst 2.0 is built for SystemCore, and Catalyst Console is the dashboard our drivers watch.',
+    body: 'That code runs on FRC Catalyst, the open-source Java library we write: mechanisms, swerve and a state machine for the whole robot. Catalyst 2.0 is built for Systemcore, and Catalyst Console is the dashboard our drivers watch.',
     links: [{ href: '#/catalyst', label: 'Explore Catalyst', primary: true }],
   },
   {
     shot: 'lineage',
     kicker: 'And then we do it again',
     title: 'A new robot,\nevery single year.',
-    body: 'Genesis, Exodus, Leviticus, Numbers. One machine a season since 2016, each built by whoever walked into the shop that September.',
+    body: 'A robot every season since 2016, each built by whoever walked into the shop that year. Since 2025: Genesis, Exodus, Leviticus, Numbers.',
     links: [
       { href: '#/join', label: 'Join the team', primary: true },
       { href: '#/sponsor', label: 'Sponsor us' },

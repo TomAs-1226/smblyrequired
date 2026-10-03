@@ -19,12 +19,11 @@ const NAV = [
   { href: '#/contact', label: 'Contact' },
 ]
 
-// School/program socials — generic hrefs for now, wired later.
+// The team's socials, as listed on its The Blue Alliance profile. (TBA's
+// YouTube entry is malformed, so it is left out until the real URL is known.)
 const SOCIALS = [
-  { label: 'Facebook', href: '#' },
-  { label: 'Instagram', href: '#' },
-  { label: 'YouTube', href: '#' },
-  { label: 'LinkedIn', href: '#' },
+  { label: 'Instagram', href: 'https://www.instagram.com/smblyrequired5805' },
+  { label: 'X (Twitter)', href: 'https://twitter.com/smblyrequired' },
 ]
 
 // FOOTER — the page ends calm. One quiet enter-reveal, no continuous motion.
@@ -139,12 +138,7 @@ export default function Footer() {
             <ul className={styles.socials} aria-label="Social media">
               {SOCIALS.map((s) => (
                 <li key={s.label}>
-                  {/* TODO: replace '#' with live school/program social URLs */}
-                  <a
-                    href={s.href}
-                    className={styles.social}
-                    data-social-pending="true"
-                  >
+                  <a href={s.href} className={styles.social} target="_blank" rel="noreferrer noopener">
                     {s.label}
                     <Icon name="external" size={13} className={styles.socialIcon} />
                   </a>

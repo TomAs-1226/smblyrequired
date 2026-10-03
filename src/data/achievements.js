@@ -1,4 +1,4 @@
-// Official competition record — sourced from The Blue Alliance (frc5805).
+// Official competition record — sourced from The Blue Alliance (frc5805), checked 2026-10-02.
 // kind drives styling: 'winner' & 'rookie' => gold; 'finalist' & 'award' => cyan.
 // flagship marks the headline results.
 export const achievements = [
@@ -7,7 +7,7 @@ export const achievements = [
     event: 'Orange County District',
     award: 'FIRST Leadership Award — Semi-Finalist',
     kind: 'award',
-    person: 'Rey Freeman',
+    person: 'Andrea', // TBA lists "Andrea F"; first names only, as on the roster
   },
   {
     year: 2026,
@@ -40,8 +40,20 @@ export const achievements = [
   },
   {
     year: 2019,
+    event: 'FIRST Championship — Turing Division',
+    award: 'World Championship qualifier',
+    kind: 'award',
+  },
+  {
+    year: 2019,
     event: 'Orange County Regional',
     award: 'Finalist · Wildcard',
+    kind: 'finalist',
+  },
+  {
+    year: 2018,
+    event: 'FIRST Championship — Carver Division',
+    award: 'Quarterfinalist · Alliance 5',
     kind: 'finalist',
   },
   {
@@ -49,6 +61,12 @@ export const achievements = [
     event: 'Orange County Regional',
     award: 'Regional Winner',
     kind: 'winner',
+  },
+  {
+    year: 2016,
+    event: 'FIRST Championship — Hopper Division',
+    award: 'World Championship qualifier · rookie year',
+    kind: 'award',
   },
   {
     year: 2016,
@@ -67,10 +85,10 @@ export const achievements = [
 
 // Headline record stats (derived from the real record).
 export const recordStats = [
-  { to: 11, label: 'Seasons competing' },
+  { to: 10, label: 'Seasons competing' }, // matches played 2016–20, 2022–26 (no 2021 events)
   { to: 3, label: 'Event wins' },
   { to: 2016, label: 'Winning since (rookie year)' },
 ]
 
 export const recordNote =
-  'Winning hardware since our rookie year — Rookie All-Star in 2016, Orange County Regional champions in 2018, and Ventura County Regional champions in 2025. Record sourced from The Blue Alliance.'
+  'Winning hardware since our rookie year — Rookie All-Star in 2016, three trips to the World Championship (2016, 2018, 2019), Orange County Regional champions in 2018, and Ventura County Regional and Beach Blitz champions in 2025. Record sourced from The Blue Alliance.'

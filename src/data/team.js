@@ -22,7 +22,7 @@ export const team = {
     'A student-run FIRST® Robotics Competition team that turns aluminum, code, and ambition into champions — and into the next generation of engineers.',
   // Real program copy (Santa Margarita Catholic HS robotics).
   mission:
-    'More than a club, it’s a launchpad — it’s a lifestyle. Every season our students design, machine, wire, and program a 120-pound competition robot from scratch, then drive it head-to-head against the best teams in Southern California. Beyond the workshop they lead fundraising, marketing, outreach, and program management. They don’t just learn how to compete — they learn how to lead, adapt, and succeed.',
+    'More than a club, it’s a launchpad — it’s a lifestyle. Every season our students design, machine, wire, and program a competition robot, then drive it head-to-head against the best teams in Southern California. Beyond the workshop they lead fundraising, marketing, outreach, and program management. They don’t just learn how to compete — they learn how to lead, adapt, and succeed.',
   missionTag: 'Heart, hustle, and human ingenuity in motion.',
   origin:
     'SMbly Required (FIRST Team 5805) grew out of the robotics program at Santa Margarita Catholic High School — home of FIRST Team 3020 since 2009 — and has been building and competing since the 2015–16 season.',
@@ -71,7 +71,7 @@ export const pillars = [
   },
   {
     title: 'Competition',
-    body: 'A full FRC district season each year against 40+ teams per event across Southern California.',
+    body: 'Several events every season, against 40 to 60 teams each, across Southern California.',
     icon: 'trophy',
   },
   {

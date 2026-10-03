@@ -115,8 +115,8 @@ export default function HomeTeasers() {
 
               <p className={styles.featureLede}>
                 Our 2025 flagship robot, {champ?.robot || 'Genesis'}, drove 5805 to
-                a banner against the best of Southern California — the latest win in
-                a record that goes back to our rookie year.
+                a banner against the best of Southern California — one of three event
+                wins in a record that goes back to our rookie year.
               </p>
 
               <p className={styles.featureMeta}>

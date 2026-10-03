@@ -284,16 +284,18 @@ export default function Impact() {
               ))}
             </Reveal>
 
-            <a
-              className={styles.watch}
-              href={livestreamUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <span className={styles.watchPulse} aria-hidden="true" />
-              Watch live
-              <Icon name="external" size={16} className={styles.watchIcon} />
-            </a>
+            {livestreamUrl && (
+              <a
+                className={styles.watch}
+                href={livestreamUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <span className={styles.watchPulse} aria-hidden="true" />
+                Watch live
+                <Icon name="external" size={16} className={styles.watchIcon} />
+              </a>
+            )}
           </div>
 
           {/* program-impact narrative — honest, judge-facing */}

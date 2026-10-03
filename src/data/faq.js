@@ -24,7 +24,7 @@ export const faqs = [
   },
   {
     q: 'What is FIRST Robotics Competition?',
-    a: 'FRC challenges high-school teams to design, build, and program a 120-pound robot in a six-week season, then compete against the best in the region. It is often called “the varsity sport for the mind.”',
+    a: 'FRC challenges high-school teams to design, build, and program a robot in a build season of about two months, then compete against the best in the region. It is often called “the varsity sport for the mind.”',
     tag: 'About',
   },
   {

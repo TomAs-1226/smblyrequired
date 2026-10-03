@@ -8,7 +8,7 @@ export const posts = [
     tag: 'Competition',
     author: 'Team 5805',
     excerpt:
-      'Leviticus closed out 2026 at the FIRST California Southern State Championship — three events, one playoff alliance, and a season that pushed us forward.',
+      'Leviticus closed out 2026 at the FIRST California Southern State Championship — three events, two playoff runs, and a season that pushed us forward.',
     body: [
       'Qualifying for the FIRST California Southern State Championship capped a full district season for Leviticus, our REBUILT robot. We finished the qualification rounds ranked 45th of 60 of the best teams in Southern California — a tough field, and exactly the kind of competition that makes us better.',
       'Reaching States meant stacking a strong enough district season to earn the points. We did it the hard way: a finalist run at Port Hueneme and a deep playoff bracket at Orange County got us there.',
@@ -22,10 +22,10 @@ export const posts = [
     tag: 'Competition',
     author: 'Team 5805',
     excerpt:
-      'We made the playoffs as the second pick of Alliance 3 — and Rey Freeman was recognized as a FIRST Leadership Award semi-finalist.',
+      'We made the playoffs as the second pick of Alliance 3 — and Andrea was recognized as a FIRST Leadership Award semi-finalist.',
     body: [
       'At the Orange County District event we qualified for the playoffs as the second pick of Alliance 3 and battled into the fifth round of the double-elimination bracket before being eliminated with a 3–2 playoff record.',
-      'Off the field, junior Rey Freeman was named a semi-finalist for the FIRST Leadership Award — recognition for the kind of student leadership that holds a program like ours together.',
+      'Off the field, Andrea was named a semi-finalist for the FIRST Leadership Award — recognition for the kind of student leadership that holds a program like ours together.',
       'Districts reward consistency, and our drive team and scouters earned every point. On to the next one.',
     ],
   },
@@ -57,12 +57,12 @@ export const posts = [
   },
   {
     slug: 'ventura-county-champions-2025',
-    date: '2025-04',
+    date: '2025-03',
     title: 'Ventura County Regional Champions',
     tag: 'Competition',
     author: 'Team 5805',
     excerpt:
-      'Genesis brought home a Regional Winner banner at the 2025 Ventura County Regional — our biggest in-season win yet.',
+      'Genesis brought home a Regional Winner banner at the 2025 Ventura County Regional — our second Regional win, after Orange County in 2018.',
     body: [
       'In the 2025 REEFSCAPE season, Genesis earned a Regional Winner banner at the Ventura County Regional — a milestone for the program and proof of how far the team had come since our rookie year in 2016.',
       'That win, plus a Beach Blitz championship and a SoCal Showdown finalist run in the offseason, made 2025 a season to remember.',

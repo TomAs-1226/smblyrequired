@@ -33,7 +33,7 @@ export const joinFacts = [
 ]
 
 // The season, as three phases. The wording restates mission (team.js), the
-// Mechanical subteam copy ("six-week deadline") and the FAQ above; the event
+// Mechanical subteam copy ("a hard deadline") and the FAQ above; the event
 // and robot lists are the real records.
 const competitionPillar = pillars.find((p) => p.title === 'Competition')
 
@@ -43,7 +43,7 @@ export const seasonRhythm = [
     label: 'Build season',
     icon: 'wrench',
     tag: 'Busiest: January–April',
-    body: 'Every season we design, machine, wire, and program a 120-pound competition robot from scratch, against a six-week deadline. Expect several days a week.',
+    body: 'Every season we design, machine, wire, and program a competition robot against a hard deadline. Expect several days a week.',
   },
   {
     key: 'compete',

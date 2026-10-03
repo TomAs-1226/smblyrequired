@@ -61,9 +61,9 @@ export default function MeetTheTeam() {
           </SplitHeading>
           <Reveal className={styles.headBody} stagger={0.1} y={24}>
             <p className="lead">
-              <strong>{rosterCount} students</strong> across every grade — designers,
+              <strong>{rosterCount} students</strong> — designers,
               machinists, programmers, and the business crew who keep the season running.
-              Student-led, mentor-guided, every season from scratch.
+              Student-led, mentor-guided, every season.
             </p>
           </Reveal>
         </div>

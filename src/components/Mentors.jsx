@@ -38,7 +38,7 @@ export default function Mentors() {
         </SplitHeading>
         <Reveal className={styles.lede} y={24}>
           <p className="lead">
-            The students design, machine, wire, and drive the robot — every season, from scratch.
+            The students design, machine, wire, and drive the robot — every season.
             Our mentors don't do it for them. They teach the tools, ask the sharper question, and
             lend the experience that turns a good idea into a robot that survives a match.
           </p>

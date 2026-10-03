@@ -6,7 +6,7 @@ export const subteams = [
   {
     name: 'Mechanical',
     icon: 'cog',
-    body: 'Design and machine the robot — CNC, lathe, mill, 3D printing, and assembly under a six-week deadline.',
+    body: 'Design and machine the robot — CNC, lathe, mill, 3D printing, and assembly under a hard deadline.',
   },
   {
     name: 'Electrical',

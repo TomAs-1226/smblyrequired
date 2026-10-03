@@ -83,7 +83,7 @@ export default function RobotLineage() {
       <div className={styles.intro}>
         <Eyebrow>The robots</Eyebrow>
         <SplitHeading as="h2" className={styles.heading}>
-          Named for the Books.
+          Since 2025, named for the Books.
         </SplitHeading>
         <p className={`lead ${styles.note}`}>{lineageNote}</p>
       </div>

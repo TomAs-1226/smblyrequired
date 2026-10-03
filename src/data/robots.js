@@ -1,9 +1,11 @@
-// Robot lineage. Team 5805 builds a new robot every season, each named for a
-// Book of the Bible — a nod to our Santa Margarita roots.
+// Robot lineage. Team 5805 has built a robot every season since 2016; since
+// 2025 each one is named for a Book of the Bible — a nod to our Santa Margarita
+// roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
+// Phocas for 2018 and 2020.)
 // status: 'season' (in-season) | 'champion' (won/podium) | 'build' (in progress)
 
 export const lineageNote =
-  'One team, a new machine every season — each named for a Book of the Bible, a nod to our Santa Margarita roots. And we’re just getting started.'
+  'A new machine every season since 2016 — and since 2025, each one named for a Book of the Bible, a nod to our Santa Margarita roots.'
 
 export const robots = [
   {
@@ -56,7 +58,6 @@ export const robots = [
     ],
     blurb: 'Our 2026 REBUILT robot: a big-dumper, 3.5-ball-wide shooter spun by four Kraken X60s, fed by a slapdown intake with an extendable hopper. A district finalist with leadership-award recognition.',
     image: 'photos/hero.jpg',
-    current: true,
   },
   {
     name: 'Numbers',
@@ -65,10 +66,16 @@ export const robots = [
     year: 2026,
     game: 'REBUILT',
     status: 'build',
-    result: 'In build for fall 2026',
-    subtitle: 'In design & fabrication',
-    specs: [{ label: 'Status', value: 'In design & fabrication for fall 2026' }],
-    blurb: 'On the bench now — our next machine, in design and fabrication for the fall offseason.',
+    result: 'Debuts at SoCal Showdown · Oct 9–11, 2026',
+    subtitle: 'Our build of Team 581’s 2026 design',
+    // From the robot's CAD (public/models/robot.json) and its code.
+    specs: [
+      { label: 'Shooter', value: '4 in stainless flywheel, four Kraken X60s, hood 13–45°' },
+      { label: 'Intake', value: 'Slides out 300 mm; hopper fits 13 FUEL' },
+      { label: 'Code', value: 'Catalyst 2.0 on Systemcore' },
+    ],
+    blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, wired by our electrical subteam and programmed on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',
     image: null,
+    current: true,
   },
 ]
