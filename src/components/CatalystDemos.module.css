@@ -1,0 +1,275 @@
+/* The Catalyst page's live demos: a stage in a double bezel beside a readout of what the robot is
+   deciding. Same type and tokens as the rest of the page. */
+
+.demo {
+  display: grid;
+  gap: clamp(28px, 4vw, 44px);
+}
+.head {
+  max-width: 760px;
+}
+.kicker {
+  margin: 0 0 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+}
+.h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 3.6vw, 3.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-transform: none;
+  color: var(--text-primary);
+}
+.lede {
+  margin: 18px 0 0;
+  max-width: 60ch;
+  font-size: 1.04rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.flip {
+  grid-template-columns: minmax(280px, 1fr) minmax(0, 1.7fr);
+}
+
+/* Double bezel, as on the rest of the page. */
+.device {
+  margin: 0;
+  padding: 8px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 0 0 1px var(--border-hairline);
+}
+.deviceCore {
+  position: relative;
+  height: 100%;
+  min-height: 380px;
+  aspect-ratio: 16 / 10;
+  border-radius: 19px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 30%, #121316, var(--bg-void) 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+}
+
+/* the readout */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: clamp(22px, 2.4vw, 32px);
+  border-radius: 22px;
+  background: var(--surface-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.decision {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -8px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+.decision i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.decision[data-tone='collect'] i {
+  background: var(--brand-gold);
+}
+.decision[data-tone='score'] i {
+  background: var(--accent-data);
+}
+.reason {
+  margin: 0;
+  min-height: 3.2em;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-body);
+}
+.refused {
+  margin: 0;
+  min-height: 3.2em;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #f0a78a;
+}
+.meter {
+  display: grid;
+  gap: 8px;
+}
+.meterHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.meterHead b {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.bar {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--brand-gold);
+  transform-origin: left;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-hairline);
+}
+.facts dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.facts dd {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.fine {
+  margin: auto 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+/* the state graph */
+.graph {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.edge {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1.5;
+}
+.edgeLive {
+  stroke: var(--accent-data);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  animation: march 0.6s linear infinite;
+}
+.edgeRefused {
+  stroke: #f0a78a;
+  stroke-width: 2;
+  stroke-dasharray: 3 6;
+}
+@keyframes march {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+.node rect {
+  fill: var(--surface-2);
+  stroke: rgba(255, 255, 255, 0.12);
+  transition: fill var(--dur-fast) var(--ease-out), stroke var(--dur-fast) var(--ease-out);
+}
+.node text {
+  fill: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+}
+.node[data-on] rect {
+  stroke: var(--accent-data);
+}
+.node[data-on] text {
+  fill: var(--text-primary);
+}
+.node[data-arrived] rect {
+  fill: var(--brand-royal);
+}
+.log {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.log li:last-child {
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .grid,
+  .flip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .flip .device {
+    order: -1;
+  }
+  .deviceCore {
+    min-height: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edgeLive {
+    animation: none;
+  }
+}

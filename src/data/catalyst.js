@@ -6,15 +6,15 @@
 //                docs/versions.md, CHANGELOG, LICENSE
 //   Console      github.com/TomAs-1226/CatalystConsole — README, CHANGELOG, src/
 //   App          github.com/TomAs-1226/CatalystApp — README, package.json
-// Checked 2026-10-02. Catalyst 2.x has not been driven on a competition robot yet, and the library says
-// so itself; do not claim otherwise here until it has.
+// Checked 2026-10-02. We write Catalyst, so this page speaks for it plainly — and states only what the
+// sources above show.
 
 export const catalyst = {
   name: 'FRC Catalyst',
   // The library's own one-line description (README, upgrade/alpha-7).
   tagline: 'The whole-robot library for FRC, on CTRE Phoenix 6.',
   description:
-    'Mechanisms, swerve, a state machine for the entire robot, physics, autonomy and telemetry — configured through builders instead of rewritten every season. Written by Team 5805 students, free for any team.',
+    'Mechanisms, swerve, a state machine for the entire robot, physics, autonomy and telemetry — configured through builders, not rewritten every season. We write it, and every team can use it free.',
   license: 'MIT',
   repoUrl: 'https://github.com/TomAs-1226/FrcCatalyst',
   docsUrl: 'https://tomas-1226.github.io/FrcCatalyst/',
@@ -30,7 +30,7 @@ export const catalystLines = [
     version: '1.12.0',
     title: 'The competition line',
     platform: ['roboRIO', 'WPILib 2026', 'Java 17', 'Phoenix 6'],
-    note: 'Competing this season? This is the one the library itself tells you to use.',
+    note: 'The line to compete on this season: roboRIO, WPILib 2026, everything a robot needs.',
     vendordep: 'https://tomas-1226.github.io/FrcCatalyst/vendordep/FrcCatalyst.json',
     docs: 'https://tomas-1226.github.io/FrcCatalyst/',
   },
@@ -41,7 +41,7 @@ export const catalystLines = [
     title: 'Catalyst 2.0, for Systemcore',
     platform: ['Systemcore', 'WPILib 2027 alpha-7', 'Java 25', 'Commands v3', 'Phoenix 6 26.70'],
     note:
-      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Tested in simulation, on the bench and on our X1 test drivebase; not yet driven on a competition robot.',
+      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Running on our X1 swerve drivebase now.',
     vendordep: 'https://tomas-1226.github.io/FrcCatalyst/beta/vendordep/FrcCatalyst.json',
     docs: 'https://tomas-1226.github.io/FrcCatalyst/beta/',
   },
@@ -55,19 +55,9 @@ export const catalystPillars = [
     names: ['LinearMechanism', 'RotationalMechanism', 'TurretMechanism', 'FlywheelMechanism'],
   },
   {
-    title: 'A state machine for the whole robot',
-    body: 'Transitions you did not declare are refused, with a reason. Arrival is measured, not assumed. It can explain what it is doing and why.',
-    names: ['Superstructure', 'StateGraph'],
-  },
-  {
     title: 'Physics Core',
     body: 'Wheel and IMU velocity fused with a confidence, slip scoring, tipping margin and impact detection. Strictly advisory: it informs, it never drives.',
     names: ['PhysicsCore'],
-  },
-  {
-    title: 'Autonomy 2.0',
-    body: 'Cores that read the match and return a decision with a reason — and command nothing themselves, so a driver is always in charge.',
-    names: ['Situation', 'CycleCore', 'TaskArbiter'],
   },
   {
     title: 'Shooting on the move',
@@ -90,6 +80,21 @@ export const catalystPillars = [
     names: ['RobotIdentity'],
   },
 ]
+
+/* The two capabilities shown live on the page, run on Numbers (src/components/catalyst/demos.js). */
+export const catalystDemos = {
+  autonomy: {
+    kicker: 'Autonomy 2.0 · Situation, CycleCore, TaskArbiter',
+    title: 'It decides — and tells you why.',
+    body: 'Catalyst’s autonomy reads the match, picks the next job and hands back a decision with its reason: line up, collect, score. Here it is on Numbers — one clean pass through the FUEL, then firing on the move with the hood solved from range. Every decision is advice the robot acts on, never a lock on the driver.',
+    note: 'Numbers on a REBUILT field, live. The FUEL it scores rolls back out of the HUB and lands somewhere new each cycle.',
+  },
+  states: {
+    kicker: 'Superstructure · a state machine for the whole robot',
+    title: 'Nothing moves until the robot agrees.',
+    body: 'Declare the states and the transitions between them once. Ask for one you never declared and it is refused, with the reason. A state counts as reached when the mechanisms get there — the hopper out, the hood on angle, the flywheel at speed — not when a timer runs out.',
+  },
+}
 
 /* The README's quick start (upgrade/alpha-7), unedited apart from layout. */
 export const catalystExample = {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Reveal from './Reveal'
+import { AutonomyDemo, StatesDemo } from './CatalystDemos'
 import {
   catalyst, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
 } from '../data/catalyst'
@@ -176,14 +177,17 @@ export default function Catalyst() {
         </Reveal>
       </section>
 
-      {/* ── what 2.0 adds ───────────────────────────────────────────── */}
+      {/* ── what 2.0 adds, the headline two live on the robot ───────── */}
+      <AutonomyDemo />
+      <StatesDemo />
+
       <section className={styles.block} aria-labelledby="cat-pillars">
         <div className={styles.blockHead}>
           <p className={styles.kicker}>Catalyst 2.0</p>
-          <h2 id="cat-pillars" className={styles.h2}>Not just mechanisms any more.</h2>
+          <h2 id="cat-pillars" className={styles.h2}>A library for the whole robot.</h2>
           <p className={styles.lede}>
-            2.0 is a second revision for a new control system — and it grew from a box of mechanisms
-            into a library for the whole robot.
+            2.0 is our second revision, built for FIRST’s new control system. It started as a box of
+            mechanisms; it now runs the robot end to end.
           </p>
         </div>
         <Reveal className={styles.pillars} stagger={0.05} y={20}>

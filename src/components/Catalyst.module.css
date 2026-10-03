@@ -363,7 +363,7 @@
 /* 2.0 pillars: an even grid of hairline-separated cells, not cards */
 .pillars {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--border-hairline);
   border-left: 1px solid var(--border-hairline);
 }
