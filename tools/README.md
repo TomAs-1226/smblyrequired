@@ -29,3 +29,16 @@ Console's bake gains a fix worth having, port it across by hand.
 
 Export the flagship robot from Onshape as glTF, run the command above, and update
 `src/data/robot.js`. Nothing else should need to change.
+
+## `hub-from-field.mjs` — the HUB for the landing page's ending
+
+```bash
+node tools/hub-from-field.mjs ~/dev/CatalystConsole/src/vendor/field.glb public/models/hub.glb
+```
+
+Cuts the blue HUB out of the decimated REBUILT field that Catalyst Console bakes from FIRST's KOP
+field CAD: every instance inside the HUB's footprint, welded, simplified to 1 mm and turned y-up
+(23k triangles). Never copy the whole field into `public/` — everything there is published on deploy.
+
+The HUB is FIRST's geometry, not ours. Console deliberately does not commit its `field.glb`; whether
+the website may ship this one piece is a decision to make before deploying, not after.

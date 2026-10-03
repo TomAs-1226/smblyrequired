@@ -198,7 +198,7 @@ em{font-style:normal;color:transparent;background:linear-gradient(104deg,var(--g
         there is a 120-pound machine that nobody has built before.</p>
       <div class="facts">
         <div class="fact"><b>20</b><span>Students</span></div>
-        <div class="fact"><b>3</b><span>Subteams</span></div>
+        <div class="fact"><b>6</b><span>Subteams</span></div>
         <div class="fact"><b>10+</b><span>Seasons</span></div>
       </div>
     </div>
@@ -383,7 +383,9 @@ const SHOTS={
      the code moves sits on the far side, where its label goes. */
   prog:    {side:1, yaw:-1.20,el:0.24,look:[0.06,0.30,0],  R:0.62,fill:0.82,fillH:0.68,prog:1,labelSide:'far'},
   catalyst:{side:-1,yaw:0.55, el:0.21,look:[0,0.29,0],     R:0.60,fill:0.70,fillH:0.66,prog:1},
-  lineage: {side:1, yaw:-0.72,el:0.20,look:[0,0.28,0],     R:0.56,fill:0.72,fillH:0.62,drive:1},
+  /* The ending is framed in the world, not on the robot: it takes in the
+     robot's home and the HUB it drives off to shoot at. */
+  lineage: {side:1, yaw:-0.72,el:0.26,look:[0.85,0.62,-1.95],worldLook:true,R:1.7,fill:0.98,fillH:0.9,drive:1},
 };
 const GROUPS=['drive','floor','hopper','intake','shooter','hood'];
 const groupOfNode=n=>n==='assembly-floor'?'floor':n==='assembly-hopper'?'hopper':
@@ -550,6 +552,70 @@ if(gltf){
   ready=true;
 }
 
+/* ── the HUB, contact shadows and FUEL ───────────────────────────────────── */
+/* The HUB is cut from FIRST's official field model (tools/hub-from-field.mjs). */
+let hub=null;
+new GLTFLoader().loadAsync('/models/hub.glb').then(g=>{
+  hub=g.scene; hub.visible=false;
+  hub.traverse(o=>{ if(!o.isMesh) return;
+    o.material=new THREE.MeshStandardMaterial({color:0x4a515c,metalness:0.5,roughness:0.46,envMapIntensity:1.0}); });
+  scene.add(hub);
+}).catch(e=>console.warn('HUB unavailable; the ending shoots at nothing',e));
+
+/* A soft contact shadow: a driving robot with nothing under it floats. */
+function blob(size,alpha){
+  const c=document.createElement('canvas'); c.width=c.height=128; const x=c.getContext('2d');
+  const gr=x.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,`rgba(0,0,0,${alpha})`); gr.addColorStop(0.55,`rgba(0,0,0,${alpha*0.55})`); gr.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=gr; x.fillRect(0,0,128,128);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(size,size),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false,toneMapped:false}));
+  m.rotation.x=-Math.PI/2; m.renderOrder=-1; scene.add(m); return m;
+}
+const shadow=blob(1.35,0.75), hubShadow=blob(2.1,0.6); hubShadow.visible=false;
+
+/* FUEL: 150 mm balls in FIRST's yellow, from the shooter's four lanes. */
+const FUEL_R=0.075, MAX_FUEL=96, G=9.81;
+const fuelMesh=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(FUEL_R,2),
+  new THREE.MeshStandardMaterial({color:0xd4b13f,roughness:0.62,metalness:0,envMapIntensity:0.7}),MAX_FUEL);
+fuelMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); fuelMesh.count=0; fuelMesh.frustumCulled=false;
+scene.add(fuelMesh);
+const balls=[]; const lanes=[];
+const _m=new THREE.Matrix4(), _p=new THREE.Vector3(), _s=new THREE.Vector3(), _r=new THREE.Quaternion();
+function makeLanes(){
+  /* The release point the manifest gives (the ball's centre at release, on the hood), four abreast
+     across the 552 mm shooter. Children of the hood, so they rise and swing with it. */
+  const ex=manifest?.shooter?.exit?.point; if(!hoodNode||!ex) return;
+  for(const z of [-0.207,-0.069,0.069,0.207]){
+    const o=new THREE.Object3D(); o.position.copy(hoodNode.worldToLocal(new THREE.Vector3(ex[0],ex[1],z)));
+    hoodNode.add(o); lanes.push(o);
+  }
+}
+if(ready) makeLanes();   // the model has loaded by now (top-level await above)
+function volley(hoodDeg){
+  if(!hub) return;
+  const th=(88.44-hoodDeg)*Math.PI/180, target=new THREE.Vector3();
+  for(const lane of lanes){
+    const p0=lane.getWorldPosition(new THREE.Vector3());
+    target.set(hub.position.x+(Math.random()-0.5)*0.22, AIM_Y, hub.position.z+(Math.random()-0.5)*0.22);
+    const dx=target.x-p0.x, dz=target.z-p0.z, D=Math.hypot(dx,dz);
+    const den=2*Math.cos(th)**2*(p0.y+D*Math.tan(th)-target.y); if(den<=0) continue;
+    const v=Math.sqrt(G*D*D/den), vh=v*Math.cos(th);
+    balls.push({p0, v:new THREE.Vector3(dx/D*vh, v*Math.sin(th), dz/D*vh), t:0, T:D/vh+0.12});
+    if(balls.length>MAX_FUEL) balls.shift();
+  }
+}
+function stepBalls(dt){
+  let n=0;
+  for(let i=balls.length-1;i>=0;i--){ const b=balls[i]; b.t+=dt; if(b.t>b.T) balls.splice(i,1); }
+  for(const b of balls){
+    _p.copy(b.p0).addScaledVector(b.v,b.t); _p.y-=0.5*G*b.t*b.t;
+    const grow=Math.min(1,0.55+b.t/0.06*0.45);   // emerges from the shooter rather than appearing whole
+    _s.setScalar(grow); _m.compose(_p,_r,_s); fuelMesh.setMatrixAt(n++,_m);
+  }
+  fuelMesh.count=n; fuelMesh.instanceMatrix.needsUpdate=true;
+}
+
 /* ── sizing ─────────────────────────────────────────────────────────────── */
 let W=1,H=1;
 let copyEdges=[];   // per panel: the copy box's left/right in canvas px
@@ -624,7 +690,11 @@ function blend(i,t){
   const a=panels[i].shot, b=panels[i+1].shot, fa=frameShot(a,i), fb=frameShot(b,i+1), o={};
   for(const k of ['yaw','el','R']) o[k]=lerp(a[k],b[k],t);
   for(const k of ['explode','prog','drive']) o[k]=lerp(a[k]??0,b[k]??0,t);
-  o.look=a.look.map((v,i)=>lerp(v,b.look[i],t));
+  /* Each shot's look point in world terms (a robot-frame point turned by that
+     shot's yaw), so a robot shot can hand over to a world shot. */
+  const wl=sh=>sh.worldLook?sh.look:new THREE.Vector3(...sh.look).applyAxisAngle(THREE.Object3D.DEFAULT_UP,sh.yaw).toArray();
+  const la=wl(a), lb=wl(b);
+  o.lookW=la.map((v,i)=>lerp(v,lb[i],t));
   o.cx=lerp(fa.cx,fb.cx,t); o.d=lerp(fa.d,fb.d,t);
   o.dim={}; o.show={};
   for(const g of GROUPS){ o.dim[g]=lerp(a.dim?.[g]??1,b.dim?.[g]??1,t); o.show[g]=lerp(a.show?.[g]??1,b.show?.[g]??1,t); }
@@ -685,28 +755,63 @@ const hoodP=profiled(40,0.45), deployP=profiled(0.42,0.55);
 const SPEED={fly:30,feed:18,conveyor:14,intake:16};   // rad/s at full command, for the eye
 let progT=0, wheelV=0, roll={fly:0,feed:0,conveyor:0,intake:0};
 
-/* The lap. A closed loop off to the right and round behind, driven the way a
-   swerve drive does it: the chassis turns a full circle while it travels, and
-   every module steers to its own velocity, v + ω × r. */
-/* A teardrop: out to the right, round behind, and home — never nearer the
-   camera than where it started, so it never swells past the frame. */
-const LAP={period:10.5, start:1.4, dur:7.2, ax:0.7, bx:0.6, az:1.3};
-let lapT=0;
-function lapAt(t){
-  const u=minJerk(clamp01((t-LAP.start)/LAP.dur)), a=2*Math.PI*u;
-  return {x:LAP.ax*Math.sin(a)+LAP.bx*(1-Math.cos(a)), z:-LAP.az*(1-Math.cos(a)), h:-2*Math.PI*u};
+/* The ending. The robot drives out to a spot short of the HUB on one curve,
+   turning as it goes so its back — Numbers shoots out of its back — faces the
+   HUB, raises the hood, spins up and fires FUEL four abreast, then drives home
+   on a different curve, spinning a full turn on the way. All of it swerve:
+   every module steers to its own velocity, v + ω × r.
+   Unlike Catalyst Console, which only draws what telemetry knows, this is a
+   marketing shot: the balls are solved to go in. */
+const HUB_AT=new THREE.Vector3(1.55,0,-4.9), SHOT_FROM=2.7;   // m, robot centre to HUB centre
+const END={period:13, out:[1.0,4.0], back:[7.3,10.5], hoodUp:[3.6,7.0], fly:[3.4,6.9], feed:[4.9,6.7], volley:0.3};
+const SHOT_HOOD=25;                    // deg; launch elevation is 88.44 − hood (manifest elevationAt)
+const AIM_Y=1.6;                       // the arc is solved to pass this low inside the HUB's centre
+const shotSpot=(()=>{ const d=new THREE.Vector3(-HUB_AT.x,0,-HUB_AT.z).normalize();
+  return HUB_AT.clone().addScaledVector(d,SHOT_FROM); })();
+const bez=(p0,c,p1,u)=>[(1-u)*(1-u)*p0[0]+2*(1-u)*u*c[0]+u*u*p1[0],(1-u)*(1-u)*p0[1]+2*(1-u)*u*c[1]+u*u*p1[1]];
+let endT=0, mechT=0, aimOffset=0, endPrev=0;
+/* Heading offset from the shot's own yaw that turns the robot's back (−x) to the HUB. */
+function aimFor(baseYaw){
+  const dx=HUB_AT.x-shotSpot.x, dz=HUB_AT.z-shotSpot.z, L=Math.hypot(dx,dz);
+  let h=Math.atan2(dz/L,-dx/L)-baseYaw;
+  while(h>Math.PI) h-=2*Math.PI; while(h<-Math.PI) h+=2*Math.PI;
+  return h;
+}
+function poseAt(t){
+  const S=[shotSpot.x,shotSpot.z], O=[0,0];
+  if(t<END.out[0]) return {x:0,z:0,h:0};
+  if(t<END.out[1]){
+    const u=minJerk((t-END.out[0])/(END.out[1]-END.out[0])), q=bez(O,[S[0]+1.3,S[1]*0.15],S,u);
+    return {x:q[0],z:q[1],h:aimOffset*u};
+  }
+  if(t<END.back[0]) return {x:S[0],z:S[1],h:aimOffset};
+  if(t<END.back[1]){
+    const u=minJerk((t-END.back[0])/(END.back[1]-END.back[0])), q=bez(S,[S[0]-1.6,S[1]*0.8],O,u);
+    const home=aimOffset>0?2*Math.PI:-2*Math.PI;   // the long way round: a full turn on the way home
+    return {x:q[0],z:q[1],h:aimOffset+(home-aimOffset)*u};
+  }
+  return {x:0,z:0,h:0};
+}
+const inside=(t,[a,b])=>t>=a&&t<b;
+function endingAt(t){
+  return {hood:inside(t,END.hoodUp)?SHOT_HOOD:15, fly:inside(t,END.fly)?1:0, feed:inside(t,END.feed)?1:0, intake:0};
 }
 
 function runMechanisms(w,dw,dt,yaw){
   if(reduced){ w=0; dw=0; }
+  mechT+=dt;
   if(w>0.001) progT+=dt;
-  if(dw>0.001) lapT+=dt; else lapT=0;
-  const r=routineAt(progT%LOOP);
+  const tPrev=endT%END.period;
+  if(dw>0.001) endT+=dt; else endT=0;
+  const tEnd=endT%END.period;
+  /* Which program the mechanisms follow, and how strongly. */
+  const ending=dw>0.5, mw=ending?dw:w;
+  const r=ending?endingAt(tEnd):routineAt(progT%LOOP);
 
-  /* What the drive asks of each module: from the lap when driving, else the routine. */
+  /* What the drive asks of each module: from the ending when driving, else the routine. */
   let lap=null;
   if(dw>0.01){
-    const t=lapT%LAP.period, e=1/120, p0=lapAt(t-e), p1=lapAt(t+e);
+    const t=tEnd, e=1/120, p0=poseAt(Math.max(0,t-e)), p1=poseAt(t+e);
     const vx=(p1.x-p0.x)/(2*e)*dw, vz=(p1.z-p0.z)/(2*e)*dw, om=(p1.h-p0.h)/(2*e)*dw;
     const c=Math.cos(yaw), sn=Math.sin(yaw);
     lap={vx:vx*c-vz*sn, vz:vx*sn+vz*c, om};          // world → robot frame
@@ -722,6 +827,7 @@ function runMechanisms(w,dw,dt,yaw){
       raw = r.drive==='spin' ? 0 : r.drive==='x' ? Math.PI/2 : HEADING[r.drive]-m.cad;
       speed=wheelV*0.9;
     }
+    if(lap && Math.hypot(lap.vx,lap.vz)+Math.abs(lap.om)<0.02 && dw>0.5) raw=m.lastRaw??raw;
     m.lastRaw=raw;
     const target=wrapNear(raw,m.angle);
     m.dir=Math.round((target-raw)/Math.PI)%2?-1:1;
@@ -734,8 +840,8 @@ function runMechanisms(w,dw,dt,yaw){
   wheelV=lag(wheelV,(r.wheel??0)*w,0.25,dt);
 
   /* Rollers: each channel spins up and coasts down; ratios from the manifest. */
-  const want={fly:(r.fly??0)*w, feed:(r.feed??0)*w, intake:(r.intake??0)*w,
-              conveyor:Math.max(r.feed??0,(r.intake??0)*0.6)*w};
+  const want={fly:(r.fly??0)*mw, feed:(r.feed??0)*mw, intake:(r.intake??0)*mw,
+              conveyor:Math.max(r.feed??0,(r.intake??0)*0.6)*mw};
   const tau={fly:0.8,feed:0.15,intake:0.3,conveyor:0.25};
   for(const k in roll) roll[k]=lag(roll[k],want[k],tau[k],dt);
   for(const q of spin){
@@ -743,12 +849,18 @@ function runMechanisms(w,dw,dt,yaw){
     q.node.quaternion.copy(q.rest).multiply(_q.setFromAxisAngle(q.axis,q.angle));
   }
 
+  let hoodDeg=manifest?.hood?.cadAngle??11;
   if(hoodNode){
-    const deg=hoodP.at(r.hood??15,progT);   // Hood.java's range is 13–45°
-    hoodNode.rotation.z=w*(deg-(manifest?.hood?.cadAngle??11))*Math.PI/180;
+    const deg=hoodP.at(r.hood??15,mechT);   // Hood.java's range is 13–45°
+    hoodDeg+=mw*(deg-hoodDeg);
+    hoodNode.rotation.z=(hoodDeg-(manifest?.hood?.cadAngle??11))*Math.PI/180;
   }
-  const deploy=deployP.at((r.intake??0)*(manifest?.intake?.travel??0.3),progT)*w;
-  return {deploy, lap: dw>0.01 ? lapAt(lapT%LAP.period) : null};
+  const deploy=deployP.at((r.intake??0)*(manifest?.intake?.travel??0.3),mechT)*w;
+  /* Volleys due this frame: one every END.volley while the feeder runs. */
+  let volleys=0;
+  if(ending && dw>0.95 && tEnd>tPrev)
+    for(let k=END.feed[0];k<END.feed[1];k+=END.volley) if(k>tPrev&&k<=tEnd) volleys++;
+  return {deploy, hoodDeg, volleys, pose: dw>0.01 ? poseAt(tEnd) : null};
 }
 const _q=new THREE.Quaternion();
 
@@ -908,7 +1020,12 @@ function frame(dt,draw=true){
     q.n.position.addScaledVector(rmv,gone*gone);          // eases in: lifts off, then accelerates away
     if(q.n===intakeNode) q.n.position.addScaledVector(intakeAxis,mech.deploy);
   }
-  rig.position.set(mech.lap?mech.lap.x*look.drive:0, 0, mech.lap?mech.lap.z*look.drive:0);
+  rig.position.set(mech.pose?mech.pose.x*look.drive:0, 0, mech.pose?mech.pose.z*look.drive:0);
+  /* The HUB slides in from off to the right as the last shot frames it, the
+     way the field would come into view, rather than appearing. */
+  if(hub){ hub.visible=look.drive>0.002;
+    hub.position.set(HUB_AT.x+5*(1-smooth(look.drive)),0,HUB_AT.z); hubShadow.position.copy(hub.position).setY(0.001); hubShadow.visible=hub.visible; }
+  shadow.position.set(rig.position.x,0.001,rig.position.z);
 
   /* Turn: the shot's yaw, a slow sway that stops while labels are up, and
      whatever the reader dragged, easing back. */
@@ -918,12 +1035,13 @@ function frame(dt,draw=true){
      does not itself jolt the robot. */
   swayAmp+=((settled?0:1)-swayAmp)*(1-Math.exp(-dt*1.5));
   const sway=reduced?0:Math.sin(performance.now()/5200)*0.07*swayAmp;
-  rig.rotation.y=look.yaw+sway+spinUser+(mech.lap?mech.lap.h*look.drive:0);
+  aimOffset=aimFor(look.yaw);
+  rig.rotation.y=look.yaw+sway+spinUser+(mech.pose?mech.pose.h*look.drive:0);
 
   /* Camera: on a sphere round the look point, with the principal point moved
      so the subject lands at cx. Shifting the view rather than the robot keeps
      perspective square — a camera panned off-axis skews the machine. */
-  const lk=v.set(...look.look).applyAxisAngle(THREE.Object3D.DEFAULT_UP,rig.rotation.y).clone();
+  const lk=new THREE.Vector3(...look.lookW);
   camera.position.set(lk.x, lk.y+Math.sin(look.el)*look.d, lk.z+Math.cos(look.el)*look.d);
   camera.lookAt(lk);
   /* On a phone the nav pill covers the top of the band, so the subject sits a
@@ -935,6 +1053,8 @@ function frame(dt,draw=true){
   scene.updateMatrixWorld();
 
   placeCallouts(settled?beat:-1, settled, look, dt);
+  if(mech.volleys) { scene.updateMatrixWorld(); for(let k=0;k<mech.volleys;k++) volley(mech.hoodDeg); }
+  stepBalls(dt);
   if(draw) renderer.render(scene,camera);
 }
 renderer.setAnimationLoop(()=>{ const dt=Math.min(0.05,clock.getDelta()); if(visible) frame(dt); });
@@ -948,6 +1068,12 @@ window.__spine={
   /* `name` is a panel, or a number of panels from the top ("3.5" is halfway
      from the fourth shot to the fifth) for looking at a transition. */
   settle(name,steps=200){
+    /* "end@5.4" is the ending at 5.4 s: settle on it, then play the last second up to that point. */
+    if(String(name).startsWith('end@')){
+      const t=Number(String(name).slice(4)); this.settle('lineage',120);
+      endT=Math.max(0.001,t-1); for(let k=0;k<60;k++) frame(1/60,k===59);
+      return {s:+s.toFixed(3), endT:+endT.toFixed(2), balls:balls.length};
+    }
     /* "lineage:500" settles for 500 frames, to look further into a loop. */
     if(String(name).includes(':')){ const [nm,k]=String(name).split(':'); name=nm; steps=Number(k)||steps; }
     const n=Number(name), keys=panels.map(x=>scrollY+panelKey(x.el.getBoundingClientRect()));
