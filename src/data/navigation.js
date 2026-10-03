@@ -3,15 +3,17 @@
 import { rosterCount } from './roster'
 import { subteams } from './subteams'
 
-// Primary nav links (Sponsor is a separate gold CTA; Home is the brand/logo).
+// Nav links (Sponsor is the separate CTA; Home is the brand mark).
+// `primary` links stay in the floating nav pill on mid-width screens; the rest
+// move into the menu there. Every link is in the menu on phones.
 export const navLinks = [
-  { path: '/team', label: 'Team' },
-  { path: '/join', label: 'Join' },
+  { path: '/team', label: 'Team', primary: true },
+  { path: '/join', label: 'Join', primary: true },
   { path: '/mentors', label: 'Mentors' },
-  { path: '/robots', label: 'Robots' },
-  { path: '/season', label: 'Season' },
+  { path: '/robots', label: 'Robots', primary: true },
+  { path: '/season', label: 'Season', primary: true },
   { path: '/blog', label: 'Blog' },
-  { path: '/catalyst', label: 'Catalyst' },
+  { path: '/catalyst', label: 'Catalyst', primary: true },
   { path: '/gallery', label: 'Gallery' },
   { path: '/contact', label: 'Contact' },
 ]

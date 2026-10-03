@@ -1,0 +1,450 @@
+/* The landing spine. The stage is sticky for the whole run of panels; the panels scroll over it, and
+   each one's copy keeps to the side the robot has left (engine.js frames the robot from the same
+   measured box, so the two never meet). Everything lives inside one capped, centred measure —
+   full-bleed put a quarter of a wide screen of dead black between the copy and the robot. */
+
+.spine {
+  position: relative;
+  z-index: 1;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.col {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, var(--frame));
+  height: 100%;
+  pointer-events: auto;
+}
+/* Focus pull is a filter on the canvas itself, driven by --dof: no layer over it, so no seam. */
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+  filter: blur(var(--dof, 14px));
+}
+.canvas[data-dragging] {
+  cursor: grabbing;
+}
+
+/* Callouts follow Catalyst Console's park view: a small grey name over a white value, set out beside
+   the robot, joined to its part by a hairline. Text leans toward the robot. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.hair {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hair line {
+  stroke: rgba(255, 255, 255, 0.34);
+  stroke-width: 1;
+  transition: opacity var(--dur-ambient) var(--ease-out);
+}
+.hair circle {
+  fill: var(--text-primary);
+  transition: opacity var(--dur-ambient) var(--ease-out);
+}
+.callout {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: nowrap;
+  line-height: 1.25;
+  will-change: transform;
+  opacity: 0;
+  transition: opacity var(--dur-ambient) var(--ease-out);
+}
+.callout[data-on='true'] {
+  opacity: 1;
+}
+.callout[data-side='left'] {
+  align-items: flex-end;
+  text-align: right;
+}
+.callout small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.callout b {
+  font-size: 0.94rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* ── the title card ─────────────────────────────────────────────────── */
+.titlecard {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.pre {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--brand-gold);
+  margin-bottom: 0.5rem;
+  padding-left: 0.42em;
+}
+/* The crest's own logic: a blue letterform with a gold edge. Two stacked layers because HTML text
+   has no paint-order — the back one draws the stroke, the front one the fill, so the gold never cuts
+   into the numerals. */
+.num {
+  position: relative;
+  display: block;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: min(26vw, 21rem);
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  text-transform: none;
+}
+.num > span {
+  display: block;
+}
+.edge {
+  -webkit-text-stroke: 0.09em var(--brand-gold);
+  color: transparent;
+  filter: drop-shadow(0 20px 46px rgba(0, 0, 0, 0.8));
+}
+.fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(174deg, #6fa8ea 4%, var(--brand-blue-lift) 42%, var(--brand-royal) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.post {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1rem, 2vw, 1.7rem);
+  color: var(--text-body);
+  margin-top: 0.55rem;
+  letter-spacing: 0.01em;
+}
+.srOnly {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── panels ─────────────────────────────────────────────────────────── */
+.panels {
+  position: relative;
+  z-index: 3;
+  margin-top: -100dvh;
+}
+.panel {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  width: min(100%, var(--frame));
+  margin: 0 auto;
+  padding: 0 clamp(24px, 3.4vw, 56px);
+}
+.lead {
+  min-height: 100dvh;
+}
+.right {
+  justify-content: flex-end;
+}
+.caption {
+  align-items: flex-end;
+  padding-bottom: 9dvh;
+}
+.box {
+  width: min(29rem, 36%);
+  pointer-events: auto;
+}
+.caption .box {
+  width: min(24rem, 28%);
+}
+.tight .box {
+  width: min(25rem, 30%);
+}
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 18px;
+}
+.kicker b {
+  font-weight: 600;
+  color: var(--brand-gold);
+}
+.h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+  text-transform: none;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+.caption .h2 {
+  font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+}
+.line {
+  display: block;
+}
+.h2 em {
+  font-style: normal;
+  color: transparent;
+  background: linear-gradient(104deg, var(--gold), #f1e3b4 52%, var(--gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.body {
+  color: var(--text-muted);
+  line-height: 1.68;
+  font-size: 1.02rem;
+  text-wrap: pretty;
+  margin: 0;
+}
+.facts {
+  display: flex;
+  gap: clamp(18px, 2.6vw, 40px);
+  margin: 40px 0 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-hairline);
+}
+.fact {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.fact dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.fact dt {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-top: 8px;
+}
+
+/* The callouts' words as plain content: a list on narrow screens, and always what assistive tech
+   reads (the on-stage callouts are aria-hidden). */
+.specs {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.spec {
+  border-left: 2px solid var(--brand-royal);
+  padding: 2px 0 2px 14px;
+}
+.spec b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+.spec span {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-top: 3px;
+}
+@media (min-width: 1025px) {
+  /* Visually hidden, still read: the stage's callouts say the same thing to sighted readers. */
+  .specs {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+
+/* Button-in-button: the arrow sits in its own circle, flush with the pill's inner padding. */
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 11px 11px 11px 23px;
+  border-radius: var(--r-pill);
+  background: var(--text-primary);
+  color: var(--bg-void);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.btn i {
+  width: 31px;
+  height: 31px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.09);
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 0.78rem;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.quiet {
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+  padding: 11px 22px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+  .btn:hover i {
+    transform: translate(3px, -1px) scale(1.05);
+  }
+}
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.btn:focus-visible i {
+  transform: translate(3px, -1px) scale(1.05);
+}
+.btn:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
+}
+
+/* No WebGL: the stage would be an empty band, so let the words stand on their own. */
+.spine[data-no-stage] .stage {
+  display: none;
+}
+.spine[data-no-stage] .panels {
+  margin-top: 0;
+}
+.spine[data-no-stage] .specs {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  position: static;
+  width: auto;
+  height: auto;
+  clip: auto;
+}
+
+/* Below 1024 there is no room beside the robot. It takes a band at the top that the copy scrolls up
+   beneath, the way a sticky header works, so text never crosses the model; the callouts become the
+   panel's own list. */
+@media (max-width: 1024px) {
+  .stage {
+    height: 52svh;
+    background: var(--bg-void);
+    border-bottom: 1px solid var(--border-hairline);
+    z-index: 4;
+  }
+  .col {
+    left: 0;
+    transform: none;
+    width: 100%;
+  }
+  .num {
+    font-size: min(27vw, 8rem);
+  }
+  .pre {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+  }
+  .post {
+    font-size: 1rem;
+  }
+  .overlay {
+    display: none;
+  }
+  .panels {
+    margin-top: 0;
+  }
+  .panel,
+  .right,
+  .caption {
+    min-height: 78svh;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 36px 20px 40px;
+  }
+  .lead {
+    min-height: 6svh;
+    padding: 0;
+  }
+  .box,
+  .caption .box,
+  .tight .box {
+    width: 100%;
+  }
+  .h2 {
+    font-size: clamp(1.7rem, 6.4vw, 2.2rem);
+  }
+  .specs {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    filter: none;
+  }
+}

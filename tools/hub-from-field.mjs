@@ -33,7 +33,7 @@ if (!input) { console.error("usage: node tools/hub-from-field.mjs <field.glb> [o
 /* The blue HUB, in the field file's own frame (z up, field centre at the origin): 4.03 m from the
    centre line toward the blue wall, on the long axis, 1.19 m square. Found by locating the instances
    that rise to the 1.83 m opening there; the margin takes in the hood that overhangs it. */
-const CENTRE = [-3.65, 0], HALF = 0.78, TOP = 2.4;
+const CENTRE = [-3.65, 0], HALF = 0.7, TOP = 2.4, FLOOR = 0.012;
 
 const buf = readFileSync(input);
 const gltf = await new Promise((ok, fail) =>
@@ -51,12 +51,19 @@ const keep = (geometry, matrix, material) => {
   g.setAttribute("position", new THREE.BufferAttribute(xyz, 3));
   if (geometry.index) g.setIndex(geometry.index.clone());
   g.applyMatrix4(matrix);
-  g.computeBoundingBox();
-  const c = g.boundingBox.getCenter(new THREE.Vector3()), s = g.boundingBox.getSize(new THREE.Vector3());
-  if (Math.abs(c.x - CENTRE[0]) > HALF || Math.abs(c.y - CENTRE[1]) > HALF || g.boundingBox.max.z > TOP) return;
-  if (s.x > 2 * HALF + 0.1 || s.y > 2 * HALF + 0.1) return;   // field-wide pieces that merely pass through
+  /* Kept per triangle, not per piece: much of the HUB's body is in meshes that also carry the other
+     HUB or field-wide parts, so a whole-piece bounds test threw the body away and kept only the funnel.
+     A triangle stays when it lies wholly inside the HUB's volume, off the carpet. */
+  const flat = g.index ? g.toNonIndexed() : g, p = flat.attributes.position.array, kept = [];
+  /* Every vertex inside, not just the centre: a big field triangle (a net, a ramp) can have its centre
+     in the footprint and still run metres outside it. */
+  const inVol = (i) => Math.abs(p[i] - CENTRE[0]) <= HALF && Math.abs(p[i + 1] - CENTRE[1]) <= HALF && p[i + 2] > FLOOR && p[i + 2] < TOP;
+  for (let t = 0; t < p.length; t += 9) if (inVol(t) && inVol(t + 3) && inVol(t + 6)) for (let k = 0; k < 9; k++) kept.push(p[t + k]);
+  if (!kept.length) return;
+  const out = new THREE.BufferGeometry();
+  out.setAttribute("position", new THREE.BufferAttribute(new Float32Array(kept), 3));
   const list = byMaterial.get(material) ?? [];
-  list.push(g.index ? g.toNonIndexed() : g);
+  list.push(out);
   byMaterial.set(material, list);
 };
 

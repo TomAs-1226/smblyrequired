@@ -5,45 +5,53 @@
    ========================================================================= */
 
 :root {
-  /* --- Backgrounds & surfaces (tinted navy neutrals, never pure black) --- */
-  --bg-void: #061325;
-  --bg-base: #0b1f3a;
-  --surface-1: #0e2a4d;
-  --surface-2: #143a66;
-  --surface-sunken: #081a30;
-  --brand-royal: #164988; /* official SM crest blue (sampled from team logo) */
-  /* Translucent bar behind the fixed nav once it raises its surface. Paired
-     with a blur; where backdrop-filter is unsupported the nav falls back to
-     opaque --surface-1, because a translucent bar with nothing blurred behind
-     it leaves the nav text unreadable over page content. */
-  --surface-nav: rgba(14, 42, 77, 0.82);
+  /* --- Backgrounds & surfaces -----------------------------------------
+     Near-black, not navy: the robot is lit as a product in a dark studio,
+     and a coloured void tints every reflection in it. */
+  --bg-void: #050505;
+  --bg-base: #070708;
+  --surface-1: #0f1012;
+  --surface-2: #16181b;
+  --surface-sunken: #0a0a0b;
+  /* Sampled from the crest (public/photos/logo.png): 21,243 blue pixels and
+     6,200 gold. A deep royal blue and an ANTIQUE gold — not the amber the site
+     used to carry. */
+  --brand-royal: #144781;
+  --brand-gold: #cbb87b;
+  --brand-blue-lift: #2f74c8; /* the crest blue opened up enough to read on black */
+  --gold: #d9c68a; /* brand gold, a touch brighter for small text */
+  --surface-nav: rgba(12, 12, 14, 0.6);
 
   /* --- Borders & dividers --- */
-  --border-hairline: rgba(199, 210, 221, 0.1);
-  --border-strong: rgba(199, 210, 221, 0.18);
-  --border-accent: rgba(56, 189, 248, 0.35);
+  --border-hairline: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-accent: rgba(91, 155, 234, 0.35);
 
   /* --- Text --- */
-  --text-primary: #f2f6fb;
-  --text-body: #c7d2dd;
-  --text-muted: #8499ae;
-  --text-on-gold: #0b1f3a;
-  --text-on-cyan: #061325;
+  --text-primary: #f4f5f7;
+  --text-body: #c4c7cd;
+  --text-muted: #8d8f96;
+  --text-faint: #5a5d66;
+  --text-on-gold: #0a0a0b;
+  --text-on-cyan: #050505;
 
-  /* --- Brand accents (function-coded) --- */
-  --accent-action: #2e7df6; /* electric blue — secondary buttons, links */
-  --accent-data: #38bdf8; /* cyan — data lines, active states, focus */
-  --accent-data-glow: rgba(56, 189, 248, 0.45);
-  --accent-data-wash: rgba(56, 189, 248, 0.1); /* faint cyan fill — hover/focus beds */
-  --accent-gold: #f5b82e; /* PRESTIGE — scarce; awards, top tiers, 1 CTA */
-  --accent-gold-hi: #ffd45e;
+  /* --- Brand accents (function-coded) ---------------------------------
+     The names are kept so every component re-skins without an edit; the
+     values are the crest's. "data" is the lifted crest blue, "gold" the
+     antique gold, still scarce: awards, top tiers, one CTA. */
+  --accent-action: #2f74c8;
+  --accent-data: #5b9bea;
+  --accent-data-glow: rgba(91, 155, 234, 0.4);
+  --accent-data-wash: rgba(91, 155, 234, 0.1);
+  --accent-gold: #d9c68a;
+  --accent-gold-hi: #ecdfb4;
 
   /* --- Tier ramp --- */
   --tier-bronze: #c98a4b;
-  --tier-silver: #c7d2dd;
-  --tier-gold: #f5b82e;
-  --tier-platinum: #dce7f2;
-  --tier-title: #38bdf8;
+  --tier-silver: #c4c7cd;
+  --tier-gold: #d9c68a;
+  --tier-platinum: #e4e7ec;
+  --tier-title: #5b9bea;
 
   /* --- Semantic --- */
   --success: #3fcf8e;
@@ -51,8 +59,9 @@
   --focus-ring: var(--accent-data);
 
   /* --- Type --- */
-  --font-display: 'Oswald', 'Segoe UI', system-ui, sans-serif;
-  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  /* Clash Display for headings, Plus Jakarta Sans for reading. */
+  --font-display: 'Clash Display', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', 'Cascadia Code', Menlo, monospace;
   --fs-display: clamp(3.25rem, 9vw, 8rem);
   --fs-h1: clamp(2.5rem, 6vw, 5.25rem);
@@ -85,6 +94,7 @@
 
   /* --- Layout --- */
   --maxw: 1440px;
+  --frame: 1500px; /* the landing spine's measure — nothing spreads wider */
   --maxw-text: 1180px;
   --gutter: clamp(20px, 5vw, 64px);
   --nav-h: 72px;
@@ -219,8 +229,8 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(120% 80% at 80% -10%, rgba(22, 73, 136, 0.35), transparent 55%),
-    radial-gradient(90% 60% at 0% 100%, rgba(14, 42, 77, 0.5), transparent 60%),
+    radial-gradient(1200px 780px at 68% 44%, rgba(203, 184, 123, 0.05), transparent 64%),
+    radial-gradient(900px 620px at 16% 78%, rgba(20, 71, 129, 0.16), transparent 66%),
     var(--bg-void);
 }
 

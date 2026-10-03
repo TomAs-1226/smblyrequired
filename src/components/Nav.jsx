@@ -160,7 +160,7 @@ export default function Nav() {
         ref={headerRef}
         className={`${styles.nav} ${showSurface ? styles.scrolled : ''}`}
       >
-        <div className={`container ${styles.bar}`}>
+        <div className={styles.bar}>
           {/* Brand lockup — interlocked SM crest + typographic wordmark */}
           <a href="#/" className={styles.brand} onClick={close} aria-label={`${team.name} — home`}>
             <img
@@ -170,10 +170,7 @@ export default function Nav() {
               width="29"
               height="34"
             />
-            <span className={styles.wordmark}>
-              <span className={styles.brandKicker}>FRC {team.number}</span>
-              <span className={styles.brandName}>{team.name}</span>
-            </span>
+            <span className={styles.brandName} aria-hidden="true">{team.number}</span>
           </a>
 
           {/* Desktop links + CTA */}
@@ -182,7 +179,7 @@ export default function Nav() {
               {navLinks.map((l) => {
                 const active = path === l.path
                 return (
-                  <li key={l.path}>
+                  <li key={l.path} className={l.primary ? undefined : styles.secondary}>
                     <a
                       href={`#${l.path}`}
                       className={`${styles.link} ${active ? styles.linkActive : ''}`}
@@ -204,9 +201,11 @@ export default function Nav() {
               <Icon name="user" size={15} className={styles.signInIcon} />
               <span className={styles.signInLabel}>Sign in</span>
             </a>
-            <MagneticButton as="a" href="#/sponsor" className={`btn btn--gold ${styles.cta}`}>
-              Sponsor Us
-              <Icon name="arrowRight" size={18} className="arrow" />
+            <MagneticButton as="a" href="#/sponsor" className={styles.cta}>
+              Sponsor
+              <i className={styles.ctaIcon} aria-hidden="true">
+                <Icon name="arrowRight" size={14} />
+              </i>
             </MagneticButton>
           </nav>
 

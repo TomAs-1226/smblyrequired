@@ -1,276 +1,244 @@
 /* =========================================================================
-   Nav — fixed top bar. Sits above content (z 1000) and below grain (z 9000).
+   Nav — a floating island, not a bar. A centred pill detached from the top
+   edge, so the page (and the robot behind it) runs to the top of the screen.
+   Sits above content (z 1000) and below grain (z 9000).
    ========================================================================= */
 
+/* The full-width wrapper only positions the pill; it takes no clicks, so the
+   stage's drag-to-turn still works either side of the island. */
 .nav {
   position: fixed;
-  top: 0;
+  top: 16px;
   left: 0;
   right: 0;
   z-index: 1000;
-  height: var(--nav-h);
-  background: transparent;
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
 }
 
-/* The raised surface lives on a pseudo-element, not on .nav itself. Two
-   reasons, both load-bearing:
+.bar {
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 6px 6px 6px 14px;
+  border-radius: var(--r-pill);
+  isolation: isolate;
+}
 
-   1. `backdrop-filter` on an element makes it a containing block for its
-      `position: fixed` descendants — the same trap `transform` sets. With the
-      filter on .nav, the mobile overlay's `inset: 0` resolved against the 72px
-      bar instead of the viewport and the menu opened as a 71px strip. Keeping
-      the filter on a child means .nav can never capture a fixed descendant.
-      (The overlay is also rendered outside <header> now; this is the belt to
-      that braces, so re-parenting it back in cannot silently break it again.)
-
-   2. `none` -> `blur(12px)` is not a smoothly interpolable pair — engines step
-      it, which is the flicker/banding on the surface transition. Fading the
-      opacity of a layer whose filter never changes is clean. */
-.nav::before {
+/* The glass lives on a pseudo-element, never on .bar or .nav. Two reasons,
+   both load-bearing (CLAUDE.md, gotchas 2 and 4):
+   1. `backdrop-filter` makes its element a containing block for `position:
+      fixed` descendants — on the header it once turned the mobile overlay into
+      a 71px strip. (The overlay is also rendered outside <header>.)
+   2. `none` -> `blur()` is stepped, not interpolated, so the filter stays
+      constant here and only the layer's background ever changes. */
+.bar::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
+  border-radius: inherit;
   background: var(--surface-nav);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  opacity: 0;
-  transition: opacity var(--dur-panel) var(--ease-out);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 0 0 1px var(--border-strong), 0 20px 50px -20px rgba(0, 0, 0, 0.9);
+  transition: background var(--dur-panel) var(--ease-out);
 }
-
-/* Past 80px: raise the surface, hairline border. */
-.scrolled::before {
-  opacity: 1;
+/* Past 80px the island firms up a little, so it reads over bright content. */
+.scrolled .bar::before {
+  background: rgba(12, 12, 14, 0.78);
 }
-.scrolled {
-  border-bottom-color: var(--border-hairline);
-}
-
-/* Firefox shipped for years without backdrop-filter, and it degrades to fully
-   transparent rather than to nothing — an unblurred 82% bar over a photo is
-   marginal, so drop to the opaque surface where the filter is unsupported. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .nav::before {
+  .bar::before {
     background: var(--surface-1);
   }
 }
 
-.bar {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-4);
-}
-
-/* --- Brand lockup (crest + wordmark) --- */
+/* --- Brand: the crest and the number --- */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
+  margin-right: 10px;
   line-height: 1;
   text-decoration: none;
+  border-radius: var(--r-pill);
 }
 .crest {
-  height: 34px;
+  height: 24px;
   width: auto;
   flex: none;
   display: block;
   transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
-/* Gated: touch devices synthesise :hover on tap and then latch it, which left
-   the crest permanently rotated after anyone tapped the logo. */
 @media (hover: hover) and (pointer: fine) {
   .brand:hover .crest {
-    transform: scale(1.05) rotate(-2deg);
+    transform: scale(1.06) rotate(-2deg);
   }
 }
 .brand:focus-visible .crest {
-  transform: scale(1.05) rotate(-2deg);
+  transform: scale(1.06) rotate(-2deg);
 }
 .brand:active .crest {
   transform: scale(0.97);
   transition-duration: var(--dur-press);
 }
-.wordmark {
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-}
-.brandKicker {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.66rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--accent-data);
-}
 .brandName {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 1.18rem;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
-  transition: color var(--dur-fast) var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) {
-  .brand:hover .brandName {
-    color: var(--accent-gold-hi);
-  }
-}
-.brand:focus-visible .brandName {
-  color: var(--accent-gold-hi);
 }
 
-/* --- Desktop cluster --- */
+/* --- Links --- */
 .desktop {
   display: flex;
   align-items: center;
-  gap: clamp(20px, 3vw, 44px);
+  gap: 4px;
 }
 .links {
   display: flex;
   align-items: center;
-  gap: clamp(18px, 2.4vw, 34px);
+  gap: 2px;
   list-style: none;
 }
 .link {
-  position: relative;
   display: inline-block;
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 500;
-  font-size: 0.92rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-body);
-  text-decoration: none;
-  padding-block: 6px;
-  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
-}
-/* Cyan underline-wipe on hover */
-.link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--accent-data);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--spring-fast-dur) var(--spring-fast);
-}
-@media (hover: hover) and (pointer: fine) {
-  .link:hover {
-    color: var(--text-primary);
-  }
-  .link:hover::after {
-    transform: scaleX(1);
-  }
-}
-.link:focus-visible {
-  color: var(--text-primary);
-}
-.link:focus-visible::after {
-  transform: scaleX(1);
-}
-.link:active {
-  transform: scale(0.97);
-}
-
-/* Active route */
-.linkActive {
-  color: var(--text-primary);
-}
-.linkActive::after {
-  transform: scaleX(1);
-  background: var(--accent-gold);
-}
-
-/* Small gold CTA — single nav action */
-.cta {
-  padding: 10px 18px;
   font-size: 0.82rem;
-}
-
-/* --- Sign in (desktop) ---
-   A staff door, not a call to action. Muted text, no fill, no border until it
-   is addressed, and a step down in size from .cta — it has to be findable
-   without competing with the gold CTA, which is the public site's one
-   conversion. */
-.signIn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--text-muted);
   text-decoration: none;
-  padding: 8px 13px;
-  margin-right: calc(var(--sp-2) * -1);
-  border: 1px solid transparent;
+  padding: 8px 12px;
   border-radius: var(--r-pill);
   white-space: nowrap;
-  transition: color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
-    transform var(--dur-press) var(--ease-out);
-}
-.signInIcon {
-  flex: none;
-  opacity: 0.75;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) {
-  .signIn:hover {
-    color: var(--text-primary);
-    background: var(--accent-data-wash);
-    border-color: var(--border-accent);
-  }
-  .signIn:hover .signInIcon {
-    opacity: 1;
-  }
-}
-.signIn:focus-visible {
-  color: var(--text-primary);
-  background: var(--accent-data-wash);
-  border-color: var(--border-accent);
-}
-.signIn:focus-visible .signInIcon {
-  opacity: 1;
-}
-.signIn:active {
-  transform: scale(0.97);
-}
-
-/* --- Mobile toggle --- */
-.toggle {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-right: -8px;
-  color: var(--text-primary);
-  border-radius: var(--r-sm);
   transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
     transform var(--dur-press) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+.link:focus-visible {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+.link:active {
+  transform: scale(0.97);
+}
+.linkActive {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --- Sign in: a staff door, an icon in the island --- */
+.signIn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+.signInIcon {
+  flex: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.signInLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .signIn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+.signIn:focus-visible {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+.signIn:active {
+  transform: scale(0.92);
+}
+
+/* --- The one call to action: button-in-button --- */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 4px;
+  padding: 6px 6px 6px 15px;
+  border-radius: var(--r-pill);
+  background: var(--text-primary);
+  color: var(--bg-void);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.ctaIcon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.09);
+  font-style: normal;
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover .ctaIcon {
+    transform: translate(2px, -1px) scale(1.05);
+  }
+}
+.cta:focus-visible .ctaIcon {
+  transform: translate(2px, -1px) scale(1.05);
+}
+.cta:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
+}
+
+/* --- Menu toggle --- */
+.toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--text-primary);
+  border-radius: var(--r-pill);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
   .toggle:hover {
-    color: var(--accent-data);
-    background: var(--accent-data-wash);
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 .toggle:focus-visible {
-  color: var(--accent-data);
-  background: var(--accent-data-wash);
+  background: rgba(255, 255, 255, 0.08);
 }
 .toggle:active {
   transform: scale(0.92);
@@ -312,8 +280,8 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(120% 70% at 90% 0%, rgba(22, 73, 136, 0.4), transparent 55%),
-    radial-gradient(90% 60% at 0% 100%, rgba(14, 42, 77, 0.5), transparent 60%);
+    radial-gradient(120% 70% at 90% 0%, rgba(20, 71, 129, 0.32), transparent 55%),
+    radial-gradient(90% 60% at 0% 100%, rgba(203, 184, 123, 0.06), transparent 60%);
   pointer-events: none;
 }
 .overlayOpen {
@@ -357,8 +325,7 @@
   font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(2.25rem, 11vw, 3.25rem);
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
   text-decoration: none;
   line-height: 1;
@@ -368,7 +335,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.1em;
-  color: var(--accent-data);
+  color: var(--brand-gold);
   transform: translateY(-0.6em);
 }
 /* This overlay is mobile-only, so :active is the state that actually fires.
@@ -471,49 +438,33 @@
 }
 
 /* --- Responsive ---
-   Breakpoint raised from 860px. Seven links + the sign-in + the gold CTA no
-   longer fit on one bar below ~1024px: measured at 880px the CTA ran 40px past
-   the viewport and was silently clipped by `body { overflow-x: hidden }`, which
-   is the worst possible failure for the site's primary conversion. Tablets get
-   the overlay instead, which already carries every link, the CTA and sign-in
-   at full size. */
-@media (max-width: 1023px) {
-  .desktop {
+   Nine links fit in the island from 1280px. Below that the secondary links
+   move into the menu and the toggle appears in the island; below 1024 the
+   island keeps only the brand and the toggle (the sticky dock carries the
+   sponsor CTA on phones). */
+@media (max-width: 1279px) {
+  .secondary {
     display: none;
   }
   .toggle {
     display: inline-flex;
   }
 }
-
-/* Between the breakpoint and ~1180px the bar is still snug. Drop the sign-in
-   to its icon rather than shrinking the CTA — the staff door can afford to be
-   terse, the conversion cannot. The label stays in the accessible name. */
-@media (max-width: 1180px) {
-  .signInLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+@media (max-width: 1023px) {
+  .desktop {
+    display: none;
   }
-  .signIn {
-    padding: 9px 10px;
-    gap: 0;
+  .bar {
+    padding: 5px 5px 5px 14px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav,
-  .nav::before,
-  .brandName,
+  .bar::before,
   .crest,
+  .cta,
+  .ctaIcon,
   .link,
-  .link::after,
   .overlay,
   .overlayLink,
   .overlaySignIn,
