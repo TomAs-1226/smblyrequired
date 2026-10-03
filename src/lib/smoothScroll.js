@@ -13,6 +13,10 @@ export function getLenis() {
 export function scrollTo(target, options = {}) {
   if (!lenis) {
     // Fallback when Lenis isn't ready (reduced motion / not yet mounted).
+    if (typeof target === 'number') {
+      window.scrollTo({ top: target, behavior: 'smooth' })
+      return
+    }
     const el = typeof target === 'string' ? document.querySelector(target) : target
     if (el) el.scrollIntoView({ behavior: 'smooth' })
     return

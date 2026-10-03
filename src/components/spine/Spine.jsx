@@ -70,6 +70,7 @@ export default function Spine() {
   const overlay = useRef(null)
   const hair = useRef(null)
   const title = useRef(null)
+  const cue = useRef(null)
 
   useEffect(() => {
     // three.js and the engine load on demand, in their own chunk: every other page — and the
@@ -91,6 +92,7 @@ export default function Spine() {
             overlay: overlay.current,
             hair: hair.current,
             title: title.current,
+            cue: cue.current,
             classes: { callout: styles.callout },
             models: `${import.meta.env.BASE_URL}models/`,
           })
@@ -128,6 +130,11 @@ export default function Spine() {
           </h1>
           <span className={styles.post} aria-hidden="true">{spineTitle.name}</span>
         </div>
+        <span ref={cue} className={styles.cue} aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
       </div>
       <div className={styles.panels}>
         {spinePanels.map((p) => <Panel key={p.shot} p={p} />)}

@@ -1,0 +1,65 @@
+/* Back to top: a 44px circle at the bottom right, there only when it is useful. */
+
+.sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 150vh;
+  pointer-events: none;
+}
+
+.top {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-primary);
+  background: rgba(18, 19, 22, 0.92);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    visibility 0s linear var(--dur-ui);
+}
+.top[data-shown] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    visibility 0s;
+}
+.top[data-shown]:active {
+  transform: scale(0.92);
+  transition-duration: var(--dur-press);
+}
+.top:focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 3px;
+  background: rgba(34, 36, 42, 0.96);
+}
+@media (hover: hover) and (pointer: fine) {
+  .top:hover {
+    background: rgba(34, 36, 42, 0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .top,
+  .top[data-shown] {
+    transition: none;
+  }
+}

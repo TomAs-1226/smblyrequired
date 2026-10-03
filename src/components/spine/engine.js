@@ -38,7 +38,7 @@ const NARROW_SHOTS = Object.fromEntries(Object.entries(SHOTS).map(([k, s]) => [k
  * classes  CSS class names for the generated callouts: { callout }
  * models   where robot.glb, robot.json and hub.glb are served from
  */
-export function createSpine({ root, canvas, overlay, hair, title, classes, models }) {
+export function createSpine({ root, canvas, overlay, hair, title, cue, classes, models }) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   /* Phones, and tablets held upright: the robot takes a band at the top and the copy runs beneath it.
      A tablet on its side has the width for the desktop layout. Must match Spine.module.css. */
@@ -222,7 +222,9 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
      fully in place when the panel's key point is on that line — its middle on desktop, its top on a
      phone so the heading is the first thing read under the robot. Between two, the move holds for the
      first and last fifth so the copy is read against a still robot. */
-  const readingLine = () => (narrowMQ.matches ? canvas.getBoundingClientRect().height + 12 : innerHeight / 2)
+  /* On a phone a panel is in place when its top reaches the top of the screen: its box has been
+     pinned at the foot of the viewport for a while by then, and the robot settles under it. */
+  const readingLine = () => (narrowMQ.matches ? 0 : innerHeight / 2)
   const panelKey = (r) => (narrowMQ.matches ? r.top : r.top + r.height / 2)
   function scrollShot() {
     const line = readingLine()
@@ -238,8 +240,16 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
      Under 1200 px only the far column is kept. */
   function frameShot(s, pi) {
     if (narrowMQ.matches) {
-      const D = Math.min(0.84 * W, 0.7 * H)
-      return { cx: W / 2, d: (H * s.R) / (D * TAN) }
+      /* The title has the whole screen. Every other shot keeps the robot in the upper part of it,
+         below the nav pill and above the copy pinned at the foot. */
+      if (panels[pi].name === 'title') return { cx: W / 2, cy: H / 2, d: (H * s.R) / (Math.min(0.84 * W, 0.5 * H) * TAN) }
+      /* The zone is what the panel's own copy leaves free, measured, so a long caption on a short
+         phone shrinks the robot instead of covering it. */
+      const top = 78
+      const copy = (panels[pi].box?.offsetHeight ?? 0.36 * H) + 44
+      const zone = Math.max(0.24 * H, Math.min(0.62 * H, H - copy) - top)
+      const D = Math.min(0.72 * W, 0.8 * zone)
+      return { cx: W / 2, cy: top + zone / 2, d: (H * s.R) / (D * TAN) }
     }
     const labelled = panels[pi].specs.length > 0 && !shortMQ.matches
     const far = labelled ? LABEL_COL : 0
@@ -251,7 +261,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     else if (s.side < 0) { lo = far; hi = (c ? c.left - 28 : W) - near }
     else if (labelled) { lo = far; hi = W - far }
     const D = Math.min(s.fill * (hi - lo), s.fillH * H)
-    return { cx: (lo + hi) / 2, d: (H * s.R) / (D * TAN) }
+    return { cx: (lo + hi) / 2, cy: H / 2, d: (H * s.R) / (D * TAN) }
   }
   /* Each shot's look point in world terms (a robot-frame point turned by that shot's yaw), so a robot
      shot can hand over to a world shot. */
@@ -268,6 +278,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     const lb = worldLook(b)
     o.lookW = la.map((v, k) => lerp(v, lb[k], t))
     o.cx = lerp(fa.cx, fb.cx, t)
+    o.cy = lerp(fa.cy, fb.cy, t)
     o.d = lerp(fa.d, fb.d, t)
     for (const g of GROUPS) {
       o.dim[g] = lerp(a.dim?.[g] ?? 1, b.dim?.[g] ?? 1, t)
@@ -513,19 +524,33 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     const look = blend(i, smooth(clamp01((s - i - 0.2) / 0.6)))
 
     /* Focus pull: the title is sharp over a soft robot, then hands over. */
-    const tOut = clamp01(s / 0.55)
+    /* On a phone the first caption arrives early, so the robot comes into focus sooner. */
+    const tOut = clamp01(s / (narrowMQ.matches ? 0.3 : 0.55))
     if (title) {
       title.style.opacity = String(1 - tOut)
       title.style.transform = `translateY(${-tOut * 70}px) scale(${1 + tOut * 0.05})`
     }
     canvas.style.setProperty('--dof', `${((1 - tOut) * 14).toFixed(2)}px`)
+    /* The phone's scrim comes up as the title leaves; the scroll cue goes as soon as the page moves. */
+    root.style.setProperty('--scrim', tOut.toFixed(3))
+    if (cue) cue.style.opacity = String(0.6 * (1 - clamp01(scrollY / 90)))
 
     /* Copy fades with distance from the reading line. */
     const line = readingLine()
+    const lastPanel = panels[panels.length - 1]
     for (const p of panels) {
       if (!p.box) continue
-      const dist = Math.abs(panelKey(p.el.getBoundingClientRect()) - line) / innerHeight
-      p.box.style.opacity = String(narrowMQ.matches ? 1 : 1 - smooth(clamp01((dist - 0.22) / 0.3)))
+      const r = p.el.getBoundingClientRect()
+      if (narrowMQ.matches) {
+        /* The box slides up into its pinned place as its panel arrives, and fades as the panel's end
+           lifts it off the foot of the screen. The last one leaves with the stage, so it does not fade. */
+        const enter = clamp01((innerHeight - r.top) / (p.box.offsetHeight + 48))
+        const leave = p === lastPanel ? 0 : clamp01((innerHeight - r.bottom) / (0.11 * innerHeight))
+        p.box.style.opacity = String(smooth(enter) * (1 - smooth(leave)))
+        continue
+      }
+      const dist = Math.abs(panelKey(r) - line) / innerHeight
+      p.box.style.opacity = String(1 - smooth(clamp01((dist - 0.22) / 0.3)))
     }
 
     applyLook(look.dim, look.show)
@@ -568,7 +593,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     const lk = v.set(...look.lookW)
     camera.position.set(lk.x, lk.y + Math.sin(look.el) * look.d, lk.z + Math.cos(look.el) * look.d)
     camera.lookAt(lk)
-    camera.setViewOffset(W, H, W / 2 - look.cx, narrowMQ.matches ? -26 : 0, W, H)
+    camera.setViewOffset(W, H, W / 2 - look.cx, H / 2 - look.cy, W, H)
     camera.updateMatrixWorld()
     /* Measure against this frame's pose; rendering would only refresh world matrices afterwards. */
     scene.updateMatrixWorld()

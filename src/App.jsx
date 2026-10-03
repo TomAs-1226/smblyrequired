@@ -10,7 +10,7 @@ import { useRoute } from './hooks/useRoute'
 import Grain from './components/Grain'
 import Nav from './components/Nav'
 import Footer from './components/Footer'
-import MobileStickyCTA from './components/MobileStickyCTA'
+import BackToTop from './components/BackToTop'
 
 import HomePage from './pages/HomePage'
 import TeamPage from './pages/TeamPage'
@@ -153,7 +153,7 @@ export default function App() {
       {/* The sticky "Sponsor Us" CTA is aimed at prospective sponsors reading
           the public site. Inside the portal the audience is already on the
           team, so it is just a bar covering the UI. */}
-      {!isPortal && <MobileStickyCTA />}
+      <BackToTop path={path} />
     </div>
   )
 }
