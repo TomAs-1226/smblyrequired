@@ -447,10 +447,52 @@
   }
 }
 
+/* Touch: every link is a 44px target. The small text links grow their hit
+   area with padding and give it straight back with a negative margin, so the
+   type and the rhythm of the column do not move — only the finger's target
+   does. */
+@media (max-width: 900px), (pointer: coarse) {
+  .navList {
+    gap: 0;
+  }
+  .navLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .contactList {
+    gap: var(--sp-1);
+  }
+  .contactLink {
+    min-height: 48px;
+  }
+  .socials {
+    gap: 0 var(--sp-4);
+    margin-top: var(--sp-3);
+  }
+  .social {
+    min-height: 44px;
+  }
+  .siteLink,
+  .dealLink {
+    padding-block: 11px;
+    margin-block: -3px -11px;
+  }
+  .portalLink {
+    padding-block: 12px;
+    margin-block: -12px;
+  }
+}
+
 @media (max-width: 560px) {
   .grid {
     grid-template-columns: 1fr;
     gap: var(--sp-6);
+  }
+  /* Nine short links read fine two-up; one long column was a screen of them. */
+  .navList {
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--sp-4);
   }
   .brandCol {
     max-width: 100%;

@@ -190,7 +190,7 @@
   color: var(--accent-data);
   transition: transform var(--dur-press) var(--ease-out);
 }
-.cardLink .arrow {
+.cardLink :global(.arrow) {
   transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -559,6 +559,19 @@
   }
 }
 
+/* Touch: grow the hit area to 44px without moving the layout — an invisible
+   pad around the link takes the tap. */
+@media (max-width: 900px), (pointer: coarse) {
+  .cardLink {
+    position: relative;
+  }
+  .cardLink::after {
+    content: '';
+    position: absolute;
+    inset: -10px -6px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card,
   .cardIcon,
@@ -566,7 +579,7 @@
   .step,
   .step::before,
   .cardLink,
-  .cardLink .arrow,
+  .cardLink :global(.arrow),
   .inKindChip {
     transition: none;
   }

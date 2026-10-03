@@ -236,6 +236,19 @@
   }
 }
 
+/* Touch: grow the hit area to 44px without moving the underline or the
+   layout — an invisible pad around the link takes the tap. */
+@media (max-width: 900px), (pointer: coarse) {
+  .closeLink {
+    position: relative;
+  }
+  .closeLink::after {
+    content: '';
+    position: absolute;
+    inset: -10px -6px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .closeLink,
   .closeArrow {

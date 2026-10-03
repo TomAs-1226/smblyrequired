@@ -389,6 +389,19 @@
   }
 }
 
+/* Touch: grow the hit area to 44px without moving the layout — an invisible
+   pad around the link takes the tap. */
+@media (max-width: 900px), (pointer: coarse) {
+  .dLink {
+    position: relative;
+  }
+  .dLink::after {
+    content: '';
+    position: absolute;
+    inset: -10px -6px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .live,
   .success {

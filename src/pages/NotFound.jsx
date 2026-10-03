@@ -35,7 +35,7 @@ export default function NotFound() {
             borderTop: '1px solid var(--border-hairline)',
             display: 'flex',
             flexWrap: 'wrap',
-            gap: 'var(--sp-4) var(--sp-5)',
+            gap: '0 var(--sp-5)',
           }}
         >
           {navLinks.map((l) => (
@@ -43,6 +43,9 @@ export default function NotFound() {
               key={l.path}
               href={`#${l.path}`}
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
                 color: 'var(--text-muted)',
                 fontFamily: 'var(--font-display)',
                 fontSize: '0.9rem',
