@@ -747,3 +747,20 @@
     transition: none;
   }
 }
+
+/* Touch: every control on this page is at least 44px to hit. */
+@media (pointer: coarse) {
+  .copyBtn,
+  .switchBtn {
+    min-height: 44px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .inline {
+    display: inline-block;
+    padding: 11px 0;
+  }
+  .btn {
+    min-height: 44px;
+  }
+}
