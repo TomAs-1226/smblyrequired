@@ -99,7 +99,7 @@ export default function RobotLineage() {
 }
 
 function Row({ robot, index, total }) {
-  const { name, book, season, game, status, result, blurb, current, subtitle, specs } =
+  const { name, book, season, game, status, result, blurb, current, subtitle, specs, retired } =
     robot
   const champion = status === 'champion'
   const build = status === 'build'
@@ -174,6 +174,8 @@ function Row({ robot, index, total }) {
         </p>
 
         <p className={styles.blurb}>{blurb}</p>
+
+        {retired && <p className={styles.retired}>{retired}</p>}
 
         <a className={styles.detailLink} href={`#/robots/${name.toLowerCase()}`}>
           Full details

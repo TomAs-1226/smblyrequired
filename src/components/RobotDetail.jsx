@@ -75,6 +75,7 @@ export default function RobotDetail({ slug }) {
     ...(robot.specs || []),
     { label: 'Season', value: season },
     { label: 'Result', value: result },
+    ...(robot.retired ? [{ label: 'Today', value: robot.retired }] : []),
   ]
 
   return (

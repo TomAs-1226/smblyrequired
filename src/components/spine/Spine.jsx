@@ -106,7 +106,7 @@ export default function Spine() {
   }, [])
 
   return (
-    <div className={styles.spine} ref={root}>
+    <div className={styles.spine} ref={root} data-spine>
       <div className={styles.stage}>
         <div className={styles.col}>
           <canvas

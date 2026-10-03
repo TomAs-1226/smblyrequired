@@ -3,6 +3,7 @@
 // roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
 // Phocas for 2018 and 2020.)
 // status: 'season' (in-season) | 'champion' (won/podium) | 'build' (in progress)
+// retired: what became of a robot that is no longer whole.
 // model: the robot's CAD on a turntable (public/models, baked by tools/display-cad.mjs). A robot
 //   with a model and a photo shows the model first and offers the photo; with neither, a plate.
 
@@ -27,6 +28,7 @@ export const robots = [
     blurb: 'Our 2025 REEFSCAPE machine — an elevator-based, side-loaded cycler that climbed deep. Ventura County Regional champions.',
     image: null,
     model: { file: 'genesis.glb' },
+    retired: 'Decommissioned and disassembled',
   },
   {
     name: 'Exodus',
@@ -45,6 +47,7 @@ export const robots = [
     blurb: 'The offseason breakout — a back-loaded cycler with a deep climb. Beach Blitz champions and a SoCal Showdown finalist banner.',
     image: 'photos/exodus.jpg',
     model: { file: 'exodus.glb' },
+    retired: 'Disassembled — its parts reflowed into new robots',
   },
   {
     name: 'Leviticus',
@@ -62,6 +65,7 @@ export const robots = [
     ],
     blurb: 'Our 2026 REBUILT robot: a big-dumper, 3.5-ball-wide shooter spun by four Kraken X60s, fed by a slapdown intake with an extendable hopper. A district finalist with leadership-award recognition.',
     image: 'photos/hero.jpg',
+    retired: 'Disassembled — its parts reflowed into new robots',
   },
   {
     name: 'Numbers',

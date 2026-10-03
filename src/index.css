@@ -651,3 +651,28 @@ button {
     --spring-reveal-dur: 1ms;
   }
 }
+
+/* Scrollbars: thin and dark, for the page and anything that scrolls inside it (code, wide tables).
+   The platform default is a light grey bar that looks pasted onto a dark site. */
+html {
+  scrollbar-color: rgba(255, 255, 255, 0.18) var(--bg-void);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16) padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

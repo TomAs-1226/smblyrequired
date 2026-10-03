@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Reveal from './Reveal'
 import { AutonomyDemo, StatesDemo } from './CatalystDemos'
 import {
-  catalyst, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
+  catalyst, catalystSunset, catalystLines, catalystPillars, catalystExample, catalystConsole, catalystApp, catalystTools,
 } from '../data/catalyst'
 import styles from './Catalyst.module.css'
 
@@ -144,11 +144,17 @@ export default function Catalyst() {
         </figure>
       </header>
 
+      {/* ── 1.x is being retired ────────────────────────────────────── */}
+      <aside className={styles.sunset} aria-labelledby="cat-sunset">
+        <p id="cat-sunset" className={styles.sunsetTitle}>{catalystSunset.title}</p>
+        <p className={styles.sunsetBody}>{catalystSunset.body}</p>
+      </aside>
+
       {/* ── the two lines ───────────────────────────────────────────── */}
       <section className={styles.block} aria-labelledby="cat-lines">
         <div className={styles.blockHead}>
           <p className={styles.kicker}>Install</p>
-          <h2 id="cat-lines" className={styles.h2}>Two lines, one library.</h2>
+          <h2 id="cat-lines" className={styles.h2}>Start on 2.0.</h2>
           <p className={styles.lede}>
             Paste a URL into WPILib’s <em>Manage Vendor Libraries → Install new libraries (online)</em>.{' '}
             <a className={styles.inline} href={catalyst.versionsUrl} target="_blank" rel="noreferrer noopener">Which one?</a>

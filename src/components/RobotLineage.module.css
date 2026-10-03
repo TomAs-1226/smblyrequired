@@ -464,6 +464,15 @@
   max-width: 48ch;
 }
 
+.retired {
+  margin: calc(-1 * var(--sp-2)) 0 var(--sp-4);
+  padding-left: 12px;
+  border-left: 1px solid var(--border-strong);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .index {
   display: block;
   margin-top: var(--sp-5);

@@ -5,7 +5,7 @@ export const resourcesNote =
 export const resources = [
   {
     title: 'FRC Catalyst — Docs',
-    desc: 'Our open-source library for the whole robot: 1.x for the roboRIO, 2.0 for Systemcore. Free for any team.',
+    desc: 'Our open-source library for the whole robot, now on 2.0 for Systemcore. Free for any team; 1.x is being sunset.',
     href: 'https://tomas-1226.github.io/FrcCatalyst/',
     icon: 'code',
     cta: 'Read the docs',

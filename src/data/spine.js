@@ -90,7 +90,7 @@ export const spinePanels = [
     right: true,
     kicker: 'Open source',
     title: 'We wrote the\nlibrary *too*.',
-    body: 'That code runs on FRC Catalyst, the open-source Java library we write: mechanisms, swerve and a state machine for the whole robot. Catalyst 2.0 is built for Systemcore, and Catalyst Console is the dashboard our drivers watch.',
+    body: 'That code runs on FRC Catalyst 2.0, the open-source Java library we write for Systemcore: mechanisms, swerve and a state machine for the whole robot. Catalyst Console is the dashboard our drivers watch.',
     links: [{ href: '#/catalyst', label: 'Explore Catalyst', primary: true }],
   },
   {

@@ -2,6 +2,50 @@
 // (#/blog/<slug>). `body` is an array of paragraphs. Keep it real.
 export const posts = [
   {
+    slug: 'numbers-socal-showdown-2026',
+    date: '2026-10',
+    title: 'Numbers is ready for SoCal Showdown',
+    tag: 'Engineering',
+    author: 'Team 5805',
+    excerpt:
+      'Our 2026 offseason robot debuts at SoCal Showdown, October 9–11 — a build of Team 581’s REBUILT design, running Catalyst 2.0 on FIRST’s new Systemcore controller.',
+    body: [
+      'Numbers is the fourth Book: our build of Team 581’s 2026 REBUILT design. Building another team’s proven robot is the fastest way we know to learn how a great machine works, and every subteam had a piece of it — mechanisms cut, assembled and tuned it, electrical planned and wired it, programming brought it up.',
+      'It shoots from a 4 in stainless flywheel spun by four Kraken X60s, with a hood that ranges from 13 to 45 degrees. The hopper extends 300 mm with the intake on its front and holds 13 FUEL.',
+      'Under it all is Systemcore, FIRST’s next-generation controller, running FRC Catalyst 2.0 — the library our programmers write. Numbers is our first competition robot on 2.0.',
+      'You can turn it around on the Robots page, and on the home page it takes itself apart. Come and see it run at SoCal Showdown, October 9–11.',
+    ],
+  },
+  {
+    slug: 'catalyst-2-and-the-end-of-1x',
+    date: '2026-10',
+    title: 'FRC Catalyst 2.0 — and the end of 1.x',
+    tag: 'Software',
+    author: 'Team 5805',
+    excerpt:
+      'Catalyst 2.0 is where the library lives now. Catalyst 1.x gets no updates after this offseason ends.',
+    body: [
+      'FRC Catalyst 2.0 is our library rebuilt for Systemcore: a new computer, a new JVM and a new command framework. We kept the API teams already know — 974 of its 986 public methods kept their names — and grew it from a box of mechanisms into a library for the whole robot, with a state machine for the superstructure, autonomy that explains its decisions, and a robot that describes itself to Catalyst Console.',
+      'It runs on X1, our swerve test drivebase, where every new feature is driven first, and on Numbers, our offseason robot.',
+      'That makes this the right time to say it plainly: Catalyst 1.x is being sunset. It will not receive any updates after this offseason is over — no fixes and no new features. 1.12.0 stays installable as it is, so nothing breaks for a robot that depends on it, but every new robot should start on 2.0, and that is where all of our work goes from here.',
+      'Install it, read the docs and try the tools from the Catalyst page.',
+    ],
+  },
+  {
+    slug: 'retiring-genesis-exodus-leviticus',
+    date: '2026-09',
+    title: 'Making room: Genesis, Exodus and Leviticus come apart',
+    tag: 'Engineering',
+    author: 'Team 5805',
+    excerpt:
+      'Genesis has been decommissioned and disassembled, and Exodus and Leviticus have been taken apart so their parts can go back into circulation.',
+    body: [
+      'A robot that sits on a shelf is a pile of motors, gearboxes and electronics nobody can use. So with Numbers on the way, we took three of our robots apart.',
+      'Genesis, our 2025 REEFSCAPE robot and Ventura County Regional winner, has been decommissioned and disassembled. Exodus, our 2025 offseason robot, and Leviticus, our 2026 REBUILT robot, have been disassembled as well, so their parts can be reflowed into the robots that come next.',
+      'The machines are gone, but they are not forgotten: the Robots page keeps each of them, with Genesis and Exodus in full 3D from their CAD.',
+    ],
+  },
+  {
     slug: 'state-championship-2026',
     date: '2026-04',
     title: 'A gritty run at the State Championship',

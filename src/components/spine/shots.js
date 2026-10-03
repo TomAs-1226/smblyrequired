@@ -46,6 +46,9 @@ export const SHOTS = {
   /* Framed in the world, not on the robot: it takes in the robot's home and the HUB. */
   lineage: {
     side: 1, yaw: -0.72, el: 0.26, look: [0.85, 0.62, -1.95], worldLook: true, R: 1.7, fill: 0.98, fillH: 0.9, drive: 1,
+    /* A phone's band is about square: stand further back and look down more, so the HUB and the robot's
+       whole run fit, the HUB's funnel included. */
+    narrow: { el: 0.52, R: 1.95, look: [1.25, 0.38, -2.55] },
   },
 }
 

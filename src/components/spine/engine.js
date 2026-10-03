@@ -25,6 +25,8 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v))
 const smooth = (t) => t * t * (3 - 2 * t)
 const lerp = (a, b, t) => a + (b - a) * t
 
+const NARROW_SHOTS = Object.fromEntries(Object.entries(SHOTS).map(([k, s]) => [k, s.narrow ? { ...s, ...s.narrow } : s]))
+
 /**
  * Start the spine.
  *
@@ -38,7 +40,11 @@ const lerp = (a, b, t) => a + (b - a) * t
  */
 export function createSpine({ root, canvas, overlay, hair, title, classes, models }) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
-  const narrowMQ = matchMedia('(max-width: 1024px)')
+  /* Phones, and tablets held upright: the robot takes a band at the top and the copy runs beneath it.
+     A tablet on its side has the width for the desktop layout. Must match Spine.module.css. */
+  /* A phone on its side: the desktop layout, but no room for the part labels. */
+  const shortMQ = matchMedia('(orientation: landscape) and (max-height: 500px)')
+  const narrowMQ = matchMedia('(max-width: 760px), (max-width: 1100px) and (orientation: portrait)')
   let disposed = false
   const cleanups = []
   const listen = (target, type, fn, opts) => {
@@ -55,7 +61,8 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   const panels = [...root.querySelectorAll('[data-shot]')].map((el) => ({
     el,
     box: el.querySelector('[data-box]'),
-    shot: SHOTS[el.dataset.shot],
+    /* On a phone the band is nearly square, so a shot may carry a `narrow` override (see shots.js). */
+    get shot() { return (narrowMQ.matches ? NARROW_SHOTS : SHOTS)[el.dataset.shot] },
     name: el.dataset.shot,
     specs: [...el.querySelectorAll('[data-anchor]')].map((s) => ({
       anchor: s.dataset.anchor, name: s.querySelector('b').textContent, value: s.querySelector('span').textContent,
@@ -234,7 +241,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
       const D = Math.min(0.84 * W, 0.7 * H)
       return { cx: W / 2, d: (H * s.R) / (D * TAN) }
     }
-    const labelled = panels[pi].specs.length > 0
+    const labelled = panels[pi].specs.length > 0 && !shortMQ.matches
     const far = labelled ? LABEL_COL : 0
     const near = labelled && s.labelSide !== 'far' && W >= 1200 ? LABEL_COL : 0
     const c = copyEdges[pi]
@@ -407,7 +414,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   function placeCallouts(beat, look, dt) {
     const k = 1 - Math.exp(-dt * 12)
     let laid = []
-    if (!narrowMQ.matches && beat >= 0) {
+    if (!narrowMQ.matches && !shortMQ.matches && beat >= 0) {
       const raw = subjectBox(look)
       if (raw) {
         /* Smoothed so the column holds still while the robot sways or is dragged. */
@@ -467,7 +474,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
 
   /* The solver's callout: beside the shooter while the robot aims and fires, on desktop only. */
   function placeSolver(cmd, drive) {
-    const on = !narrowMQ.matches && drive > 0.95 && cmd.shot && cmd.fly
+    const on = !narrowMQ.matches && !shortMQ.matches && drive > 0.95 && cmd.shot && cmd.fly
     solverEl.dataset.on = on ? 'true' : 'false'
     solverLine.style.opacity = solverDot.style.opacity = on ? 1 : 0
     if (!on || !hoodNode) return

@@ -312,6 +312,37 @@
   color: var(--text-faint);
 }
 
+/* 1.x is being retired: a plain statement between hairlines, not an alert. */
+.sunset {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+  gap: 12px clamp(20px, 4vw, 56px);
+  align-items: baseline;
+  padding: clamp(22px, 3vw, 32px) 0;
+  border-top: 1px solid var(--border-hairline);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.sunsetTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  letter-spacing: -0.02em;
+  color: var(--brand-gold);
+}
+.sunsetBody {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-body);
+}
+@media (max-width: 760px) {
+  .sunset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* copy field */
 .copy {
   display: flex;
@@ -326,7 +357,10 @@
 .copyValue {
   flex: 1;
   min-width: 0;
-  overflow-x: auto;
+  /* The whole URL is in the DOM (selectable, and the Copy button takes all of it); what does not fit
+     ends in an ellipsis rather than a scrollbar. */
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.74rem;

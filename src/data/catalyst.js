@@ -10,40 +10,47 @@
 // sources above show.
 
 export const catalyst = {
-  name: 'FRC Catalyst',
+  name: 'FRC Catalyst 2.0',
   // The library's own one-line description (README, upgrade/alpha-7).
   tagline: 'The whole-robot library for FRC, on CTRE Phoenix 6.',
   description:
     'Mechanisms, swerve, a state machine for the entire robot, physics, autonomy and telemetry — configured through builders, not rewritten every season. We write it, and every team can use it free.',
   license: 'MIT',
   repoUrl: 'https://github.com/TomAs-1226/FrcCatalyst',
-  docsUrl: 'https://tomas-1226.github.io/FrcCatalyst/',
-  betaDocsUrl: 'https://tomas-1226.github.io/FrcCatalyst/beta/',
+  // 2.0 is the line we build on; its docs are the ones to send people to.
+  docsUrl: 'https://tomas-1226.github.io/FrcCatalyst/beta/',
+  legacyDocsUrl: 'https://tomas-1226.github.io/FrcCatalyst/',
   versionsUrl: 'https://tomas-1226.github.io/FrcCatalyst/versions.html',
 }
 
-/* The two lines a team can install today. */
+/* 1.x is being retired. Shown on the Catalyst page under the hero, and echoed on the 1.x card. */
+export const catalystSunset = {
+  title: 'Catalyst 1.x is being sunset.',
+  body: 'Catalyst 1.x gets no updates after this offseason ends — no fixes, no new features. It stays installable as it is, but every new robot should start on 2.0, and everything we build from here is 2.0.',
+}
+
+/* What a team can install today: 2.0 first, because that is where Catalyst is going. */
 export const catalystLines = [
   {
-    id: 'stable',
-    label: 'Stable',
-    version: '1.12.0',
-    title: 'The competition line',
-    platform: ['roboRIO', 'WPILib 2026', 'Java 17', 'Phoenix 6'],
-    note: 'The line to compete on this season: roboRIO, WPILib 2026, everything a robot needs.',
-    vendordep: 'https://tomas-1226.github.io/FrcCatalyst/vendordep/FrcCatalyst.json',
-    docs: 'https://tomas-1226.github.io/FrcCatalyst/',
-  },
-  {
     id: 'beta',
-    label: 'Beta',
+    label: 'Catalyst 2.0',
     version: '2.0.0-beta.2',
-    title: 'Catalyst 2.0, for Systemcore',
+    title: 'FRC Catalyst 2.0, for Systemcore',
     platform: ['Systemcore', 'WPILib 2027 alpha-7', 'Java 25', 'Commands v3', 'Phoenix 6 26.70'],
     note:
-      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Running on our X1 swerve drivebase now.',
+      'A new computer, a new JVM and a new command framework — and 974 of 986 public methods kept their names. Running on our X1 swerve drivebase and on Numbers.',
     vendordep: 'https://tomas-1226.github.io/FrcCatalyst/beta/vendordep/FrcCatalyst.json',
     docs: 'https://tomas-1226.github.io/FrcCatalyst/beta/',
+  },
+  {
+    id: 'stable',
+    label: 'Legacy · sunsetting',
+    version: '1.12.0',
+    title: 'Catalyst 1.x, for the roboRIO',
+    platform: ['roboRIO', 'WPILib 2026', 'Java 17', 'Phoenix 6'],
+    note: 'For robots still on the roboRIO this season. No updates after this offseason ends — plan the move to 2.0.',
+    vendordep: 'https://tomas-1226.github.io/FrcCatalyst/vendordep/FrcCatalyst.json',
+    docs: 'https://tomas-1226.github.io/FrcCatalyst/',
   },
 ]
 
