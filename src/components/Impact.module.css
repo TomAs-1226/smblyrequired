@@ -101,7 +101,10 @@
 /* Each year is one group: big numeral column + its result rows */
 .yearGroup {
   display: grid;
-  grid-template-columns: clamp(120px, 16vw, 220px) minmax(0, 1fr);
+  /* The column has to hold a four-digit year at the size below plus the 32px
+     spine inset: 16vw could not at tablet widths, and "2026" ran into the
+     event name beside it. */
+  grid-template-columns: clamp(150px, 19vw, 270px) minmax(0, 1fr);
   gap: clamp(20px, 4vw, 64px);
   padding: clamp(28px, 4vw, 52px) 0;
   border-top: 1px solid var(--border-hairline);
@@ -130,7 +133,7 @@
   display: block;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  font-size: clamp(2.5rem, 5.2vw, 5.5rem);
   line-height: 0.82;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -557,7 +560,7 @@
     gap: var(--sp-7);
   }
   .yearGroup {
-    grid-template-columns: clamp(96px, 22vw, 140px) minmax(0, 1fr);
+    grid-template-columns: clamp(150px, 22vw, 190px) minmax(0, 1fr);
     gap: var(--sp-4);
   }
 }
@@ -579,7 +582,8 @@
   }
   .stat :global(.stat-numeral) {
     display: grid;
-    grid-template-columns: 4.6ch minmax(0, 1fr);
+    /* rem, not ch: ch here is the label's 17px face, not the numeral's. */
+    grid-template-columns: 6.75rem minmax(0, 1fr);
     align-items: center;
     gap: var(--sp-3);
   }

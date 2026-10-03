@@ -251,7 +251,9 @@
 .plates {
   margin-top: var(--sp-4);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  /* auto-fit, not auto-fill: four plates fill the row instead of huddling in
+     four of six columns with their names wrapped to three lines. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--sp-3);
 }
 .plate {

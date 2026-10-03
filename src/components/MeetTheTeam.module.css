@@ -58,9 +58,12 @@
 /* Grade breakdown — mono ledger rows */
 .breakdown {
   list-style: none;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--sp-3) var(--sp-4);
+  /* Wrapping flex, not two fixed columns: each count keeps its label on one
+     line and drops to the next row when it runs out of room (at 320px
+     "20 STUDENTS" ran into "6 SUBTEAMS"). */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-5);
   margin-top: var(--sp-5);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--border-hairline);
@@ -342,11 +345,16 @@
     border-top: 1px solid var(--border-hairline);
     max-width: none;
   }
-  .groupGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .mentorsList {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Three names across still fits a tablet or a landscape phone; two-up only
+   once the columns would squeeze a long name. */
+@media (max-width: 700px) {
+  .groupGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -364,9 +372,6 @@
     width: 34px;
     height: 34px;
     font-size: 0.74rem;
-  }
-  .breakdown {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .captainCard {
     grid-template-columns: minmax(0, 1fr);

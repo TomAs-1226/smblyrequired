@@ -328,9 +328,12 @@
 }
 .railRow {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  /* Month | event, with the result on its own line under the event. A third
+     "auto" column for the result squeezed the event name until
+     "Championship" ran into "RANK 45 OF 60" in the three-across phase cards. */
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-1) var(--sp-3);
   padding: var(--sp-3) 0;
   border-top: 1px solid var(--border-hairline);
 }
@@ -365,6 +368,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-gold);
+  grid-column: 2;
 }
 
 /* -------------------------------------------------------------------------
@@ -535,9 +539,6 @@
   }
   .railRow {
     grid-template-columns: 40px minmax(0, 1fr);
-  }
-  .railResult {
-    grid-column: 2;
   }
 }
 

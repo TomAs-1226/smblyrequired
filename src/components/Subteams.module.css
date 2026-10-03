@@ -37,6 +37,12 @@
   gap: clamp(16px, 2vw, 28px);
 }
 /* Lead tile occupies the tall left column across two rows */
+/* The tall lead tile takes two cells, so an even number of subteams fills an
+   odd number of cells and strands the last tile beside a hole. That last tile
+   runs the full width instead. (Reset below, where the grid is one column.) */
+.grid > *:last-child:nth-child(even) {
+  grid-column: 1 / -1;
+}
 .grid > *:first-child {
   grid-row: 1 / span 2;
   justify-content: flex-end;
@@ -162,6 +168,9 @@
 @media (max-width: 600px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .grid > *:last-child:nth-child(even) {
+    grid-column: auto;
   }
   /* On one column the lead tile no longer needs to span rows */
   .grid > *:first-child {

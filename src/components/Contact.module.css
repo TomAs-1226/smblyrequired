@@ -363,6 +363,14 @@
 }
 
 /* ---- Responsive ------------------------------------------------------- */
+/* Side by side on a tablet or small laptop the form card is ~370px wide:
+   two fields across left each ~140px and clipped their placeholders. */
+@media (min-width: 881px) and (max-width: 1180px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 880px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
@@ -403,7 +411,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live,
   .success {
     animation: none;
   }
