@@ -343,27 +343,47 @@ export async function recordEntry({
   })
 }
 
+// Supabase answers at most 1000 rows per request by default, whatever .limit()
+// asks for. The event CSV export asks for 5000 and Analytics for 4000, and both
+// silently got the newest 1000 — an export missing most of an event, with
+// nothing in the file to say so. Larger reads are fetched in pages.
+const PAGE_ROWS = 1000
+
 export async function listEntries({ eventKey, teamNumber, kind, limit = 200 } = {}) {
   if (!isConfigured) return { data: [], error: NOT_CONFIGURED }
-  let q = supabase
-    .from('scout_entries')
-    // Embeds the scout's name so a CSV export and the entry lists read "Alex
-    // Rivera", not a UUID. The join is member+ under the roster read policy,
-    // which every caller of this already is. `scout_name` is flattened onto the
-    // row so consumers don't have to reach through the nested object.
-    .select(
-      'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at, scout:profiles!scout_entries_scout_id_fkey(full_name)'
-    )
-    .order('recorded_at', { ascending: false })
-    .limit(limit)
-  if (eventKey) q = q.eq('event_key', eventKey)
-  if (teamNumber) q = q.eq('team_number', teamNumber)
-  if (kind) q = q.eq('kind', kind)
-  const { data, error } = await q
+  const page = (from, to) => {
+    let q = supabase
+      .from('scout_entries')
+      // Embeds the scout's name so a CSV export and the entry lists read "Alex
+      // Rivera", not a UUID. The join is member+ under the roster read policy,
+      // which every caller of this already is. `scout_name` is flattened onto the
+      // row so consumers don't have to reach through the nested object.
+      .select(
+        'id, client_uuid, kind, event_key, team_number, match_key, match_number, comp_level, alliance, data, notes, scout_id, recorded_at, scout:profiles!scout_entries_scout_id_fkey(full_name)'
+      )
+      .order('recorded_at', { ascending: false })
+      // Tie-break so consecutive pages neither repeat nor skip a row that
+      // shares a timestamp with its neighbour.
+      .order('id')
+      .range(from, to)
+    if (eventKey) q = q.eq('event_key', eventKey)
+    if (teamNumber) q = q.eq('team_number', teamNumber)
+    if (kind) q = q.eq('kind', kind)
+    return q
+  }
+
+  let data = []
+  for (let from = 0; from < limit; from += PAGE_ROWS) {
+    const to = Math.min(limit, from + PAGE_ROWS) - 1
+    const { data: rows, error } = await page(from, to)
+    if (error) return { data: [], error: wrap(error) }
+    data = data.concat(rows ?? [])
+    if ((rows ?? []).length < to - from + 1) break
+  }
   // Flatten the join so callers see a plain `scout_name` string (null when the
   // scout row was removed — the entry survives, its author is just unknown).
-  const rows = (data ?? []).map((r) => ({ ...r, scout_name: r.scout?.full_name ?? null }))
-  return { data: rows, error: wrap(error) }
+  const rows = data.map((r) => ({ ...r, scout_name: r.scout?.full_name ?? null }))
+  return { data: rows, error: null }
 }
 
 // How many pit/strategy passes this scout has left on a team today, via the
