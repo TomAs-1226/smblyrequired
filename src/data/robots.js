@@ -83,7 +83,7 @@ export const robots = [
     // From the robot's CAD (public/models/robot.json) and its code.
     specs: [
       { label: 'Shooter', value: '4 in stainless flywheel, four Kraken X60s, hood 13–45°' },
-      { label: 'Hopper', value: 'Extends 300 mm with the intake on its front; fits 13 FUEL' },
+      { label: 'Hopper', value: 'Extends 300 mm with the intake on its front; holds about 60 FUEL' },
       { label: 'Code', value: 'Catalyst 2.0 on Systemcore' },
     ],
     blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, wired by our electrical subteam and programmed on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',

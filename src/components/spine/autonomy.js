@@ -83,7 +83,8 @@ export function solveHood(exitY, D) {
  */
 export function createAutonomy({ scene, manifest, hubAt, home = [0, 0], spots, rows, shots, seed = 5805 }) {
   const slots = (manifest?.hopper?.ballCentres?.deployed ?? []).map((p) => new THREE.Vector3(...p))
-  const capacity = slots.length || 13
+  /* `slots` are where the model draws FUEL in the hopper, not its capacity (it holds about 60).
+     What the readouts report is how many of the FUEL in play the robot has aboard. */
   const mouth = manifest?.intakeMouth
   const exitLocal = manifest?.shooter?.exit?.point ?? [-0.17, 0.51, 0]
   const pivot = manifest?.hood?.pivot ?? [-0.2858, 0.4826, 0]
@@ -262,7 +263,7 @@ export function createAutonomy({ scene, manifest, hubAt, home = [0, 0], spots, r
       reason,
       shot: mode === 'score' ? { hood, range } : null,
       held: held().length,
-      capacity,
+      inPlay: balls.length,
     }
   }
 
@@ -319,7 +320,7 @@ export function createAutonomy({ scene, manifest, hubAt, home = [0, 0], spots, r
       feeding = fly > 0.95 && aimed && toSpot < 0.6
       reason = feeding
         ? `${inHopper} FUEL to go — firing on the move at ${range.toFixed(1)} m, hood ${hood.toFixed(1)}°`
-        : `Hopper ${inHopper}/${capacity} — turning to the HUB and spinning up on the way`
+        : `${inHopper} FUEL aboard — turning to the HUB and spinning up on the way`
       if (feeding) {
         feedClock -= dt
         if (feedClock <= 0) { feedClock = FEED_EVERY; fire(top) }

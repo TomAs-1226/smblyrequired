@@ -80,11 +80,11 @@ export function AutonomyDemo() {
           <p className={styles.reason}>{st?.reason || 'Waking up…'}</p>
           <div className={styles.meter}>
             <div className={styles.meterHead}>
-              <span>Hopper</span>
-              <b>{st ? `${st.held} / ${st.capacity}` : '—'}</b>
+              <span>FUEL aboard</span>
+              <b>{st ? `${st.held} of ${st.inPlay}` : '—'}</b>
             </div>
             <div className={styles.bar}>
-              <span style={{ transform: `scaleX(${st ? st.held / st.capacity : 0})` }} />
+              <span style={{ transform: `scaleX(${st ? st.held / st.inPlay : 0})` }} />
             </div>
           </div>
           <dl className={styles.facts}>

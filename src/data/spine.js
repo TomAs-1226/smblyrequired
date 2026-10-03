@@ -37,7 +37,7 @@ export const spinePanels = [
     specs: [
       { anchor: 'intake', name: 'Extending hopper', value: 'Slides out 300 mm, intake in front' },
       { anchor: 'floor', name: 'Floor', value: 'Eleven-roller conveyor' },
-      { anchor: 'hopper', name: 'Hopper', value: 'Holds 13 FUEL extended' },
+      { anchor: 'hopper', name: 'Hopper', value: 'Holds about 60 FUEL' },
       { anchor: 'shooter', name: 'Shooter', value: 'Four Krakens, one flywheel' },
       { anchor: 'hood', name: 'Hood', value: 'Aims from 13° to 45°' },
       { anchor: 'drive', name: 'Drive base', value: 'Four swerve modules' },

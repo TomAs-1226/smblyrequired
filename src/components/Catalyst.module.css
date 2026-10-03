@@ -368,6 +368,8 @@
   display: grid;
   gap: 12px;
   min-width: 0;
+  /* One column that may shrink: an implicit `auto` column sizes to the URL and pushes the page wide. */
+  grid-template-columns: minmax(0, 1fr);
 }
 .label {
   margin: 0;
@@ -413,6 +415,8 @@
   display: grid;
   gap: 12px;
   min-width: 0;
+  /* One column that may shrink: an implicit `auto` column sizes to the URL and pushes the page wide. */
+  grid-template-columns: minmax(0, 1fr);
 }
 .h1 .ver {
   color: var(--brand-gold);

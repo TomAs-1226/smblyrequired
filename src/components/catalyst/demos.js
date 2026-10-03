@@ -81,7 +81,7 @@ function frameCamera(camera, W, H, { look, R, el, az = 0, fill = 0.9 }) {
 /* ── Autonomy ─────────────────────────────────────────────────────────── */
 
 /**
- * The robot collecting and scoring on its own. `onState({ mode, reason, held, capacity, shot })` is
+ * The robot collecting and scoring on its own. `onState({ mode, reason, held, inPlay, shot })` is
  * called a few times a second with what it decided.
  */
 export function createAutonomyDemo({ canvas, models, onState }) {
@@ -137,7 +137,7 @@ export function createAutonomyDemo({ canvas, models, onState }) {
     robot.setHood(hoodP.at(cmd.hood, t))
     if (t - lastReport > 0.15) {
       lastReport = t
-      onState?.({ mode: cmd.mode, reason: cmd.reason, held: cmd.held, capacity: cmd.capacity, shot: cmd.shot })
+      onState?.({ mode: cmd.mode, reason: cmd.reason, held: cmd.held, inPlay: cmd.inPlay, shot: cmd.shot })
     }
   }
 
