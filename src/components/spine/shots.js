@@ -124,6 +124,33 @@ export const ROUTINE_LOOP = 12
 export const HEADING = { fwd: 0, strafe: Math.PI / 2, crab: -0.6 }
 
 /* ── the ending ────────────────────────────────────────────────────────────
-   Where the HUB stands, in world metres; the robot's home is the origin. The cycle itself — collect,
-   aim, shoot, return — is in ending.js. */
+   The field the last shot frames, in world metres; the robot's home is the origin. What the robot does
+   on it — collect, score, collect again — is the behaviour in autonomy.js. */
 export const HUB_AT = [1.55, 0, -4.9]
+/* The FUEL it starts with: a straight row — four rows of two, inside the intake's width — just right
+   of home, so the first pass is one clean line. */
+export const FUEL_START = (() => {
+  const a = [1.0, -0.4]
+  const b = [1.65, -1.25]
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1])
+  const ux = (b[0] - a[0]) / L
+  const uz = (b[1] - a[1]) / L
+  const out = []
+  for (let r = 0; r < 4; r++) for (const side of [-0.12, 0.12]) out.push([a[0] + ux * r * 0.3 - uz * side, a[1] + uz * r * 0.3 + ux * side])
+  return out
+})()
+/* Where scored FUEL rolls out to and stops, a different row each cycle. Both are measured to sit in the
+   last shot's frame at 1440x900, clear of the copy column (which ends at 513 px) and away from the arc
+   the robot shoots from, so every pass is a real drive across the carpet. */
+export const FUEL_ROWS = [
+  [[1.7, -3.4], [1.85, -1.95]], // deep, right of the HUB
+  [[0.9, -0.85], [2.0, -0.5]], // near, toward the camera
+]
+/* Where it fires from, one per cycle in turn: a bearing about the HUB (radians, atan2(dz, dx)) and a
+   distance. All on the home side of the HUB and left of the paths FUEL rolls out along, so a rolling
+   ball never crosses the robot; different each cycle, so the solved hood angle visibly changes. */
+export const SHOT_SPOTS = [
+  { bearing: 2.1, range: 2.7 },
+  { bearing: 1.95, range: 3.0 },
+  { bearing: 2.05, range: 2.45 },
+]

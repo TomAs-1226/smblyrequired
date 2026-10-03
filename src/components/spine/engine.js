@@ -11,15 +11,15 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import {
   SHOTS, GROUPS, groupOfNode, LAYERS, REMOVE_W, REMOVE_ORDER, ANCHORS,
-  ROUTINE, ROUTINE_LOOP, HEADING, HUB_AT,
+  ROUTINE, ROUTINE_LOOP, HEADING, HUB_AT, FUEL_START, FUEL_ROWS, SHOT_SPOTS,
 } from './shots'
-import { createEnding } from './ending'
+import { createAutonomy } from './autonomy'
 
 const SVG = 'http://www.w3.org/2000/svg'
 const FOV = 30
 const TAN = Math.tan((FOV * Math.PI) / 360)
 /* Per material class, how much of the studio it reflects. */
-const REFLECT = { aluminium: 1.0, steel: 0.95, motor: 0.8, poly: 1.4, print: 0.35, belt: 0.3, tread: 0.3, electronics: 0.55, black: 0.4, other: 0.5 }
+const REFLECT = { aluminium: 1.0, steel: 0.95, motor: 0.8, poly: 0.35, print: 0.35, belt: 0.3, tread: 0.3, electronics: 0.55, black: 0.4, other: 0.5 }
 /* Steering: a stiff loop with almost no overshoot. Detent duration 0.3 / bounce 0.1 → k 438.6,
    c 37.7 — our tuning for a tight azimuth PID, not a platform value. */
 const K = 438.65
@@ -251,7 +251,9 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   let intakeAxis = null
   let ending = null
 
-  /* Polycarbonate is clear. As an alpha-blended sheet it read milky, and blended sheets cannot be
+  /* Polycarbonate is clear, so it is mostly what is behind it plus a thin specular sheen: it reflects
+     the studio at about a third the strength of metal (REFLECT.poly) and transmits everything else.
+     As an alpha-blended sheet it read milky, and blended sheets cannot be
      sorted against each other inside one mesh, so as the robot turned one panel cut across another.
      Transmission samples what is behind from the opaque pass instead of blending over it, so draw
      order stops mattering. Phones get a faint blended sheet: the transmission pass draws the opaque
@@ -259,8 +261,8 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   const glassy = !narrowMQ.matches
   const polycarb = () => {
     const m = glassy
-      ? new THREE.MeshPhysicalMaterial({ color: 0xf6f8fb, metalness: 0, roughness: 0.015, transmission: 1, thickness: 0.003, ior: 1.585, specularIntensity: 1, side: THREE.DoubleSide })
-      : new THREE.MeshStandardMaterial({ color: 0xeef2f8, metalness: 0, roughness: 0.08, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide })
+      ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.01, transmission: 1, thickness: 0, ior: 1.585, specularIntensity: 0.55, side: THREE.DoubleSide })
+      : new THREE.MeshStandardMaterial({ color: 0xeef2f8, metalness: 0, roughness: 0.08, transparent: true, opacity: 0.1, depthWrite: false, side: THREE.DoubleSide })
     m.name = 'poly'
     m.polygonOffset = true
     m.polygonOffsetFactor = 1
@@ -330,7 +332,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     hoodNode = robot.getObjectByName(manifest?.hood?.node ?? 'hood')
     intakeNode = robot.getObjectByName(manifest?.intake?.node ?? 'intake')
     intakeAxis = new THREE.Vector3(...(manifest?.intake?.axis ?? [1, 0, 0]))
-    ending = createEnding({ scene, manifest, hubAt: HUB_AT })
+    ending = createAutonomy({ scene, manifest, hubAt: HUB_AT, spots: FUEL_START, rows: FUEL_ROWS, shots: SHOT_SPOTS })
     /* Compile every shader now, not on the first frame that needs it. */
     renderer.compile(scene, camera)
     ready = true
@@ -454,9 +456,9 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   const deployP = profiled(0.42, 0.55)
   let progT = 0
   let mechT = 0
-  let endT = 0
+  let endLive = false // the ending has started since the reader last left it
   let wheelV = 0
-  let endCmd = null // the ending's commands, from last frame's update
+  let endCmd = null // the ending's pose and commands, from last frame's update
   const roll = { fly: 0, feed: 0, conveyor: 0, intake: 0 }
   const hubAt = new THREE.Vector3(...HUB_AT)
   const routineAt = (t) => { const o = {}; for (const k of ROUTINE) { if (k.t > t) break; Object.assign(o, k) } return o }
@@ -464,28 +466,24 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
     if (reduced) { w = 0; dw = 0 }
     mechT += dt
     if (w > 0.001) progT += dt
-    if (dw > 0.001) endT += dt
-    else if (endT > 0) { endT = 0; ending?.reset(); endCmd = null }
-    const period = ending?.period ?? 1
-    const tEnd = endT % period
+    /* Leaving the last shot puts the field back, so it starts from the top next time. */
+    if (dw > 0.001) endLive = true
+    else if (endLive) { endLive = false; ending?.reset(baseYaw); endCmd = null }
     const inEnding = dw > 0.5 && endCmd
     const mw = inEnding ? dw : w
     const r = inEnding
       ? { intake: endCmd.intake, hood: endCmd.hood, fly: endCmd.fly, feed: endCmd.feed, rollers: endCmd.rollers }
       : routineAt(progT % ROUTINE_LOOP)
 
-    /* What the drive asks of each module: from the ending's path when driving (swerve kinematics,
-       v + ω × r), otherwise from the routine. */
+    /* What the drive asks of each module: in the ending, the robot's own velocity and turn rate
+       (swerve kinematics, v + ω × r); otherwise the routine. */
     let drive = null
     let pose = null
     if (dw > 0.01 && endCmd) {
-      const e = 1 / 120
-      pose = endCmd.poseAt(tEnd, baseYaw)
-      const p0 = endCmd.poseAt(Math.max(0, tEnd - e), baseYaw)
-      const p1 = endCmd.poseAt(tEnd + e, baseYaw)
-      const vx = ((p1.x - p0.x) / (2 * e)) * dw
-      const vz = ((p1.z - p0.z) / (2 * e)) * dw
-      const om = ((p1.yaw - p0.yaw) / (2 * e)) * dw
+      pose = endCmd.pose
+      const vx = endCmd.vel.vx * dw
+      const vz = endCmd.vel.vz * dw
+      const om = endCmd.vel.w * dw
       const c = Math.cos(yaw)
       const sn = Math.sin(yaw)
       drive = { vx: vx * c - vz * sn, vz: vx * sn + vz * c, om } // world → robot frame
@@ -533,7 +531,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
       hoodNode.rotation.z = ((hoodDeg - cad) * Math.PI) / 180
     }
     const deploy = deployP.at((r.intake ?? 0) * (manifest?.intake?.travel ?? 0.3), mechT) * mw
-    return { deploy, hoodDeg, tEnd, pose }
+    return { deploy, hoodDeg, pose }
   }
 
   /* ── callouts: Catalyst Console's layoutCallouts, ported ───────────── */
@@ -769,7 +767,10 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
 
     placeCallouts(settled ? beat : -1, look, dt)
     if (ending) {
-      endCmd = ending.update(mech.tEnd, dt, endT, { top, deploy: mech.deploy, shift: fieldShift, visible: look.drive > 0.002 })
+      endCmd = ending.update(dt, {
+        top, deploy: mech.deploy, baseYaw: look.yaw, shift: fieldShift,
+        active: look.drive > 0.98 && !reduced, visible: look.drive > 0.002,
+      })
       placeSolver(endCmd, look.drive)
     }
     if (draw) renderer.render(scene, camera)
@@ -783,7 +784,7 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
   /* Verification hook, development only. Automated review browsers throttle requestAnimationFrame
      below 1 fps, so eased values cannot be observed; settle() scrolls a panel onto the reading line
      and drives the same frame function until it rests. "3.5" is halfway between the fourth and fifth
-     shots, "lineage:500" settles for 500 frames, "end@5.4" is the ending at 5.4 s. */
+     shots, "lineage:500" settles for 500 frames, "end@5.4" is the ending 5.4 s after it starts. */
   if (import.meta.env.DEV) {
     window.__spine = {
       get ready() { return ready },
@@ -791,12 +792,11 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
         if (String(name).startsWith('end@')) {
           const t = Number(String(name).slice(4))
           this.settle('lineage', 120)
-          /* Play the loop from its start, so collecting and shooting happen in order. */
-          endT = 0.001
-          ending?.reset()
+          /* Play the ending from its start, so collecting and shooting happen in order. */
+          ending?.reset(SHOTS.lineage.yaw)
           const steps = Math.round(t * 60)
           for (let k = 0; k < steps; k++) frame(1 / 60, k === steps - 1)
-          return { s: +s.toFixed(3), endT: +endT.toFixed(2), shot: endCmd?.shot ?? null }
+          return { s: +s.toFixed(3), mode: endCmd?.mode, reason: endCmd?.reason, held: endCmd?.held }
         }
         if (String(name).includes(':')) { const [nm, k] = String(name).split(':'); name = nm; steps = Number(k) || steps }
         const n = Number(name)
@@ -807,6 +807,25 @@ export function createSpine({ root, canvas, overlay, hair, title, classes, model
         window.scrollTo(0, y - readingLine())
         for (let k = 0; k < steps; k++) frame(1 / 60, k === steps - 1)
         return { s: +s.toFixed(3), shown: callouts.filter((c) => c.el.dataset.on === 'true').length }
+      },
+      /* The ending as numbers: every quarter second for `sec` seconds, what the robot is doing. */
+      trace(sec = 30) {
+        this.settle('lineage', 120)
+        ending?.reset(SHOTS.lineage.yaw)
+        const out = []
+        for (let k = 0; k < sec * 60; k++) {
+          frame(1 / 60, false)
+          if (k % 15 === 0 && endCmd) {
+            const p = endCmd.pose
+            out.push(`${(k / 60).toFixed(2)} ${endCmd.mode.padEnd(8)} x${p.x.toFixed(2)} z${p.z.toFixed(2)} yaw${p.yaw.toFixed(2)} v${Math.hypot(endCmd.vel.vx, endCmd.vel.vz).toFixed(2)} w${endCmd.vel.w.toFixed(2)} held${endCmd.held}`)
+          }
+        }
+        return out.join('\n')
+      },
+      /* Where a world point lands on the stage, in canvas px — for placing things in frame. */
+      project(x, y, z) {
+        const q = new THREE.Vector3(x, y, z).project(camera)
+        return { x: Math.round(((q.x + 1) / 2) * W), y: Math.round(((1 - q.y) / 2) * H), W, H }
       },
       callouts() {
         return callouts.filter((c) => c.el.dataset.on === 'true').map((c) => ({ a: c.anchor, side: c.side, x: Math.round(c.x), y: Math.round(c.y), w: c.w, h: c.h }))
