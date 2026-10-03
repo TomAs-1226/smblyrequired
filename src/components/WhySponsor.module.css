@@ -143,7 +143,6 @@
 }
 .barRowPeak .barFill {
   background: var(--accent-data);
-  box-shadow: var(--glow-data);
 }
 
 /* ---- Benefits band ---- */

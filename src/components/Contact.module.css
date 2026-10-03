@@ -171,14 +171,6 @@
 .formHeader {
   margin-bottom: var(--sp-5);
 }
-.live {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  animation: pulse 2.4s ease-in-out infinite;
-}
 
 .form {
   display: grid;
@@ -358,17 +350,6 @@
   line-height: 1.5;
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(0.6);
-    opacity: 0.5;
-  }
-}
 
 @keyframes successIn {
   from {

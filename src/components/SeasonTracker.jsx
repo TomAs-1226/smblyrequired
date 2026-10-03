@@ -42,7 +42,7 @@ export default function SeasonTracker() {
     <Section id="season-tracker" className={styles.section}>
       <div className={`${styles.field} blueprint`} aria-hidden="true" />
 
-      <Eyebrow>Live from the field</Eyebrow>
+      <Eyebrow>The record</Eyebrow>
 
       <div className={styles.head}>
         <SplitHeading as="h2" className={styles.heading}>
@@ -90,7 +90,6 @@ export default function SeasonTracker() {
                 return (
                   <li className={styles.event} key={ev.key}>
                     <div className={styles.eventMain}>
-                      <span className={styles.eventNode} aria-hidden="true" />
                       <div className={styles.eventText}>
                         <h3 className={styles.eventName}>{ev.name}</h3>
                         <time

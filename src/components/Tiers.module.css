@@ -129,7 +129,6 @@
   background: var(--accent-data);
   padding: 4px 10px;
   border-radius: var(--r-pill);
-  box-shadow: var(--glow-data);
 }
 
 .tierName {

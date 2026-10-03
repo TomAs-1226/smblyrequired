@@ -291,8 +291,7 @@ export default function Impact() {
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <span className={styles.watchPulse} aria-hidden="true" />
-                Watch live
+                Watch the livestream
                 <Icon name="external" size={16} className={styles.watchIcon} />
               </a>
             )}

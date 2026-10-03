@@ -241,14 +241,6 @@
   text-transform: uppercase;
   color: var(--text-primary);
 }
-.bandTick {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  flex: none;
-}
 
 /* --- What is FIRST? + mentors --- */
 .firstRow {

@@ -113,12 +113,10 @@
 .markerCyan {
   color: var(--accent-data);
   border-color: var(--border-accent);
-  box-shadow: var(--glow-data);
 }
 .markerGold {
   color: var(--accent-gold);
   border-color: var(--accent-gold);
-  box-shadow: var(--glow-gold);
 }
 .markerMuted {
   color: var(--text-body);

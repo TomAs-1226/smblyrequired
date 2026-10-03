@@ -189,11 +189,9 @@
 }
 .tickCyan {
   background: var(--accent-data);
-  box-shadow: var(--glow-data);
 }
 .tickGold {
   background: var(--accent-gold);
-  box-shadow: 0 0 12px rgba(245, 184, 46, 0.5);
 }
 
 /* Flagship rows: extra emphasis */
@@ -466,26 +464,6 @@
 .watch:active {
   transform: scale(0.97);
 }
-.watchPulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-  flex: none;
-  animation: watchPulse 2s ease-in-out infinite;
-}
-@keyframes watchPulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.45;
-    transform: scale(0.7);
-  }
-}
 .watchIcon {
   transition: transform var(--spring-fast-dur) var(--spring-fast);
 }
@@ -644,8 +622,5 @@
   .watch,
   .watchIcon {
     transition: none;
-  }
-  .watchPulse {
-    animation: none;
   }
 }

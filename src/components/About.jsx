@@ -134,7 +134,6 @@ export default function About() {
         <div className={styles.bandCaptionWrap}>
           <div className="container">
             <p className={styles.bandCaption}>
-              <span className={styles.bandTick} aria-hidden="true" />
               Team {team.number} — {team.school}
             </p>
           </div>

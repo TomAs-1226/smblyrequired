@@ -91,7 +91,6 @@
   color: var(--text-on-cyan);
   background: var(--accent-data);
   border-color: var(--accent-data);
-  box-shadow: var(--glow-data);
 }
 /* Keeps the selected chip from being washed out by the generic hover/focus
    treatment above — must stay after it. */
@@ -315,7 +314,6 @@
   width: 72px;
   height: 2px;
   background: var(--accent-data);
-  box-shadow: var(--glow-data);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--spring-fast-dur) var(--spring-fast);
