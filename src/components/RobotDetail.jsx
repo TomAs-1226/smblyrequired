@@ -8,7 +8,7 @@ import SplitHeading from './SplitHeading'
 import Reveal from './Reveal'
 import Icon from './Icon'
 import RobotViewer from './RobotViewer'
-import { robots, monthYear } from '../data/robots'
+import { robots, monthYear, shortDate } from '../data/robots'
 import { prefersReducedMotion } from '../lib/prefersReducedMotion'
 import styles from './RobotDetail.module.css'
 
@@ -95,7 +95,6 @@ export default function RobotDetail({ slug }) {
                 <RobotViewer model={model} label={`${name} — Team 5805's ${year} ${game} robot, from its CAD. Drag to turn it.`} />
               </div>
               <figcaption className={styles.frameCap}>
-                <span className={styles.frameTick} aria-hidden="true" />
                 {name} · CAD · {year}
               </figcaption>
             </figure>
@@ -118,7 +117,6 @@ export default function RobotDetail({ slug }) {
                 </div>
               </div>
               <figcaption className={styles.frameCap}>
-                <span className={styles.frameTick} aria-hidden="true" />
                 {name} · {game} · {year}
               </figcaption>
             </figure>
@@ -195,6 +193,29 @@ export default function RobotDetail({ slug }) {
           </Reveal>
         </div>
       </div>
+
+      {/* --- A retired robot's service record: every event it played, then its retirement --- */}
+      {robot.record && (
+        <section className={styles.record} aria-labelledby="robot-record">
+          <h2 id="robot-record" className={styles.recordTitle}>Service record</h2>
+          <ol className={styles.recordList}>
+            {robot.record.map((e) => (
+              <li key={e.event} data-banner={e.banner || undefined}>
+                <span className={styles.recordDate}>{shortDate(e.date)}</span>
+                <span className={styles.recordEvent}>{e.event}</span>
+                <span className={styles.recordResult}>{e.result}</span>
+              </li>
+            ))}
+            {robot.retired && (
+              <li data-retired>
+                <span className={styles.recordDate}>{shortDate(robot.retired.date)}</span>
+                <span className={styles.recordEvent}>Retired</span>
+                <span className={styles.recordResult}>{robot.retired.note}</span>
+              </li>
+            )}
+          </ol>
+        </section>
+      )}
 
       {/* --- Prev / next through the lineage --- */}
       {(prev || next) && (

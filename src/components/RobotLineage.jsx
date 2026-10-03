@@ -178,7 +178,10 @@ function Row({ robot, index, total }) {
         {retired && (
           <div className={styles.retired}>
             <p className={styles.retiredHead}>Retired {monthYear(retired.date)}</p>
-            <p className={styles.retiredNote}>{retired.note}</p>
+            <p className={styles.retiredNote}>
+              {retired.note}
+              {robot.record && ` ${robot.record.length} events played, ${robot.record.filter((e) => e.banner).length} banner${robot.record.filter((e) => e.banner).length === 1 ? '' : 's'} won.`}
+            </p>
             <a className={styles.retiredLink} href={`#/blog/${retired.post}`}>
               Read its farewell <Icon name="arrowRight" size={16} className="arrow" />
             </a>

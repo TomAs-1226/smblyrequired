@@ -3,11 +3,14 @@
 // roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
 // Phocas for 2018 and 2020.)
 // status: 'season' (in-season) | 'champion' (won/podium) | 'build' (in progress)
+// record: every event the robot played, in order (The Blue Alliance / Statbotics, checked 2026-10-02).
 // retired: when a robot was retired, what became of it, and the slug of its farewell post (blog.js).
 // model: the robot's CAD on a turntable (public/models, baked by tools/display-cad.mjs). A robot
 //   with a model and a photo shows the model first and offers the photo; with neither, a plate.
 
 const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+/** 'YYYY-MM' → 'Sep 2026'; a bare year stays a year. */
+export const shortDate = (d) => (d.length > 4 ? `${MONTH[Number(d.slice(5, 7)) - 1].slice(0, 3)} ${d.slice(0, 4)}` : d)
 /** 'YYYY-MM' → 'September 2026'. */
 export const monthYear = (ym) => `${MONTH[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`
 
@@ -33,6 +36,10 @@ export const robots = [
     image: null,
     model: { file: 'genesis.glb' },
     retired: { date: '2026-09', note: 'Decommissioned and disassembled.', post: 'farewell-genesis' },
+    record: [
+      { date: '2025-03', event: 'Orange County Regional', result: 'Ranked 15th of 47 · playoffs' },
+      { date: '2025-03', event: 'Ventura County Regional', result: 'Regional Winner — 5–0 in the playoffs, from the 49th seed', banner: true },
+    ],
   },
   {
     name: 'Exodus',
@@ -52,6 +59,10 @@ export const robots = [
     image: 'photos/exodus.jpg',
     model: { file: 'exodus.glb' },
     retired: { date: '2026-09', note: 'Disassembled, its parts reflowed into new robots.', post: 'farewell-exodus' },
+    record: [
+      { date: '2025', event: 'SoCal Showdown', result: 'Finalist' },
+      { date: '2025', event: 'Beach Blitz', result: 'Event Winner', banner: true },
+    ],
   },
   {
     name: 'Leviticus',
@@ -70,6 +81,11 @@ export const robots = [
     blurb: 'Our 2026 REBUILT robot: a big-dumper, 3.5-ball-wide shooter spun by four Kraken X60s, fed by a slapdown intake with an extendable hopper. A district finalist with leadership-award recognition.',
     image: 'photos/hero.jpg',
     retired: { date: '2026-09', note: 'Disassembled, its parts reflowed into new robots.', post: 'farewell-leviticus' },
+    record: [
+      { date: '2026-03', event: 'Port Hueneme District', result: 'Event Finalist — 3–3 in the playoffs' },
+      { date: '2026-04', event: 'Orange County District', result: 'Playoffs, Alliance 3 — 3–2' },
+      { date: '2026-04', event: 'FIRST California Southern State Championship', result: 'Ranked 45th of 60' },
+    ],
   },
   {
     name: 'Numbers',

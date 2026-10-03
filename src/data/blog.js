@@ -121,7 +121,7 @@ export const posts = [
       'The first of the Books, and a Regional Winner. Genesis has been decommissioned and disassembled — here is what it gave us.',
     body: [
       'Genesis was Book I, the robot that started our tradition of naming each machine for a Book of the Bible. It played the 2025 REEFSCAPE season as an elevator-based, side-loaded cycler that could climb deep.',
-      'At the 2025 Ventura County Regional, Genesis won. It was our second Regional Winner banner, after Orange County in 2018, and it set the bar for every robot that has come after it: Exodus took its lessons into the offseason, Leviticus into a new game, and Numbers into a new control system.',
+      'Genesis opened its season at the Orange County Regional, ranked 15th of 47. The next week, at the Ventura County Regional, it won — from the 49th seed, 5–0 through the playoffs. It was our second Regional Winner banner, after Orange County in 2018, and it set the bar for every robot that has come after it: Exodus took its lessons into the offseason, Leviticus into a new game, and Numbers into a new control system.',
       'This September we decommissioned Genesis and disassembled it. Its parts return to the shop to be reflowed into the robots that come next — which is exactly what a first robot should do.',
       'Genesis still lives on our Robots page, in full 3D from its CAD. Thank you, Genesis. Every Book since has been written on top of you.',
     ],
