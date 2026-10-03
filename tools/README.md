@@ -42,3 +42,35 @@ field CAD: every instance inside the HUB's footprint, welded, simplified to 1 mm
 
 The HUB is FIRST's geometry, not ours. Console deliberately does not commit its `field.glb`; whether
 the website may ship this one piece is a decision to make before deploying, not after.
+
+## `display-cad.mjs` — any robot as a static display model
+
+```bash
+node tools/display-cad.mjs ~/Downloads/Robot.gltf --name genesis \
+  --drop-node "Manipulator <1> / Coral" --out public/models
+node tools/display-cad.mjs "~/Downloads/Assembly 1 (1).gltf" --name exodus \
+  --config tools/display-cad/exodus.json --out public/models
+```
+
+For the robots that only need to be looked at — the lineage on `/robots`, a turntable. It knows nothing
+about any one machine: it places every instance, drops fasteners, bearings, spacers and anything under
+`--min-size` (4 mm), simplifies to `--budget` (260k triangles) and then lower until the file fits
+`--max-mb` (5 MB), and merges the lot into one node with one material per class. The materials are named
+exactly by class (`aluminium`, `steel`, `black`, `motor`, `poly`, `print`, `belt`, `tread`,
+`electronics`, `other`), because the site restyles by name; a bumper found in the CAD is `other` in its
+own colour, flagged `extras.bumper`.
+
+The output is in the site's frame: y up, +x forward, origin on the floor under the middle of the wheels.
+Up is the direction along which the most wheels touch the lowest plane. Forward is the side with parts
+named Front/Back if there are any, otherwise the side the mechanisms reach furthest past the wheels —
+the scoring side, which is a guess, so `<name>.json` records the evidence under `orientation` and
+`--forward -y` (a CAD axis) overrides it.
+
+Anything stuck to the robot that is not the robot — a game piece, a field element mated in for a check,
+a belt that ended up on no pulleys — comes off with `--drop <regex>` (part name or path) or
+`--drop-node`, which removes a node and everything under it by exact name, by a run of names along the
+path (`"Manipulator <1> / Coral"`), or by glTF index (`node:1359`) when two twins share a name and path.
+`--list` prints every instance with its index, node and what would happen to it. A robot whose drops and
+orientation need explaining keeps them in `tools/display-cad/<name>.json`, read with `--config`.
+
+Check the result by eye before committing it: wrong-way-up and a floating cage both pass every number.
