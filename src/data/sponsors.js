@@ -112,4 +112,6 @@ export const sponsorSteps = [
 export const taxNote =
   'Team 5805 is supported through Santa Margarita Catholic High School. Contributions may be tax-deductible to the extent allowed by law. Tax ID and 501(c)(3) details are available on request.';
 
-export const packetUrl = 'Team5805-Sponsorship-Packet.pdf'
+// The sponsorship packet PDF, served from public/. Withdrawn until it is regenerated with the
+// corrected record; null hides every "Download the packet" link.
+export const packetUrl = null

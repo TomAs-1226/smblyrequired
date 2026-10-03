@@ -143,15 +143,17 @@ export default function WhySponsor() {
         </Reveal>
 
         <div className={styles.ctas}>
-          <MagneticButton
-            as="a"
-            href={'./' + packetUrl}
-            download
-            className="btn btn--gold"
-          >
-            <Icon name="download" size={18} />
-            Download the 2026 packet
-          </MagneticButton>
+          {packetUrl && (
+            <MagneticButton
+              as="a"
+              href={'./' + packetUrl}
+              download
+              className="btn btn--gold"
+            >
+              <Icon name="download" size={18} />
+              Download the packet
+            </MagneticButton>
+          )}
           <MagneticButton as="a" href="#partnership" className="btn btn--cyan">
             Become a sponsor
             <Icon name="arrowRight" className="arrow" size={18} />

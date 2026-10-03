@@ -201,22 +201,24 @@ export default function Donate() {
             <h3 className={styles.cardTitle}>Giving as a business?</h3>
             <p className={styles.cardBody}>
               Companies get logo placement on our jerseys, robot, and banner —
-              plus a tax-deductible receipt. See the tiers, or take the packet to
-              your team.
+              plus a receipt for your records. See the tiers on the Sponsor
+              page.
             </p>
             <div className={styles.cardActions}>
               <a href="#/sponsor" className={`btn btn--cyan ${styles.cardCta}`}>
                 View sponsorship
                 <Icon name="arrowRight" className="arrow" size={18} />
               </a>
-              <a
-                href={'./' + packetUrl}
-                download
-                className={`btn btn--ghost ${styles.cardCta}`}
-              >
-                <Icon name="download" size={18} />
-                Download the packet
-              </a>
+              {packetUrl && (
+                <a
+                  href={'./' + packetUrl}
+                  download
+                  className={`btn btn--ghost ${styles.cardCta}`}
+                >
+                  <Icon name="download" size={18} />
+                  Download the packet
+                </a>
+              )}
             </div>
           </article>
         </div>

@@ -4,7 +4,7 @@ export const faqNote = 'Common questions from sponsors, families, and future mem
 export const faqs = [
   {
     q: 'How do we sponsor Team 5805?',
-    a: 'Email our program manager, Mr. Klatt, at klatta@smhs.org. Choose a tier (Bronze $250 up to Title $5,000) or offer in-kind support, download our sponsorship packet, and we handle the rest.',
+    a: 'Email our program manager, Mr. Klatt, at klatta@smhs.org. Choose a tier (Bronze $250 up to Title $5,000) or offer in-kind support, and we handle the rest.',
     tag: 'Sponsors',
   },
   {

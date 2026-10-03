@@ -24,7 +24,7 @@ export const pageTeasers = [
   { path: '/join', label: 'Join the Team', icon: 'users', blurb: `Open to every experience level — ${subteams.length} subteams, student-run, and we will teach you.` },
   { path: '/robots', label: 'The Robots', icon: 'cog', blurb: 'Genesis to Numbers — our robot lineage, plus how swerve drive works.' },
   { path: '/season', label: 'Season & Record', icon: 'trophy', blurb: 'Every banner since rookie year and the latest from the shop.' },
-  { path: '/sponsor', label: 'Sponsor Us', icon: 'heart', blurb: 'Why partner with us, the tiers, and the 2026 sponsorship packet.' },
+  { path: '/sponsor', label: 'Sponsor Us', icon: 'heart', blurb: 'Why partner with us, the tiers, and who to talk to.' },
   { path: '/catalyst', label: 'FRC Catalyst', icon: 'code', blurb: 'Our open-source Java library, built for the whole FRC community.' },
   { path: '/gallery', label: 'Gallery', icon: 'star', blurb: 'The pit, the field, and everything in between.' },
   { path: '/blog', label: 'Build Blog', icon: 'calendar', blurb: 'Recaps from the shop and the field, all season long.' },
