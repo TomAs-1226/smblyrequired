@@ -298,8 +298,8 @@
    "real but unproven". */
 .conf_thin {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.35);
-  background: rgba(245, 184, 46, 0.08);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
 }
 .conf_building {
   color: var(--accent-data);
@@ -308,8 +308,8 @@
 }
 .conf_solid {
   color: var(--success);
-  border-color: rgba(63, 207, 142, 0.35);
-  background: rgba(63, 207, 142, 0.08);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
 }
 
 /* --- Performance: hero avg + supporting tiles --------------------------- */
@@ -445,14 +445,14 @@
    marks the bed as provisional while leaving every figure readable. */
 .provisional {
   padding: var(--sp-3);
-  border: 1px solid rgba(245, 184, 46, 0.3);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
   border-radius: var(--r-md);
   background-image: repeating-linear-gradient(
     135deg,
     transparent 0,
     transparent 6px,
-    rgba(245, 184, 46, 0.05) 6px,
-    rgba(245, 184, 46, 0.05) 12px
+    color-mix(in srgb, var(--accent-gold) 5%, transparent) 6px,
+    color-mix(in srgb, var(--accent-gold) 5%, transparent) 12px
   );
 }
 
@@ -467,7 +467,7 @@
   max-width: 34ch;
 }
 .statBad {
-  border-color: rgba(240, 99, 99, 0.35);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 /* Pit estimate is walled off from match play (functions/src/stats.js keeps it apart). Its own block,
@@ -549,8 +549,8 @@
 }
 .kind_strategy {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.3);
-  background: rgba(245, 184, 46, 0.06);
+  border-color: color-mix(in srgb, var(--accent-gold) 30%, transparent);
+  background: color-mix(in srgb, var(--accent-gold) 6%, transparent);
 }
 .matchTag {
   font-family: var(--font-display);
@@ -570,13 +570,13 @@
 }
 .alliance_red {
   color: var(--danger);
-  border-color: rgba(240, 99, 99, 0.4);
-  background: rgba(240, 99, 99, 0.08);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
 }
 .alliance_blue {
   color: var(--accent-action);
-  border-color: rgba(46, 125, 246, 0.4);
-  background: rgba(46, 125, 246, 0.1);
+  border-color: color-mix(in srgb, var(--accent-action) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-action) 10%, transparent);
 }
 .entryWhen {
   margin-left: auto;
@@ -1178,8 +1178,8 @@
 /* A #1 seed is prestige, and prestige is the one thing gold is for. Scarce by
    construction: only the rank tile, only when it is literally first. */
 .oStatGold {
-  border-color: rgba(245, 184, 46, 0.4);
-  background: linear-gradient(180deg, rgba(245, 184, 46, 0.1), var(--surface-sunken) 72%);
+  border-color: color-mix(in srgb, var(--accent-gold) 40%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-gold) 10%, transparent), var(--surface-sunken) 72%);
   box-shadow: inset 0 1px 0 rgba(255, 212, 94, 0.15), var(--glow-gold);
 }
 .oStatGold .oLabel::before {

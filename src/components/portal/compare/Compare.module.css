@@ -126,7 +126,7 @@
 .pickOn {
   color: var(--text-primary);
   border-color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.1);
+  background: color-mix(in srgb, var(--accent-data) 10%, transparent);
   /* A lit cyan edge on the selected chip — the selection reads instantly in a
      grid of sixty. */
   box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
@@ -221,8 +221,8 @@
   background: var(--accent-data-wash);
 }
 .verdictWarn .verdictIcon {
-  border-color: rgba(245, 184, 46, 0.35);
-  background: rgba(245, 184, 46, 0.08);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
 }
 .verdictTitle {
   font-size: var(--fs-h3);
@@ -267,8 +267,8 @@
 /* The confirmed pick — the only gold on the page, and only on a confident
    verdict. A quiet gold wash and a small trophy, not a shout. */
 .tallyPick {
-  border-color: rgba(245, 184, 46, 0.4);
-  background: rgba(245, 184, 46, 0.08);
+  border-color: color-mix(in srgb, var(--accent-gold) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
   box-shadow: var(--glow-gold);
 }
 .tallyPick .tallyTeam,
@@ -361,7 +361,7 @@
     background-color: var(--surface-1);
   }
   .row:hover > .won {
-    background-color: rgba(56, 189, 248, 0.14);
+    background-color: color-mix(in srgb, var(--accent-data) 14%, transparent);
   }
 }
 /* Keyboard parity: tabbing to a row's flip button highlights the same row a
@@ -370,7 +370,7 @@
   background-color: var(--surface-1);
 }
 .row:focus-within > .won {
-  background-color: rgba(56, 189, 248, 0.14);
+  background-color: color-mix(in srgb, var(--accent-data) 14%, transparent);
 }
 
 /* --- sticky metric column ------------------------------------------------ */
@@ -457,8 +457,8 @@
   font-family: var(--font-mono);
   font-size: 0.76rem;
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.08);
-  border: 1px solid rgba(245, 184, 46, 0.3);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
   border-radius: var(--r-sm);
   transition: color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
@@ -470,12 +470,12 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .flip:hover {
-    background: rgba(245, 184, 46, 0.16);
+    background: color-mix(in srgb, var(--accent-gold) 16%, transparent);
     border-color: var(--accent-gold);
   }
 }
 .flip:focus-visible {
-  background: rgba(245, 184, 46, 0.16);
+  background: color-mix(in srgb, var(--accent-gold) 16%, transparent);
   border-color: var(--accent-gold);
 }
 
@@ -559,7 +559,7 @@
   font-family: var(--font-mono);
   font-size: 0.82rem;
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.1);
+  background: color-mix(in srgb, var(--accent-data) 10%, transparent);
   border: 1px solid var(--border-accent);
   border-radius: var(--r-pill);
   padding: 4px 9px;
@@ -570,13 +570,13 @@
 }
 .colNLight {
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.08);
-  border-color: rgba(245, 184, 46, 0.35);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
 }
 .colNThin {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.08);
-  border-color: rgba(240, 99, 99, 0.4);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .colWarn,
@@ -603,8 +603,8 @@
     135deg,
     transparent 0,
     transparent 6px,
-    rgba(245, 184, 46, 0.06) 6px,
-    rgba(245, 184, 46, 0.06) 12px
+    color-mix(in srgb, var(--accent-gold) 6%, transparent) 6px,
+    color-mix(in srgb, var(--accent-gold) 6%, transparent) 12px
   );
 }
 .headThin .colNum {
@@ -625,8 +625,8 @@
     135deg,
     transparent 0,
     transparent 6px,
-    rgba(245, 184, 46, 0.04) 6px,
-    rgba(245, 184, 46, 0.04) 12px
+    color-mix(in srgb, var(--accent-gold) 4%, transparent) 6px,
+    color-mix(in srgb, var(--accent-gold) 4%, transparent) 12px
   );
 }
 
@@ -654,7 +654,7 @@
 /* Winner. Only ever applied to a row the maths actually decided — a cell that
    is merely in front gets `.aheadTag` instead, which says so in words. */
 .won {
-  background-color: rgba(56, 189, 248, 0.08);
+  background-color: color-mix(in srgb, var(--accent-data) 8%, transparent);
 }
 .won .valueNum {
   color: var(--accent-data);
@@ -663,7 +663,7 @@
    full-strength winner. Same data-colour family, deliberately softer — it says
    "probably", where the winner says "yes". */
 .leansCell {
-  background-color: rgba(56, 189, 248, 0.045);
+  background-color: color-mix(in srgb, var(--accent-data) 4.5%, transparent);
 }
 .leansCell .valueNum {
   color: var(--accent-data);
@@ -799,7 +799,7 @@
 }
 .chipWin {
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   border-color: var(--border-accent);
 }
 /* The most important chip on the page. "Too close to call" has to look like a
@@ -814,14 +814,14 @@
    The dash is the hedge made visible. */
 .chipLean {
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.05);
+  background: color-mix(in srgb, var(--accent-data) 5%, transparent);
   border-color: var(--border-accent);
   border-style: dashed;
 }
 .chipThin {
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.08);
-  border-color: rgba(245, 184, 46, 0.3);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent-gold) 30%, transparent);
 }
 .chipWhy {
   opacity: 0.8;
@@ -850,13 +850,13 @@
 @media (hover: hover) and (pointer: fine) {
   .remove:hover {
     color: var(--danger);
-    border-color: rgba(240, 99, 99, 0.4);
-    background: rgba(240, 99, 99, 0.08);
+    border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
   }
 }
 .remove:focus-visible {
   color: var(--danger);
-  border-color: rgba(240, 99, 99, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 /* --- AI ------------------------------------------------------------------ */

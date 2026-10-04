@@ -10,7 +10,7 @@ import styles from './Portal.module.css'
  * from the pit, and an indicator that only shows up when something is wrong
  * teaches people that its absence means nothing.
  */
-export default function SyncBadge({ compact = false }) {
+export default function SyncBadge() {
   const { online, syncing, pending, failing, sync } = useOfflineQueue()
 
   // Nothing queued and connected: say so quietly rather than rendering nothing.
@@ -32,7 +32,7 @@ export default function SyncBadge({ compact = false }) {
   return (
     <button
       type="button"
-      className={`${styles.syncBadge} ${styles[`sync_${tone}`]} ${compact ? styles.syncCompact : ''}`}
+      className={`${styles.syncBadge} ${styles[`sync_${tone}`]}`}
       onClick={() => sync()}
       // Manual retry is always available. When the network returns mid-match a
       // scout will tap this before they trust a 30-second timer, and denying
@@ -40,13 +40,14 @@ export default function SyncBadge({ compact = false }) {
       title={online ? 'Tap to sync now' : 'No connection — your entries are saved on this device'}
       aria-live="polite"
     >
-      <span className={styles.syncDot} aria-hidden="true" />
       {syncing ? (
         <span className={styles.spinnerSm} aria-hidden="true" />
       ) : (
         <Icon name={!online ? 'alert' : failing ? 'alert' : pending ? 'arrowUp' : 'check'} size={14} />
       )}
-      <span className={styles.syncLabel}>{label}</span>
+      {/* Always in words. An icon alone — which is all a phone used to get —
+          cannot tell "all synced" from "3 waiting" at a glance. */}
+      <span>{label}</span>
     </button>
   )
 }

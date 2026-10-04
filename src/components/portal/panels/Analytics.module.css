@@ -86,7 +86,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent-gold);
-  border: 1px solid rgba(245, 184, 46, 0.35);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 35%, transparent);
   border-radius: var(--r-pill);
   padding: 2px 9px;
 }
@@ -304,7 +304,7 @@
 }
 .conf_high {
   color: var(--success);
-  border-color: rgba(63, 207, 142, 0.3);
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
 }
 .conf_medium {
   color: var(--accent-data);
@@ -312,7 +312,7 @@
 }
 .conf_low {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.3);
+  border-color: color-mix(in srgb, var(--accent-gold) 30%, transparent);
 }
 
 .colCr {
@@ -378,11 +378,11 @@
 }
 .trendUp {
   color: var(--success);
-  background: rgba(63, 207, 142, 0.1);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 .trendDown {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.1);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 .trendFlat {
   color: var(--text-muted);
@@ -519,8 +519,8 @@
   border: 1px solid var(--border-hairline);
 }
 .allianceRed {
-  background: rgba(240, 99, 99, 0.06);
-  border-color: rgba(240, 99, 99, 0.25);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 25%, transparent);
 }
 .allianceBlue {
   background: var(--accent-data-wash);
@@ -615,12 +615,12 @@
 .winRed {
   justify-content: flex-start;
   padding-left: 9px;
-  background: linear-gradient(90deg, rgba(240, 99, 99, 0.5), rgba(240, 99, 99, 0.25));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--danger) 50%, transparent), color-mix(in srgb, var(--danger) 25%, transparent));
 }
 .winBlue {
   justify-content: flex-end;
   padding-right: 9px;
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.25), rgba(56, 189, 248, 0.5));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-data) 25%, transparent), color-mix(in srgb, var(--accent-data) 50%, transparent));
 }
 .predNote,
 .predHint {

@@ -24,7 +24,6 @@ export default function BackupLeg({ leg }) {
 
   return (
     <li className={`${styles.leg} ${ok ? styles.legOk : styles.legBad}`}>
-      <span className={styles.legDot} aria-hidden="true" />
       <div className={styles.legMain}>
         <span className={styles.legName}>{LEG_LABEL[leg.leg] ?? leg.leg}</span>
         <span className={styles.legWhen}>

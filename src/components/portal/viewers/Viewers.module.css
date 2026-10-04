@@ -151,7 +151,7 @@
   .iconBtn:hover:not(:disabled) {
     color: var(--accent-data);
     border-color: var(--accent-data);
-    background: rgba(56, 189, 248, 0.08);
+    background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   }
 }
 .iconBtn:focus-visible {
@@ -220,7 +220,7 @@
 .textBtnOn {
   color: var(--accent-data);
   border-color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-data) 8%, transparent);
 }
 /* The one gold action per surface: committing a new version. */
 .textBtnPrimary {
@@ -294,13 +294,13 @@
   height: 52px;
   border-radius: 50%;
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   border: 1px solid var(--border-accent);
 }
 .centerIconBad {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.08);
-  border-color: rgba(240, 99, 99, 0.3);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 .centerTitle {
   font-size: var(--fs-h3);
@@ -345,14 +345,14 @@
   flex: none;
   font-size: var(--fs-small);
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.07);
-  border-bottom: 1px solid rgba(245, 184, 46, 0.25);
+  background: color-mix(in srgb, var(--accent-gold) 7%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-gold) 25%, transparent);
   padding: 10px var(--sp-4);
 }
 .noticeBad {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.07);
-  border-bottom-color: rgba(240, 99, 99, 0.3);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
 .noticeIcon {
   flex: none;
@@ -737,7 +737,7 @@
 @media (hover: hover) and (pointer: fine) {
   .twisty:hover {
     color: var(--accent-data);
-    background: rgba(56, 189, 248, 0.1);
+    background: color-mix(in srgb, var(--accent-data) 10%, transparent);
   }
 }
 .twisty:focus-visible {
@@ -784,7 +784,7 @@
   opacity: 0.8;
 }
 .jsonHit {
-  background: rgba(245, 184, 46, 0.18);
+  background: color-mix(in srgb, var(--accent-gold) 18%, transparent);
   border-radius: var(--r-sm);
 }
 
@@ -802,12 +802,12 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .moreBtn:hover {
-    background: rgba(56, 189, 248, 0.1);
+    background: color-mix(in srgb, var(--accent-data) 10%, transparent);
     border-color: var(--accent-data);
   }
 }
 .moreBtn:focus-visible {
-  background: rgba(56, 189, 248, 0.1);
+  background: color-mix(in srgb, var(--accent-data) 10%, transparent);
   border-color: var(--accent-data);
 }
 .moreBtn:active {

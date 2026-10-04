@@ -313,38 +313,25 @@
   background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-md);
-  padding: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
   box-shadow: var(--card-depth);
+  min-width: 0;
 }
 
+/* A label and a number. The label is a caption in the reading face — the
+   number is the thing on the tile, and nothing else competes with it. */
 .statLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: block;
+  font-size: var(--fs-small);
+  line-height: 1.3;
   color: var(--text-muted);
-  margin-bottom: var(--sp-3);
-}
-/* A small field-telemetry tick — the same cyan mark `.data-tag` uses — gives
-   every reading an accent and a shared identity, without a per-tile icon or a
-   parallel component. The tone classes below recolour it. Static: these tiles
-   are read on every visit, so nothing here moves. */
-.statLabel::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  flex: none;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
+  margin-bottom: var(--sp-2);
 }
 
 .statValue {
+  display: block;
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-primary);
@@ -354,17 +341,16 @@
 }
 
 /* StatTile exposes a `tone`; these complete it. Gold stays scarce — reserved
-   for a genuinely prestige/attention reading, never a default. */
-.stat_gold .statLabel::before {
-  background: var(--accent-gold);
-  box-shadow: none;
+   for a reading that needs attention, never a default. The tone is carried by
+   the number and the tile's edge, in words' own colour. */
+.stat_gold {
+  border-color: color-mix(in srgb, var(--accent-gold) 36%, transparent);
 }
 .stat_gold .statValue {
   color: var(--accent-gold);
 }
-.stat_success .statLabel::before {
-  background: var(--success);
-  box-shadow: none;
+.stat_success .statValue {
+  color: var(--success);
 }
 
 .statUnit {
@@ -449,7 +435,7 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   border: 1px solid var(--border-accent);
   border-radius: var(--r-sm);
   padding: 2px 6px;
@@ -478,7 +464,7 @@
   .rowAction:hover:not(:disabled) {
     color: var(--accent-data);
     border-color: var(--accent-data);
-    background: rgba(56, 189, 248, 0.08);
+    background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   }
 }
 .rowAction:focus-visible {
@@ -576,30 +562,20 @@
   margin-bottom: var(--sp-2);
 }
 .legBad {
-  border-color: rgba(240, 99, 99, 0.35);
-}
-
-.legDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--text-muted);
-}
-.legOk .legDot {
-  background: var(--success);
-  box-shadow: 0 0 10px rgba(63, 207, 142, 0.5);
-}
-.legBad .legDot {
-  background: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 
 .legMain {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  flex: 1;
+  flex: 1 1 220px;
   min-width: 0;
+}
+/* On a phone the two state tags drop under the name instead of squeezing it
+   into a four-line column. */
+.leg {
+  flex-wrap: wrap;
 }
 .legName {
   font-weight: 600;
@@ -630,8 +606,8 @@
   padding: var(--sp-3);
   font-size: var(--fs-small);
   color: var(--text-body);
-  background: rgba(245, 184, 46, 0.08);
-  border: 1px solid rgba(245, 184, 46, 0.3);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
   border-radius: var(--r-md);
   transition: background var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
@@ -647,7 +623,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .alertRow:hover {
-    background: rgba(245, 184, 46, 0.14);
+    background: color-mix(in srgb, var(--accent-gold) 14%, transparent);
     border-color: var(--accent-gold);
   }
 }
@@ -660,7 +636,7 @@
 
 .quickGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: var(--sp-2);
 }
 
@@ -770,17 +746,17 @@
 }
 .legStateOk {
   color: var(--success);
-  border-color: rgba(63, 207, 142, 0.35);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
 }
 .legStateBad {
   color: var(--danger);
-  border-color: rgba(240, 99, 99, 0.35);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 /* Amber, not red: an unverified backup is not a failure, it is an unproven
    claim. Colouring it as an error would train people to ignore it. */
 .legStateWarn {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.35);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
 }
 
 /* --- Graph hubs --------------------------------------------------------- */
@@ -803,8 +779,8 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.08);
-  border: 1px solid rgba(245, 184, 46, 0.25);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 25%, transparent);
   border-radius: var(--r-sm);
   padding: 2px 6px;
 }
@@ -1125,9 +1101,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   text-align: center;
-  padding: var(--sp-7) var(--sp-4);
+  padding: var(--sp-6) var(--sp-4);
   background: var(--surface-sunken);
   border: 1px dashed var(--border-hairline);
   border-radius: var(--r-md);
@@ -1136,25 +1112,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--sp-1);
   border-radius: 50%;
   color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
+  background: color-mix(in srgb, var(--accent-data) 8%, transparent);
   border: 1px solid var(--border-accent);
 }
 .emptyIconBad {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.08);
-  border-color: rgba(240, 99, 99, 0.3);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
 }
+/* An empty state is a note, not a headline: it must not be the loudest thing
+   on a screen whose real content is simply not there yet. */
 .emptyTitle {
-  font-size: var(--fs-h3);
+  font-size: 1.2rem;
+  line-height: 1.2;
 }
 .emptyText {
   font-size: var(--fs-small);
+  line-height: 1.5;
   color: var(--text-muted);
-  max-width: 42ch;
+  max-width: 46ch;
+}
+.empty > :global(.btn) {
+  margin-top: var(--sp-2);
 }
 
 /* --- Skeletons ---------------------------------------------------------- */
@@ -1268,6 +1252,16 @@
   transition: color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
+@media (hover: hover) and (pointer: fine) {
+  .previewToggle:hover {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.previewToggle:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
 .previewToggle[aria-pressed='true'] {
   color: var(--accent-data);
   border-color: var(--accent-data);
@@ -1359,13 +1353,13 @@
 .syncBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: 0.82rem;
+  gap: 7px;
+  min-height: 36px;
+  font-size: var(--fs-small);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 7px 13px;
+  line-height: 1.25;
+  text-align: left;
+  padding: 6px 13px;
   border-radius: var(--r-pill);
   border: 1px solid var(--border-hairline);
   color: var(--text-muted);
@@ -1387,25 +1381,22 @@
   color: var(--text-primary);
 }
 
-.syncDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.syncBadge > svg,
+.syncBadge > .spinnerSm {
   flex: none;
-  background: currentColor;
 }
 
 .sync_ok {
   color: var(--success);
-  border-color: rgba(63, 207, 142, 0.3);
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
 }
 .sync_warn {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.35);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
 }
 .sync_bad {
   color: var(--danger);
-  border-color: rgba(240, 99, 99, 0.4);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 /* Offline is a state, not a fault — the scout did nothing wrong and their data
    is safe. Colouring it red would train people to panic at a working system. */
@@ -1413,16 +1404,6 @@
   color: var(--text-muted);
   border-color: var(--border-strong);
   background: var(--surface-sunken);
-}
-
-.syncCompact .syncLabel {
-  display: none;
-}
-
-@media (max-width: 560px) {
-  .syncLabel {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1471,8 +1452,29 @@
 @media (max-width: 860px), (pointer: coarse) {
   .input,
   .textarea,
-  .fileInput {
+  .fileInput,
+  .searchInput {
     font-size: 16px;
+  }
+  .input,
+  .searchInput {
+    min-height: 44px;
+  }
+  .chip,
+  .syncBadge,
+  .syncDiscard,
+  .previewToggle,
+  .backBtn {
+    min-height: 44px;
+  }
+  .chip,
+  .backBtn {
+    display: inline-flex;
+    align-items: center;
+  }
+  .rowAction {
+    width: 44px;
+    height: 44px;
   }
   .railLink,
   .signOut {
@@ -1557,8 +1559,8 @@
   padding: var(--sp-3);
   font-size: var(--fs-small);
   color: var(--text-body);
-  background: rgba(240, 99, 99, 0.08);
-  border: 1px solid rgba(240, 99, 99, 0.3);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   border-radius: var(--r-md);
 }
 .adminAlert svg {
@@ -1571,8 +1573,8 @@
    gold stays a hairline and a faint wash; the solid gold is spent only on the
    Approve button, so the accent keeps meaning "the primary action". */
 .adminCallout {
-  background: rgba(245, 184, 46, 0.05);
-  border: 1px solid rgba(245, 184, 46, 0.3);
+  background: color-mix(in srgb, var(--accent-gold) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
   border-radius: var(--r-md);
   padding: var(--sp-4);
 }
@@ -1604,6 +1606,45 @@
 .adminField {
   flex: 1 1 130px;
   min-width: 0;
+}
+/* With room, a member is one line — name, subteam, year, role — so the roster
+   reads as a table. Stacked, every member took two rows and the two inputs
+   stretched to half the panel each for a word and a year. */
+@media (min-width: 1000px) {
+  .adminRow .rowMain {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+  .adminRow .rowTitle {
+    flex: 1;
+    min-width: 0;
+  }
+  .adminRow .adminFields {
+    flex: none;
+    flex-wrap: nowrap;
+    width: 320px;
+    margin-top: 0;
+  }
+  .adminRow .adminField:first-child {
+    flex: 1.5 1 0;
+  }
+  .adminRow .adminField:last-child {
+    flex: 1 1 0;
+  }
+  .adminRow {
+    padding-block: var(--sp-2);
+  }
+  /* The role column is the same width whether it holds a select or your own
+     role as a tag, so the columns line up down the list. */
+  .adminRow > .roleSelect,
+  .adminRow > .roleTag {
+    flex: none;
+    width: 130px;
+  }
+  .adminRow > .roleTag {
+    text-align: center;
+  }
 }
 /* Editing here is touch-first, so these inputs opt up to a 16px floor (no iOS
    focus-zoom) and a 44px tap target. The shared .input stays at 14px for the
@@ -1673,8 +1714,8 @@
   display: grid;
   gap: var(--sp-2);
   padding: var(--sp-3);
-  background: rgba(240, 99, 99, 0.06);
-  border: 1px solid rgba(240, 99, 99, 0.3);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   border-radius: var(--r-md);
 }
 .syncProblemsHead {
@@ -1729,12 +1770,12 @@
 @media (hover: hover) and (pointer: fine) {
   .syncDiscard:hover {
     color: var(--danger);
-    border-color: rgba(240, 99, 99, 0.5);
+    border-color: color-mix(in srgb, var(--danger) 50%, transparent);
   }
 }
 .syncDiscard:focus-visible {
   color: var(--danger);
-  border-color: rgba(240, 99, 99, 0.5);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
   .syncDiscard {

@@ -8,12 +8,12 @@
   background: var(--surface-1);
 }
 .statusOpen {
-  border-color: rgba(63, 207, 142, 0.4);
-  background: rgba(63, 207, 142, 0.06);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 6%, transparent);
 }
 .statusClosed {
-  border-color: rgba(240, 99, 99, 0.4);
-  background: rgba(240, 99, 99, 0.06);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
 }
 .statusDot {
   width: 12px;
@@ -24,7 +24,7 @@
 }
 .statusOpen .statusDot {
   background: var(--success);
-  box-shadow: 0 0 12px rgba(63, 207, 142, 0.55);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--success) 55%, transparent);
 }
 .statusClosed .statusDot {
   background: var(--danger);
