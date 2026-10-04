@@ -20,6 +20,8 @@ import {
 } from '../../../lib/scoutingApi'
 import { sortEntries, planMove, locate } from './position'
 import { parseProposal } from './aiProposal'
+import { usePublicEvent } from '../../../lib/publicData'
+import PublicNumbers from '../PublicNumbers'
 import { Loading, Empty, ErrorState } from '../ui'
 import portal from '../Portal.module.css'
 import styles from './PickList.module.css'
@@ -74,6 +76,7 @@ export default function PickList() {
   const [actionError, setActionError] = useState(null)
 
   const [eventKey, setEventKey] = useState(() => localStorage.getItem('frc5805.event') ?? '')
+  const pub = usePublicEvent(eventKey)
   const [events, setEvents] = useState([])
   const [list, setList] = useState(null)
   const [entries, setEntries] = useState([])
@@ -607,6 +610,7 @@ export default function PickList() {
   const cardProps = (entry) => ({
     entry,
     stat: stats[entry.team_number],
+    pub: pub.get(entry.team_number),
     nickname: nicknames[entry.team_number],
     canEdit,
     editable,
@@ -865,6 +869,7 @@ function Coverage({ coverage, unscouted }) {
 function TeamCard({
   entry,
   stat,
+  pub,
   nickname,
   canEdit,
   editable,
@@ -960,6 +965,9 @@ function TeamCard({
             {sd != null && <span className={styles.statV}>±{Number(sd).toFixed(1)}</span>}
           </div>
         )}
+
+        {/* A team we have little or nothing on still has a public number to rank it by. */}
+        <PublicNumbers team={pub} compact />
 
         <div className={styles.meterRow}>
           <div className={styles.meter} aria-hidden="true">

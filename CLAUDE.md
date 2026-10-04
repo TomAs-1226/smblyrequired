@@ -227,8 +227,8 @@ npm run dev:emulators    # dev server pointed at the emulators, http://localhost
 npm test                 # everything below, in order
 npm run test:markdown    # 21 XSS cases + 12 feature cases for the kb renderer
 npm run test:portal      # offline queue, upload types, CSV export, analytics maths (node, no network)
-npm run test:rules       # 52 tests of the Firestore and Storage rules, against the emulator
-npm run test:functions   # 53 tests of the Cloud Functions, against the emulator
+npm run test:rules       # 53 tests of the Firestore and Storage rules, against the emulator
+npm run test:functions   # 62 tests of the Cloud Functions, against the emulator
 npm run seed:demo        # demo data (scripts/firebase/seed-demo.mjs)
 npm run deploy:backend   # firestore rules + indexes, storage rules, functions
 npm run deploy           # fetch TBA data, build, push dist/ to gh-pages
@@ -245,7 +245,7 @@ same through `firebase.backup-test.json`.
 **Run `npm run test:rules` after touching `firebase/firestore.rules` or
 `firebase/storage.rules`, and `npm run test:functions` after touching
 `functions/`.** Both need Java 21+ for the emulators and run under the
-placeholder project `demo-frc5805`, never a real one. The 52 rules tests are the
+placeholder project `demo-frc5805`, never a real one. The 53 rules tests are the
 actual proof that the access model holds — that a member cannot escalate, that a
 signed-out visitor reads nothing, that a member cannot overwrite another member's
 file. Reading the rules is not the same as testing them; the overwrite hole in

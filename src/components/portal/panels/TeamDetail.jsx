@@ -12,6 +12,8 @@ import {
   teamStat,
 } from '../../../lib/scoutingApi'
 import { signedUrl } from '../../../lib/portalApi'
+import { usePublicEvent } from '../../../lib/publicData'
+import PublicNumbers from '../PublicNumbers'
 import { Loading, Empty, ErrorState } from '../ui'
 import styles from '../Portal.module.css'
 import css from './TeamDetail.module.css'
@@ -193,6 +195,7 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
   const [bootError, setBootError] = useState(null)
 
   const [eventKey, setEventKey] = useState(() => localStorage.getItem(EVENT_KEY) ?? '')
+  const pub = usePublicEvent(eventKey)
   const [roster, setRoster] = useState([])
   const [forms, setForms] = useState({ match: [], pit: [], strategy: [] })
   const [eventLoading, setEventLoading] = useState(false)
@@ -465,6 +468,8 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
                 )}
                 <Header team={team} info={teamInfo} stat={detail.stat} />
                 <Performance stat={detail.stat} />
+                {/* The public estimate, for the team we watched twice or not at all. */}
+                <PublicNumbers team={pub.get(Number(team))} epaOnly />
                 <OfficialNumbers tba={detail.tba} />
                 <Entries entries={detail.entries} forms={forms} />
                 <Photos

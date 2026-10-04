@@ -155,8 +155,8 @@ npm test                    # everything below, in order
 |---|---|
 | `npm run test:markdown` | The knowledge-base renderer: 21 attack cases and 12 feature cases. No network |
 | `npm run test:portal` | Node-only suites: offline queue, upload types, CSV export, analytics maths. No network |
-| `npm run test:rules` | `firebase/test/rules.test.mjs` — 52 tests of the Firestore and Storage rules, against the emulator |
-| `npm run test:functions` | `functions/test/` — 53 tests of the Cloud Functions, against the emulator |
+| `npm run test:rules` | `firebase/test/rules.test.mjs` — 53 tests of the Firestore and Storage rules, against the emulator |
+| `npm run test:functions` | `functions/test/` — 62 tests of the Cloud Functions, against the emulator |
 
 The two emulator suites need **Java 21 or newer** on `PATH` (the emulators are Java programs)
 and no credentials. They run under the placeholder project `demo-frc5805`, and
@@ -271,6 +271,13 @@ public numbers: Statbotics EPA and The Blue Alliance OPR, shown beside our own s
 averages and labelled as public data. It is fetched by the `publicData` function and cached
 for ten minutes. EPA needs nothing; OPR needs the `TBA_KEY` function secret (step 8), and
 without it the OPR columns are simply empty.
+
+The same numbers appear where our own scouting may be thin: **Coverage** shows each team's EPA
+and rank and can sort "Strongest gaps first" (the best team nobody has watched comes first),
+**Team detail** shows the EPA split under our own performance figures, and each **Pick list**
+card carries EPA and rank. They are an estimate from match scores, always named as such, and
+never mixed into our own averages. `npm run seed:demo` writes invented public numbers for the
+demo event, since Statbotics has never heard of it.
 
 ### A new account is `pending` and sees nothing
 

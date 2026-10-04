@@ -100,6 +100,16 @@ test('Statbotics down: the last good copy is served and marked stale; with no co
   )
 })
 
+test('an empty answer never replaces a copy that has teams', async () => {
+  const now = 9_000_000_000
+  const old = { event_key: '2026demo', teams: [teamFromStatbotics(sbRow(5805, 40))], sources: {}, team_count: 1, synced_at: new Date(now - 3_600_000).toISOString() }
+  const cache = memoryCache(old)
+  const out = await handlePublicData({ action: 'event', eventKey: '2026demo' }, { key: '', cache, now, fetch: upstream({ statbotics: () => json([]) }) })
+  assert.equal(out.stale, true)
+  assert.equal(out.teams.length, 1)
+  assert.equal(cache.peek().team_count, 1)
+})
+
 test('a bad event key or action is refused before anything is fetched', async () => {
   const fetch = async () => { throw new Error('should not be called') }
   await assert.rejects(handlePublicData({ action: 'event', eventKey: 'not a key' }, { fetch, cache: memoryCache() }), /eventKey/)

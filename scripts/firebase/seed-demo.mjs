@@ -139,6 +139,32 @@ for (const [team_number] of TEAMS.slice(0, 12)) {
   entries++
 }
 
+// The public record for the demo event, as the publicData function would cache it.
+// Statbotics has never heard of this event, so these numbers are invented, like
+// everything else here; the function keeps a copy that has teams over an empty answer.
+// They follow each team's level, loosely: the public estimate and the scouts mostly agree.
+const strength = TEAMS.map(([team_number, name]) => ({
+  team_number, name, total: Math.max(4, Math.round(level.get(team_number) * 6 + between(-50, 50)) / 10),
+}))
+const ranked = [...strength].sort((a, b) => b.total - a.total)
+await w.set(db.collection('public_event_data').doc(EVENT), {
+  event_key: EVENT,
+  teams: strength.map(({ team_number, name, total }) => {
+    const auto = Math.round(total * 2.2) / 10
+    const endgame = Math.round(total * 1.1) / 10
+    const wins = between(2, 9)
+    return {
+      team_number, name,
+      epa: { total, auto, teleop: Math.round((total - auto - endgame) * 10) / 10, endgame, start: null, mean: total, max: null, components: {} },
+      record: { wins, losses: 10 - wins, ties: 0, played: 10, rank: ranked.findIndex((t) => t.team_number === team_number) + 1, num_teams: TEAMS.length },
+      opr: Math.round(total * 9.4) / 10, dpr: null, ccwm: null,
+    }
+  }),
+  sources: { statbotics: { ok: true, error: null }, tba: { ok: true, error: null } },
+  team_count: TEAMS.length,
+  synced_at: now(),
+})
+
 // Knowledge base, with their slug indexes.
 const docs = [
   ['pit-checklist', 'Pit checklist', 'pit', '# Before every match\n\n- Battery above 12.5 V, strapped in\n- Bumpers on, numbers the right way round\n- Radio light solid\n- **Tug-test** every connector you touched'],

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../Icon'
 import { eventCoverage, listEvents, teamChecklist } from '../../../lib/scoutingApi'
+import { usePublicEvent } from '../../../lib/publicData'
 import { ErrorState, Loading, Empty } from '../ui'
 import styles from '../Portal.module.css'
 import c from '../forms/Checklist.module.css'
@@ -34,6 +35,10 @@ const FILTERS = [
 
 const SORTS = [
   { id: 'gaps', label: 'Least scouted first' },
+  // With fewer scouts than robots, the gap worth closing first is the strongest
+  // team nobody has watched. Strength here is Statbotics EPA: public, and an
+  // estimate, which is all a priority order needs.
+  { id: 'priority', label: 'Strongest gaps first' },
   { id: 'team', label: 'Team number' },
   { id: 'recent', label: 'Most recent first' },
   { id: 'stale', label: 'Longest since scouted' },
@@ -64,6 +69,8 @@ export default function Checklist() {
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('gaps')
+  // Empty when Statbotics has nothing for the event: the rows simply show no EPA.
+  const pub = usePublicEvent(eventKey)
 
   // The event list only populates the picker — `load` below owns the loading and
   // error state for the checklist itself, so this deliberately does not touch
@@ -143,13 +150,18 @@ export default function Checklist() {
         const zt = z.last_scouted ? new Date(z.last_scouted).getTime() : -Infinity
         return at - zt
       }
+      if (sort === 'priority') {
+        const ae = pub.get(a.team_number)?.epa?.total ?? -Infinity
+        const ze = pub.get(z.team_number)?.epa?.total ?? -Infinity
+        return done(a) - done(z) || ze - ae || a.team_number - z.team_number
+      }
       // gaps: least complete first, then fewest match passes, then team number
       // so the order is stable rather than shuffling between refreshes.
       return done(a) - done(z) || a.match_passes - z.match_passes || a.team_number - z.team_number
     })
 
     return out
-  }, [rows, q, filter, sort])
+  }, [rows, q, filter, sort, pub])
 
   return (
     <div className={styles.stack}>
@@ -258,7 +270,7 @@ export default function Checklist() {
             ) : (
               <ul className={c.list}>
                 {visible.map((r, i) => (
-                  <TeamRow key={r.team_number} row={r} index={i} />
+                  <TeamRow key={r.team_number} row={r} index={i} pub={pub.get(r.team_number)} />
                 ))}
               </ul>
             )}
@@ -307,8 +319,9 @@ function Coverage({ coverage }) {
   )
 }
 
-function TeamRow({ row, index }) {
+function TeamRow({ row, index, pub }) {
   const when = ago(row.last_scouted)
+  const epa = pub?.epa?.total
 
   return (
     <li className={c.row} style={{ '--i': Math.min(index, 8) }}>
@@ -323,6 +336,12 @@ function TeamRow({ row, index }) {
       </div>
 
       <div className={c.meta}>
+        {epa != null && (
+          <span title="Statbotics EPA: expected points, estimated from match scores">
+            EPA {epa.toFixed(1)}
+            {pub.record?.rank != null ? ` · rank ${pub.record.rank}` : ''}
+          </span>
+        )}
         <span className={row.match_passes ? '' : c.zero}>{row.match_passes} match</span>
         <span className={row.pit_passes ? '' : c.zero}>{row.pit_passes} pit</span>
         <span className={row.note_passes ? '' : c.zero}>{row.note_passes} notes</span>

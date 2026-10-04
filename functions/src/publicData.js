@@ -141,6 +141,9 @@ export async function handlePublicData(data, deps = {}) {
   }
 
   let teams = sb.data.map(teamFromStatbotics).filter((t) => Number.isInteger(t.team_number) && t.team_number > 0)
+  // An event's teams do not vanish. An empty answer over a copy that has teams is
+  // an upstream hiccup, so the copy stands, marked old.
+  if (!teams.length && cached?.teams?.length) return { ...plain(cached), cached: true, stale: true }
   const sources = { statbotics: { ok: true, error: null }, tba: { ok: false, error: null } }
 
   const tba = await tbaGet(`/event/${eventKey}/oprs`, d)

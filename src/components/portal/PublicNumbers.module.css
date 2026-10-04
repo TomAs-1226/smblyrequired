@@ -1,0 +1,65 @@
+/* One team's public numbers. Mono figures, small caps labels, and a source line:
+   it should read as a reference figure sitting beside our scouting, not as part
+   of it. */
+.strip {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+}
+.cells {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin: 0;
+}
+.cell {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.cell dt {
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cell dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.96rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-body);
+}
+.lead dd {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.from {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+/* In a list row: no box, no source line, just the figures. */
+.compact {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.compact .cells {
+  gap: 2px var(--sp-3);
+}
+.compact .cell dt {
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+}
+.compact .cell dd {
+  font-size: 0.9rem;
+}
