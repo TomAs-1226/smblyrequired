@@ -85,7 +85,7 @@
 .role_viewer { color: var(--tier-silver); border-color: var(--border-strong); }
 .role_member { color: var(--accent-data); border-color: var(--border-accent); }
 .role_lead,
-.role_mentor { color: var(--accent-gold); border-color: rgba(245, 184, 46, 0.35); }
+.role_mentor { color: var(--accent-gold); border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent); }
 .role_admin {
   color: var(--text-on-gold);
   background: var(--accent-gold);
@@ -206,11 +206,10 @@
 }
 .railLinkActive {
   color: var(--text-primary);
-  /* A lit cyan wash fading to nothing, so the active tab reads as a channel that
-     is switched on — more present than a flat fill, still restrained. */
-  background: linear-gradient(90deg, rgba(56, 189, 248, 0.16), rgba(56, 189, 248, 0.02) 80%);
+  /* A wash of the accent fading to nothing, and the edge line: enough to find
+     the current tab, no glow. */
+  background: linear-gradient(90deg, var(--accent-data-wash), transparent 80%);
   border-left-color: var(--accent-data);
-  box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
 }
 .railLinkActive > svg {
   color: var(--accent-data);

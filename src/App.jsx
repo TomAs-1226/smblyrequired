@@ -166,10 +166,9 @@ export default function App() {
       </main>
       {/* The portal draws its own slim foot; the public footer is for visitors. */}
       {!isPortal && <Footer />}
-      {/* The sticky "Sponsor Us" CTA is aimed at prospective sponsors reading
-          the public site. Inside the portal the audience is already on the
-          team, so it is just a bar covering the UI. */}
-      <BackToTop path={path} />
+      {/* Public pages only. The portal's forms keep their own controls in the
+          bottom corner of a phone, and the button sat on top of them. */}
+      {!isPortal && <BackToTop path={path} />}
     </div>
   )
 }
