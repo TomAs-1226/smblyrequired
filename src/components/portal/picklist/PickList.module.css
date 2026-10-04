@@ -46,7 +46,7 @@
 
 .listMeta {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -64,7 +64,7 @@
   align-items: center;
   gap: 7px;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -222,14 +222,14 @@
 }
 .missingLabel {
   font-family: var(--font-display);
-  font-size: 0.65rem;
+  font-size: 0.76rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 .missingTeam {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--accent-gold);
   background: rgba(245, 184, 46, 0.08);
   border: 1px solid rgba(245, 184, 46, 0.25);
@@ -302,7 +302,7 @@
 }
 .laneCount {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -457,7 +457,7 @@
   font-variant-numeric: tabular-nums;
 }
 .cardNick {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -496,7 +496,7 @@
   gap: var(--sp-2);
   flex-wrap: wrap;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 .statV {
@@ -504,7 +504,7 @@
 }
 .statStrong {
   color: var(--text-primary);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
 }
 
 .flags {
@@ -514,7 +514,7 @@
 }
 .flag {
   font-family: var(--font-display);
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -589,7 +589,7 @@
 }
 
 .noteText {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-body);
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -598,7 +598,7 @@
 .noteInput {
   width: 100%;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   line-height: 1.45;
   color: var(--text-primary);
   background: var(--surface-sunken);
@@ -655,13 +655,13 @@
 /* --- Keyboard hint ------------------------------------------------------ */
 
 .hint {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
 .hint kbd {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--accent-data);
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
@@ -693,7 +693,7 @@
 }
 .proposalTitle {
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -719,7 +719,7 @@
 }
 
 .proposalNote {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -741,7 +741,7 @@
 }
 .offerGroupName {
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -770,24 +770,24 @@
 }
 .offerMove {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 .offerExcerpt {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--text-body);
   overflow-wrap: anywhere;
 }
 .offerWeak {
   font-family: var(--font-display);
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent-gold);
 }
 .offerDone {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--success);
   flex: none;
 }
@@ -795,7 +795,7 @@
 .accept {
   flex: none;
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;

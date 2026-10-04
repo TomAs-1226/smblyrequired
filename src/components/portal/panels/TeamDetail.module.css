@@ -196,7 +196,7 @@
 }
 .teamNumTag {
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -228,7 +228,7 @@
   gap: var(--sp-2) var(--sp-3);
   flex-wrap: wrap;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.02em;
   color: var(--text-muted);
   margin-top: 7px;
@@ -273,7 +273,7 @@
   align-items: center;
   gap: 7px;
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -394,7 +394,7 @@
   justify-content: space-between;
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -460,7 +460,7 @@
    "context not a rating" disclaimer. */
 .statSub {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
   margin-top: 8px;
@@ -529,7 +529,7 @@
 }
 .kindTag {
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -560,7 +560,7 @@
 }
 .alliance {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 2px 8px;
@@ -581,7 +581,7 @@
 .entryWhen {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -777,7 +777,7 @@
 }
 .lbCaption {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-body);
   overflow-wrap: anywhere;
 }
@@ -923,7 +923,7 @@
   font-variant-numeric: tabular-nums;
 }
 .workScale {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -944,7 +944,7 @@
   transform: scaleX(var(--v, 0));
 }
 .workSub {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
@@ -996,7 +996,7 @@
 .aiFoot {
   margin-top: var(--sp-3);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 /* Muted, never red. The numbers above are complete without any of this. */
@@ -1010,7 +1010,7 @@
 }
 .aiWhy {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
@@ -1111,7 +1111,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1171,7 +1171,7 @@
   color: var(--text-muted);
 }
 .oUnit {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -1193,7 +1193,7 @@
 .tbaHint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -1233,7 +1233,7 @@
 }
 .tbaAlliance {
   font-family: var(--font-display);
-  font-size: 0.66rem;
+  font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;

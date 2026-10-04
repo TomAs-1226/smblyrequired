@@ -164,7 +164,8 @@ export default function App() {
           <Page {...pageProps} />
         </Suspense>
       </main>
-      <Footer />
+      {/* The portal draws its own slim foot; the public footer is for visitors. */}
+      {!isPortal && <Footer />}
       {/* The sticky "Sponsor Us" CTA is aimed at prospective sponsors reading
           the public site. Inside the portal the audience is already on the
           team, so it is just a bar covering the UI. */}

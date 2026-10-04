@@ -2,7 +2,7 @@ import {
   collection, doc, query, where, orderBy, limit as limitTo, getDocFromServer as fsGetDoc,
   getDocsFromServer as getDocs, runTransaction, getAggregateFromServer, count, sum,
 } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL, getBlob, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL, getBlob, getMetadata, deleteObject } from 'firebase/storage'
 import { db, storage } from './firebase'
 import { isConfigured, notConnected, wrap, row, rows, now, ts, call, currentUid, memberNames } from './db'
 import { fileId } from './ids'
@@ -72,24 +72,31 @@ export async function listFiles({ kind, season, search, limit = 60 } = {}) {
   }
 }
 
-// A URL for a stored file. The Storage rules decide who may ask for one; the
-// link it returns carries its own access token, so treat it like the file
-// itself — do not paste it where the file should not go. For pictures of
-// people, prefer `blobUrl`, which never creates a link at all.
-// (`expiresIn` is accepted for the callers that pass it; Firebase links do not
-// expire, they are revoked per file.)
+// A URL for a stored file. The Storage rules decide who may ask for one.
+//
+// Team media (the `media` folder: pit photos, pictures of students) is fetched
+// with the signed-in user's own credentials and handed back as an object URL
+// that lives only in this tab — nothing shareable is created. A media file too
+// large to hold in memory (a long video), and everything in the other folders,
+// gets a Firebase download link. That link carries its own access token and does
+// not expire, so treat it like the file itself.
+// (`expiresIn` is accepted for the callers that pass it; it no longer applies.)
+const IN_MEMORY_LIMIT = 40 * 1024 * 1024
 export async function signedUrl(bucket, path, expiresIn = 300) { // eslint-disable-line no-unused-vars
   if (!isConfigured) return notConnected()
   try {
-    return { data: await getDownloadURL(objectRef(bucket, path)), error: null }
+    const at = objectRef(bucket, path)
+    if (bucket === 'media' && (await getMetadata(at)).size <= IN_MEMORY_LIMIT) {
+      return { data: URL.createObjectURL(await getBlob(at)), error: null }
+    }
+    return { data: await getDownloadURL(at), error: null }
   } catch (e) {
     return { data: null, error: wrap(e) }
   }
 }
 
-// The file's bytes fetched with the signed-in user's own credentials and handed
-// to the page as an object URL: nothing shareable is created. Used for team
-// photos. The caller revokes it (URL.revokeObjectURL) when done.
+// The same in-memory fetch for any folder, when a caller wants no link at all.
+// The caller revokes it (URL.revokeObjectURL) when done.
 export async function blobUrl(bucket, path) {
   if (!isConfigured) return notConnected()
   try {

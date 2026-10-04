@@ -25,7 +25,7 @@
 
 .sectionHead {
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -292,7 +292,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-display);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -384,7 +384,7 @@
   letter-spacing: 0.04em;
 }
 .modeBlurb {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.35;
 }
@@ -618,7 +618,7 @@
 }
 .timerPhase {
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -642,7 +642,7 @@
 .timerFlag {
   width: 100%;
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -707,7 +707,7 @@
   padding: 0 var(--sp-4);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -727,7 +727,7 @@
 }
 .timerElapsed {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
 }
 
@@ -802,7 +802,7 @@
   margin-left: auto;
   flex: none;
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;

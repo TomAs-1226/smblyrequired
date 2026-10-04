@@ -23,50 +23,59 @@ import Admin from './panels/Admin'
 import { ErrorState } from './ui'
 import styles from './Portal.module.css'
 
+// The rail's sections, in order. A group with no visible panel is not drawn.
+const GROUPS = [
+  { id: 'home', label: null },
+  { id: 'scouting', label: 'Scouting' },
+  { id: 'strategy', label: 'Strategy' },
+  { id: 'library', label: 'Library' },
+  { id: 'leads', label: 'Leads' },
+]
+
 // Panels are declared with the privilege floor they require. The gate below is
 // convenience only — the security rules are the actual boundary. Hiding a tab
 // the server would refuse anyway just avoids showing people doors that do not
 // open for them.
 const PANELS = [
-  { id: '', label: 'Overview', icon: 'grid', min: 'viewer', Component: Dashboard },
+  { id: '', group: 'home', label: 'Overview', icon: 'grid', min: 'viewer', Component: Dashboard },
   // Second, deliberately. At a competition this is the only tab that matters,
   // and it should not be buried under the archive tabs nobody opens in a pit.
-  { id: 'scout', label: 'Scout', icon: 'flag', min: 'member', Component: Scouting },
+  { id: 'scout', group: 'scouting', label: 'Scout', icon: 'flag', min: 'member', Component: Scouting },
   // Coverage sits next to Scout because "who still needs scouting?" is the
   // question asked between matches, by the same person, on the same phone.
-  { id: 'checklist', label: 'Coverage', icon: 'check', min: 'member', Component: Checklist },
-  { id: 'compare', label: 'Compare', icon: 'bars', min: 'member', Component: Compare },
+  { id: 'checklist', group: 'scouting', label: 'Coverage', icon: 'check', min: 'member', Component: Checklist },
+  { id: 'compare', group: 'strategy', label: 'Compare', icon: 'bars', min: 'member', Component: Compare },
   // The Catalyst engine on screen: power rankings computed from our own scouting
   // (with Statbotics EPA alongside when it answers), plus a match predictor. The
   // strategy cluster's overview — where a lead starts before drilling in.
-  { id: 'analytics', label: 'Analytics', icon: 'compass', min: 'member', Component: Analytics },
+  { id: 'analytics', group: 'strategy', label: 'Analytics', icon: 'compass', min: 'member', Component: Analytics },
   // Drill into one team: their scouting, photos, official TBA numbers, and how
   // workable they are as a partner. The strategy-analysis cluster's detail view.
-  { id: 'team', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },
+  { id: 'team', group: 'strategy', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },
   // Members can read the board — everyone benefits from knowing the ranking.
   // Editing is lead+, enforced in firestore.rules: one careless drag during selection is
   // expensive and hard to notice.
-  { id: 'picks', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
+  { id: 'picks', group: 'strategy', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
   // The master-device vision pipeline: a phone runs an object detector on-device
   // and streams timestamped counts into scouting. `cpu` icon, not a camera one,
   // deliberately — the honest framing is "on-device model", not "it sees the
   // game". Member floor: running it is a scout's job, firestore.rules is the real gate.
-  { id: 'vision', label: 'Vision', icon: 'cpu', min: 'member', Component: VisionPanel },
+  { id: 'vision', group: 'scouting', label: 'Vision', icon: 'cpu', min: 'member', Component: VisionPanel },
   // Authoring the season's questions is a mentor/lead job, not a scout's.
-  { id: 'forms', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
+  { id: 'forms', group: 'leads', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
   // Leadership sets the active event and the scouting window here; both are
   // enforced in firestore.rules (scout_settings), not just this screen.
-  { id: 'control', label: 'Event control', icon: 'calendar', min: 'lead', Component: Control },
-  { id: 'files', label: 'Files', icon: 'folder', min: 'viewer', Component: Files },
-  { id: 'graphs', label: 'Graphs', icon: 'share', min: 'member', Component: Graphs },
-  { id: 'code', label: 'Code', icon: 'code', min: 'member', Component: CodeArchive },
-  { id: 'kb', label: 'Knowledge', icon: 'book', min: 'member', Component: Knowledge },
-  { id: 'roster', label: 'Team', icon: 'users', min: 'lead', Component: Roster },
+  { id: 'control', group: 'leads', label: 'Event control', icon: 'calendar', min: 'lead', Component: Control },
+  { id: 'files', group: 'library', label: 'Files', icon: 'folder', min: 'viewer', Component: Files },
+  { id: 'graphs', group: 'library', label: 'Graphs', icon: 'share', min: 'member', Component: Graphs },
+  { id: 'code', group: 'library', label: 'Code', icon: 'code', min: 'member', Component: CodeArchive },
+  { id: 'kb', group: 'library', label: 'Knowledge', icon: 'book', min: 'member', Component: Knowledge },
+  { id: 'roster', group: 'leads', label: 'Team', icon: 'users', min: 'lead', Component: Roster },
   // Last, and admin-only. Approvals, role changes, the audit trail, and storage
   // health — the controls a lead can see the results of but only an admin may
   // touch. The rules are the real gate; `min: 'admin'` just hides a door that would not
   // open anyway.
-  { id: 'admin', label: 'Admin', icon: 'cog', min: 'admin', Component: Admin },
+  { id: 'admin', group: 'leads', label: 'Admin', icon: 'cog', min: 'admin', Component: Admin },
 ]
 
 // AuthProvider lives here rather than in App so that the Firebase client is
@@ -156,18 +165,27 @@ function PortalInner({ sub }) {
           className={`${styles.rail} ${menuOpen ? styles.railOpen : ''}`}
           aria-label="Portal sections"
         >
-          {visible.map((p) => {
-            const isActive = p.id === active.id
+          {GROUPS.map((g) => {
+            const items = visible.filter((p) => p.group === g.id)
+            if (!items.length) return null
             return (
-              <a
-                key={p.id || 'overview'}
-                href={`#/portal${p.id ? `/${p.id}` : ''}`}
-                className={`${styles.railLink} ${isActive ? styles.railLinkActive : ''}`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <Icon name={p.icon} size={17} />
-                {p.label}
-              </a>
+              <div key={g.id} className={styles.railGroup}>
+                {g.label && <span className={styles.railLabel}>{g.label}</span>}
+                {items.map((p) => {
+                  const isActive = p.id === active.id
+                  return (
+                    <a
+                      key={p.id || 'overview'}
+                      href={`#/portal${p.id ? `/${p.id}` : ''}`}
+                      className={`${styles.railLink} ${isActive ? styles.railLinkActive : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      <Icon name={p.icon} size={17} />
+                      {p.label}
+                    </a>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>
@@ -182,6 +200,13 @@ function PortalInner({ sub }) {
           )}
         </div>
       </div>
+
+      {/* The portal's own foot: the public site's footer (sponsors, donate, the
+          big wordmark) is for visitors, and is not drawn under the portal. */}
+      <footer className={styles.foot}>
+        <span>FRC Team 5805 · Team portal</span>
+        <a href="#/">Back to the public site</a>
+      </footer>
     </div>
   )
 }

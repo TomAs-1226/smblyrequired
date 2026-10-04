@@ -195,9 +195,12 @@ One bucket, five top-level folders (the old buckets): `graphs/`, `code/`,
 `knowledge/`, `media/` (private) and `public-media/` (world-readable). Limits per
 folder are in `firebase/storage.rules` (same sizes and types as before;
 `src/lib/uploadTypes.js` normalises the content type first). Every upload sets
-`customMetadata.owner = uid`. Reading a private file: `fileUrl()` in
-`src/lib/portalApi.js` fetches the bytes with the user's credentials and hands
-back an object URL — no long-lived public link is created for team media.
+`customMetadata.owner = uid`. Reading a private file is `signedUrl()` in
+`src/lib/portalApi.js`: team media (`media/`, up to 40 MB) is fetched with the
+user's credentials and handed back as an object URL, so no shareable link exists
+for pictures of students; everything else gets a Firebase download link, which
+carries its own token and does not expire. Browser downloads need the bucket's
+CORS set once (`firebase/cors.json`).
 
 ## Cloud Functions (`functions/`, region `us-west1`)
 

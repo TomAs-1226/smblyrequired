@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Official website of FRC Team 5805 — SMbly Required, Santa Margarita Catholic High School.",
+  "description": "Official website of FRC Team 5805 \u2014 SMbly Required, Santa Margarita Catholic High School.",
   "scripts": {
     "dev": "vite",
     "dev:emulators": "vite --mode emulators --port 5174 --strictPort",
@@ -18,7 +18,8 @@
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frc5805 \"node --test firebase/test/rules.test.mjs\"",
     "test:functions": "firebase --config firebase.functions-test.json emulators:exec --project demo-frc5805 \"node --test functions/test/*.test.mjs\"",
     "test": "npm run test:markdown && npm run test:portal && npm run test:rules && npm run test:functions",
-    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions"
+    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",
+    "seed:demo": "node scripts/firebase/seed-demo.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

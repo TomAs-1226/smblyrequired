@@ -57,7 +57,7 @@
 
 .event {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   color: var(--text-muted);
 }
@@ -78,7 +78,7 @@
   font-size: 1.3rem;
 }
 .countSub {
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -132,7 +132,7 @@
   padding: 0 14px;
   scroll-snap-align: start;
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -155,7 +155,7 @@
   border-radius: 50%;
   border: 1px solid currentColor;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.76rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -431,7 +431,7 @@
 
 .metricLabel {
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -440,7 +440,7 @@
 
 .metricValue {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   color: var(--text-body);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -759,7 +759,7 @@
 
 .doneRowMeta {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
@@ -769,7 +769,7 @@
   min-height: 44px;
   padding: 0 var(--sp-3);
   font-family: var(--font-display);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -800,7 +800,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
   .action {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     padding: 0 var(--sp-2);
   }
 }

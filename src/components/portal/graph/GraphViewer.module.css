@@ -55,13 +55,13 @@
 
 .counts {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
 .settling {
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent-data);
@@ -75,7 +75,7 @@
   min-height: 36px;
   padding: 8px 14px;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -123,7 +123,7 @@
   left: var(--sp-3);
   bottom: var(--sp-3);
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   color: var(--text-primary);
   background: var(--surface-1);
   border: 1px solid var(--border-accent);
@@ -211,7 +211,7 @@
 .metaLabel {
   display: block;
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  font-size: 0.76rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);

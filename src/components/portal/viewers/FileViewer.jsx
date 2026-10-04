@@ -34,23 +34,6 @@ const HtmlViewer = lazy(() => import('./HtmlViewer'))
 const TTL_DEFAULT = 600
 const TTL_ARCHIVE = 900
 
-// Supabase honoured `?download=` on a signed URL by setting Content-Disposition.
-// TODO(verify): whether a Firebase download URL does the same; if it does not,
-// the button still opens the file, but the browser picks the filename. Appending
-// it here avoids having to change lib/portalApi's signature.
-function withDownload(url, filename) {
-  if (!url) return url
-  try {
-    const u = new URL(url)
-    u.searchParams.set('download', filename)
-    return u.toString()
-  } catch {
-    // A URL that does not parse is not one worth decorating — hand back the
-    // original so the button still does something useful.
-    return url
-  }
-}
-
 export default function FileViewer({
   bucket,
   path,
@@ -152,7 +135,10 @@ export default function FileViewer({
     }
   }, [onClose])
 
-  const download = withDownload(state.url, name)
+  // The same URL the viewer shows. An object URL (team media) downloads under
+  // the name given by the link's `download` attribute; a Firebase download link is
+  // served under the stored object's own name.
+  const download = state.url
 
   return (
     <div
