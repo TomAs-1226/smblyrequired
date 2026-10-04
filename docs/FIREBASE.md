@@ -157,6 +157,13 @@ null at n<2), `min_score?`, `max_score?`, `pit_estimate?`, `breakdowns`,
 entries and no photos left. Coverage and the checklist are computed in the browser
 from these plus `event_teams`.
 
+### `public_event_data/{eventKey}` (functions only)
+`event_key`, `teams` (array of `{ team_number, name, epa: { total, auto, teleop,
+endgame, start, mean, max, components }, record: { wins, losses, ties, played,
+rank, num_teams }, opr, dpr, ccwm }`), `sources: { statbotics: {ok, error}, tba:
+{ok, error} }`, `team_count`, `synced_at`. An estimate from match scores, shown
+beside our own scouting and labelled as public data wherever it appears.
+
 ### `robot_photos/{client_uuid}`
 `client_uuid`, `event_key?`, `team_number int`, `angle`
 (`front|side|rear|drivetrain|intake|scoring|other`), `file {id,bucket,path}`,
@@ -215,6 +222,7 @@ or an `HttpsError` whose message is already written for the reader):
 | `tbaProxy({ action, … })` | member | The Blue Alliance, with `events` / `event_teams` cached in Firestore |
 | `nexusProxy({ action:'event_status', eventKey, force })` | member | frc.nexus live queuing |
 | `statboticsProxy({ action, … })` | member | Statbotics EPA |
+| `publicData({ action:'event', eventKey, force })` | member | every team at an event from the public record: Statbotics EPA (total, auto, teleop, endgame, components, record, rank) merged with TBA OPR/DPR/CCWM when a key is set; cached in `public_event_data/{eventKey}` for ten minutes, and the last good copy is served, marked stale, when Statbotics is down |
 | `ai({ task, … })` | member | scouting summaries and pick-list help (OpenAI) |
 
 Triggers: `onScoutEntryWritten`, `onRobotPhotoWritten` (stats),

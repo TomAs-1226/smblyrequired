@@ -10,6 +10,7 @@ import Checklist from './panels/Checklist'
 import Compare from './compare/Compare'
 import Analytics from './panels/Analytics'
 import TeamDetail from './panels/TeamDetail'
+import PublicData from './panels/PublicData'
 import PickList from './picklist/PickList'
 import VisionPanel from './vision/VisionPanel'
 import Forms from './forms/Forms'
@@ -52,6 +53,9 @@ const PANELS = [
   // Drill into one team: their scouting, photos, official TBA numbers, and how
   // workable they are as a partner. The strategy-analysis cluster's detail view.
   { id: 'team', group: 'strategy', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },
+  // Every team at the event from the public record (Statbotics EPA, TBA OPR),
+  // beside what we scouted. There for the robots we had no scout on.
+  { id: 'field', group: 'strategy', label: 'Field data', icon: 'pin', min: 'member', Component: PublicData },
   // Members can read the board — everyone benefits from knowing the ranking.
   // Editing is lead+, enforced in firestore.rules: one careless drag during selection is
   // expensive and hard to notice.

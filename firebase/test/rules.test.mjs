@@ -334,6 +334,11 @@ describe('server-written collections', () => {
     await assertFails(setDoc(doc(dbOf('admin'), 'backup_runs', 'x'), { leg: 'a', status: 'ok' }))
     await assertFails(setDoc(doc(dbOf('admin'), 'team_event_stats', '2026test_5805'), { avg_score: 999 }))
   })
+  test('the public-data cache: members read, nobody writes', async () => {
+    await assertSucceeds(getDoc(doc(dbOf('member'), 'public_event_data', '2026test')))
+    await assertFails(getDoc(doc(dbOf('viewer'), 'public_event_data', '2026test')))
+    await assertFails(setDoc(doc(dbOf('admin'), 'public_event_data', '2026test'), { teams: [] }))
+  })
   test('a collection the rules do not name is closed, to admins too', async () => {
     await assertFails(setDoc(doc(dbOf('admin'), 'rate_limits', 'admin_ai'), { count: 0 }))
     await assertFails(getDocs(collection(dbOf('admin'), 'anything_else')))

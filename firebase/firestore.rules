@@ -316,6 +316,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // The public record for an event (Statbotics EPA, TBA OPR), merged and cached
+    // by the publicData function.
+    match /public_event_data/{eventKey} {
+      allow read: if atLeast('member');
+      allow write: if false;
+    }
+
     // ---- The Blue Alliance cache ---------------------------------------------
     // Written by the tbaProxy function for everyone, and by leads directly.
 

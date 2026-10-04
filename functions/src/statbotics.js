@@ -27,7 +27,7 @@ const MAX_BODY_BYTES = 4_000
 // cache is safe and kind to a free service. A miss is always correct.
 const TTL = 15 * 60
 
-async function sbGet(path, deps) {
+export async function sbGet(path, deps) {
   let res
   try {
     res = await deps.fetch(BASE + path, {

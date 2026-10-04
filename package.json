@@ -15,7 +15,7 @@
     "deploy": "node scripts/fetch-tba.mjs && vite build && npx gh-pages -d dist -m \"Deploy site\"",
     "test:markdown": "node scripts/test/markdown-safety.mjs",
     "test:portal": "node scripts/test/portal.mjs",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frc5805 \"node --test firebase/test/rules.test.mjs\"",
+    "test:rules": "firebase --config firebase.rules-test.json emulators:exec --only firestore,storage --project demo-frc5805 \"node --test firebase/test/rules.test.mjs\"",
     "test:functions": "firebase --config firebase.functions-test.json emulators:exec --project demo-frc5805 \"node --test functions/test/*.test.mjs\"",
     "test": "npm run test:markdown && npm run test:portal && npm run test:rules && npm run test:functions",
     "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions",

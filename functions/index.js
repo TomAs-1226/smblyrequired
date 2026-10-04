@@ -7,7 +7,7 @@
 //
 //   change a role or remove a member     setMemberRole, deleteMember
 //   hold an API key                      tbaProxy, nexusProxy, ai
-//   (and cache a public API politely)    statboticsProxy
+//   (and cache a public API politely)    statboticsProxy, publicData
 //   keep what SQL kept with views,       onScoutEntryWritten, onRobotPhotoWritten,
 //   triggers and foreign keys            onKnowledgeDocUpdated, onKnowledgeDocDeleted,
 //                                        onFileDeleted
@@ -30,6 +30,7 @@ import { cascadeFileDelete } from './src/files.js'
 import { removeKnowledgeHistory, snapshotKnowledgeDoc } from './src/knowledge.js'
 import { deleteMember as removeMember, setMemberRole as changeRole } from './src/members.js'
 import { handleNexus } from './src/nexus.js'
+import { handlePublicData } from './src/publicData.js'
 import { guarded } from './src/roles.js'
 import { handleStatbotics } from './src/statbotics.js'
 import { refreshStatsFor } from './src/statsTriggers.js'
@@ -69,6 +70,15 @@ export const statboticsProxy = onCall(
   { region: REGION },
   guarded('member', 'statbotics', 'The Statbotics lookup failed unexpectedly.', (request) =>
     handleStatbotics(request.data)
+  )
+)
+
+// Every team at an event from the public record (Statbotics EPA, TBA OPR), for
+// the teams we have no scout on. The Blue Alliance key is optional to it.
+export const publicData = onCall(
+  { region: REGION, secrets: [TBA_KEY] },
+  guarded('member', 'publicData', 'The public data lookup failed unexpectedly.', (request) =>
+    handlePublicData(request.data)
   )
 )
 

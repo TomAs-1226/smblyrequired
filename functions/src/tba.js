@@ -46,7 +46,7 @@ const TTL = {
 
 const ACTIONS = 'events, event_teams, event_matches, team_history, team_event_detail'
 
-async function tbaGet(path, deps) {
+export async function tbaGet(path, deps) {
   if (!deps.key) return { data: null, status: 500, error: 'TBA_KEY is not configured on the server.' }
 
   let res
