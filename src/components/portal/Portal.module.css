@@ -1686,6 +1686,12 @@
   .adminRow {
     flex-wrap: wrap;
   }
+  /* The name and its two fields take the row; the role (a select, or your own
+     role as a tag) goes underneath — the same for every member, yourself
+     included. */
+  .adminRow .rowMain {
+    flex: 1 1 100%;
+  }
   .adminActions {
     width: 100%;
   }

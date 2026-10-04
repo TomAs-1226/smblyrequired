@@ -674,7 +674,9 @@ export default function Dashboard() {
 
       {/* The scouting numbers people open this for. The one raised block on the
           screen: coverage and the two counts on the left, who is leading on the
-          right, a fortnight of activity underneath. */}
+          right, a fortnight of activity underneath. Members only: a viewer may
+          not read scouting, and a card of zeros would tell them there is none. */}
+      {isMember && (
       <section className={d.card}>
         <div className={d.cardHead}>
           <div className={d.cardHeadText}>
@@ -785,9 +787,11 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+      )}
 
       {/* What changed most recently, side by side. */}
-      <div className={d.pair}>
+      <div className={isMember ? d.pair : undefined}>
+        {isMember && (
         <section>
           <h2 className={styles.sectionTitle}>
             <Icon name="flag" size={15} />
@@ -809,6 +813,7 @@ export default function Dashboard() {
             </ul>
           )}
         </section>
+        )}
 
         <section>
           <h2 className={styles.sectionTitle}>
@@ -835,6 +840,7 @@ export default function Dashboard() {
 
       {/* Reference numbers: what the library holds. Quiet tiles — nobody acts on
           these, they are here to be glanced at. */}
+      {isMember && (
       <section>
         <h2 className={styles.sectionTitle}>
           <Icon name="folder" size={15} />
@@ -847,6 +853,7 @@ export default function Dashboard() {
           <StatTile label="Vision sessions" value={visionCount} />
         </div>
       </section>
+      )}
 
       {canSeeBackups && (
         <section>
