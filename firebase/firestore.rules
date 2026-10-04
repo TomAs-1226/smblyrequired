@@ -1,0 +1,671 @@
+rules_version = '2';
+
+// =============================================================================
+// Team 5805 portal — Firestore security rules.
+//
+// The browser talks to Firestore directly; these rules are the access boundary.
+// Nothing here trusts the client: every write is checked for who is writing,
+// what role they hold, and whether the document has the shape it claims.
+//
+// Roles live in profiles/{uid}.role, in privilege order:
+//   pending < viewer < member < lead < mentor < admin
+// A signed-in user with no profile document is `pending`. The role field can be
+// written only by the setMemberRole Cloud Function (Admin SDK, which bypasses
+// these rules) — there is no client path to it, by design.
+//
+// Constraints that SQL expressed as unique indexes or counting triggers are
+// expressed here as DETERMINISTIC DOCUMENT IDS, checked against the document's
+// own fields, so a duplicate cannot exist:
+//   one match entry per scout per match   scout_entries  m:{event}:{team}:{match}:{scout}
+//   two pit/strategy passes per day       scout_entries  p:{event}:{team}:{kind}:{scout}:{day}:{1|2}
+//   one file row per stored object        files          {bucket}~{path with / as ~}
+//   one entry per team per pick list      picklists/{id}/entries/{team}
+//   unique knowledge slugs                kb_slugs/{slug} -> doc_id
+//   one active form per season and kind   scout_form_active/{season}_{kind} -> form_id
+//
+// docs/FIREBASE.md is the full data model. firebase/test/rules.test.mjs proves
+// every claim in this file against the emulator: `npm run test:rules`.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- identity ------------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    function profile(u) {
+      return /databases/$(database)/documents/profiles/$(u);
+    }
+    function myRole() {
+      return exists(profile(uid())) ? get(profile(uid())).data.role : 'pending';
+    }
+    // An unknown role is not in the map, the lookup errors, and the request is denied.
+    function rank(r) {
+      return {'pending': 0, 'viewer': 1, 'member': 2, 'lead': 3, 'mentor': 4, 'admin': 5}[r];
+    }
+    function atLeast(minimum) {
+      return signedIn() && rank(myRole()) >= rank(minimum);
+    }
+
+    // ---- small validators ----------------------------------------------------
+
+    function incoming() {
+      return request.resource.data;
+    }
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+    function optString(d, k, max) {
+      return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= max);
+    }
+    function reqString(d, k, max) {
+      return k in d && d[k] is string && d[k].size() > 0 && d[k].size() <= max;
+    }
+    function optInt(d, k, lo, hi) {
+      return !(k in d) || d[k] == null || (d[k] is int && d[k] >= lo && d[k] <= hi);
+    }
+    function optBool(d, k) {
+      return !(k in d) || d[k] == null || d[k] is bool;
+    }
+    function optUid(d, k) {
+      return !(k in d) || d[k] == null || d[k] is string;
+    }
+    function stampedNow(k) {
+      return incoming()[k] == request.time;
+    }
+    function unchanged(k) {
+      return incoming().get(k, null) == resource.data.get(k, null);
+    }
+
+    // ---- profiles ------------------------------------------------------------
+    // pending reads only its own row; viewer+ reads the roster. A user creates
+    // their own profile at first sign-in, and it can only say `pending`. Nobody
+    // writes `role` from a client, and nobody deletes a profile from a client:
+    // both go through Cloud Functions, which hold the last-admin guard.
+
+    function validProfile(d) {
+      return d.keys().hasOnly(['full_name', 'grad_year', 'subteam', 'role', 'created_at', 'updated_at'])
+        && optString(d, 'full_name', 120)
+        && optInt(d, 'grad_year', 2000, 2100)
+        && optString(d, 'subteam', 60);
+    }
+
+    match /profiles/{userId} {
+      allow get: if signedIn() && (userId == uid() || atLeast('viewer'));
+      allow list: if atLeast('viewer');
+      allow create: if signedIn()
+        && userId == uid()
+        && validProfile(incoming())
+        && incoming().role == 'pending'
+        && stampedNow('created_at')
+        && stampedNow('updated_at');
+      allow update: if signedIn()
+        && (userId == uid() || atLeast('admin'))
+        && validProfile(incoming())
+        && changed().hasOnly(['full_name', 'grad_year', 'subteam', 'updated_at'])
+        && stampedNow('updated_at');
+      allow delete: if false;
+    }
+
+    // ---- files (the index over Storage objects) ------------------------------
+    // One document per stored object; the id is derived from bucket and path, so
+    // two rows for one object cannot exist. viewer reads media only.
+
+    function fileIdOf(d) {
+      return d.bucket + '~' + d.path.replace('/', '~');
+    }
+    function validFile(d) {
+      return d.keys().hasOnly(['bucket', 'path', 'title', 'description', 'kind', 'season', 'tags',
+          'byte_size', 'sha256', 'uploaded_by', 'created_at', 'updated_at'])
+        && d.bucket in ['graphs', 'code', 'knowledge', 'media', 'public-media']
+        && reqString(d, 'path', 900)
+        && d.path.matches('[A-Za-z0-9_./-]+')
+        && reqString(d, 'title', 300)
+        && optString(d, 'description', 4000)
+        && (!('kind' in d) || d.kind == null
+            || d.kind in ['graph', 'code', 'cad', 'doc', 'photo', 'video', 'other'])
+        && optInt(d, 'season', 2000, 2100)
+        && d.tags is list && d.tags.size() <= 40
+        && (!('byte_size' in d) || d.byte_size == null || (d.byte_size is int && d.byte_size >= 0))
+        && (!('sha256' in d) || d.sha256 == null
+            || (d.sha256 is string && d.sha256.matches('^[a-f0-9]{64}$')))
+        && optUid(d, 'uploaded_by');
+    }
+
+    match /files/{fileId} {
+      allow read: if atLeast('member')
+        || (atLeast('viewer') && resource.data.bucket in ['media', 'public-media']);
+      allow create: if atLeast('member')
+        && validFile(incoming())
+        && fileId == fileIdOf(incoming())
+        && (incoming().uploaded_by == uid() || atLeast('lead'))
+        && stampedNow('created_at')
+        && stampedNow('updated_at');
+      allow update: if validFile(incoming())
+        && unchanged('bucket') && unchanged('path') && unchanged('created_at')
+        && stampedNow('updated_at')
+        && (atLeast('lead')
+            || (atLeast('member')
+                && resource.data.uploaded_by == uid()
+                && incoming().uploaded_by == uid()));
+      allow delete: if atLeast('lead')
+        || (atLeast('member') && resource.data.uploaded_by == uid());
+    }
+
+    // ---- graphs and code archives --------------------------------------------
+    // A graph's id is its slug, so slugs are unique. Members add and edit their
+    // own; leads manage all; only leads delete.
+
+    function validFileRef(d, k) {
+      return !(k in d) || d[k] == null
+        || (d[k] is map && d[k].keys().hasOnly(['id', 'bucket', 'path', 'byte_size'])
+            && d[k].id is string && d[k].bucket is string && d[k].path is string);
+    }
+    function optCount(d, k) {
+      return !(k in d) || d[k] == null || (d[k] is int && d[k] >= 0);
+    }
+    function validGraph(d) {
+      return d.keys().hasOnly(['slug', 'title', 'summary', 'source', 'node_count', 'edge_count',
+          'community_count', 'god_nodes', 'generated_at', 'file', 'html_file', 'created_by',
+          'created_at', 'updated_at'])
+        && reqString(d, 'slug', 80) && d.slug.matches('^[a-z0-9][a-z0-9-]*$')
+        && reqString(d, 'title', 300)
+        && optString(d, 'summary', 4000) && optString(d, 'source', 600)
+        && optCount(d, 'node_count') && optCount(d, 'edge_count') && optCount(d, 'community_count')
+        && d.god_nodes is list && d.god_nodes.size() <= 60
+        && (!('generated_at' in d) || d.generated_at == null || d.generated_at is timestamp)
+        && validFileRef(d, 'file') && validFileRef(d, 'html_file')
+        && optUid(d, 'created_by');
+    }
+
+    match /graphs/{graphId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validGraph(incoming())
+        && graphId == incoming().slug
+        && (incoming().created_by == uid() || atLeast('lead'))
+        && stampedNow('created_at') && stampedNow('updated_at');
+      allow update: if validGraph(incoming())
+        && unchanged('slug') && unchanged('created_at')
+        && stampedNow('updated_at')
+        && (atLeast('lead')
+            || (atLeast('member') && resource.data.created_by == uid()
+                && incoming().created_by == uid()));
+      allow delete: if atLeast('lead');
+    }
+
+    function validCodeArchive(d) {
+      return d.keys().hasOnly(['repo', 'ref', 'commit_sha', 'season', 'notes', 'file', 'created_by',
+          'created_at', 'updated_at'])
+        && reqString(d, 'repo', 300)
+        && optString(d, 'ref', 200)
+        && (!('commit_sha' in d) || d.commit_sha == null
+            || (d.commit_sha is string && d.commit_sha.matches('^[a-f0-9]{7,40}$')))
+        && optInt(d, 'season', 2000, 2100)
+        && optString(d, 'notes', 4000)
+        && validFileRef(d, 'file')
+        && optUid(d, 'created_by');
+    }
+
+    match /code_archives/{archiveId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validCodeArchive(incoming())
+        && (incoming().created_by == uid() || atLeast('lead'))
+        && stampedNow('created_at') && stampedNow('updated_at');
+      allow update: if validCodeArchive(incoming())
+        && unchanged('created_at') && stampedNow('updated_at')
+        && (atLeast('lead')
+            || (atLeast('member') && resource.data.created_by == uid()
+                && incoming().created_by == uid()));
+      allow delete: if atLeast('lead');
+    }
+
+    // ---- knowledge base ------------------------------------------------------
+    // Any member writes and edits; only leads delete. Slugs are unique through
+    // kb_slugs/{slug}, written in the same batch as the doc. A body that looks
+    // like it holds a secret is refused (a backstop for the obvious accident, not
+    // a guarantee: src/lib/secretPatterns.js holds the same six patterns and names
+    // which one matched). History is written by a Cloud Function and cannot be
+    // edited or deleted by anyone.
+
+    function looksSecret(body) {
+      return body.matches('(?s)(.*[^0-9.])?(10[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}|192[.]168[.][0-9]{1,3}[.][0-9]{1,3}|172[.](1[6-9]|2[0-9]|3[01])[.][0-9]{1,3}[.][0-9]{1,3}|100[.](6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])[.][0-9]{1,3}[.][0-9]{1,3}).*')
+        || body.matches('(?s).*-----BEGIN [A-Z ]*PRIVATE KEY-----.*')
+        || body.matches('(?s)(.*[^A-Za-z0-9_])?gh[pousr]_[A-Za-z0-9]{20,}.*')
+        || body.matches('(?s)(.*[^A-Za-z0-9_])?(sk-[A-Za-z0-9_-]{20,}|sk_live_[A-Za-z0-9]{20,}).*')
+        || body.matches('(?s)(.*[^A-Za-z0-9_])?AKIA[0-9A-Z]{16}([^A-Za-z0-9_].*)?')
+        || body.matches('(?is)(.*[^a-z0-9_])?(service_role|supabase_service_role_key)[[:space:]]*[:=].*');
+    }
+    function validDoc(d) {
+      return d.keys().hasOnly(['slug', 'title', 'body_md', 'category', 'is_pinned', 'created_by',
+          'updated_by', 'created_at', 'updated_at'])
+        && reqString(d, 'slug', 80) && d.slug.matches('^[a-z0-9][a-z0-9-]*$')
+        && reqString(d, 'title', 300) && d.title.trim().size() > 0
+        && d.body_md is string && d.body_md.size() <= 400000
+        && !looksSecret(d.body_md)
+        && optString(d, 'category', 80)
+        && d.is_pinned is bool
+        && optUid(d, 'created_by');
+    }
+    function slugIndex(slug) {
+      return /databases/$(database)/documents/kb_slugs/$(slug);
+    }
+    function kbDoc(id) {
+      return /databases/$(database)/documents/knowledge_docs/$(id);
+    }
+
+    match /knowledge_docs/{docId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validDoc(incoming())
+        && incoming().is_pinned == false
+        && incoming().created_by == uid()
+        && incoming().updated_by == uid()
+        && stampedNow('created_at') && stampedNow('updated_at')
+        && getAfter(slugIndex(incoming().slug)).data.doc_id == docId;
+      allow update: if atLeast('member')
+        && validDoc(incoming())
+        && unchanged('created_by') && unchanged('created_at')
+        && (unchanged('is_pinned') || atLeast('lead'))
+        && incoming().updated_by == uid()
+        && stampedNow('updated_at')
+        && getAfter(slugIndex(incoming().slug)).data.doc_id == docId;
+      allow delete: if atLeast('lead')
+        && !existsAfter(slugIndex(resource.data.slug));
+
+      match /versions/{versionId} {
+        allow read: if atLeast('member');
+        allow write: if false;
+      }
+    }
+
+    match /kb_slugs/{slug} {
+      allow read: if atLeast('member');
+      // Creating a slug that exists is an update, and updates are refused: unique.
+      allow create: if atLeast('member')
+        && incoming().keys().hasOnly(['doc_id'])
+        && incoming().doc_id is string
+        && getAfter(kbDoc(incoming().doc_id)).data.slug == slug;
+      allow update: if false;
+      // A slug is released only when its doc is gone or has moved to another slug.
+      allow delete: if atLeast('member')
+        && (!existsAfter(kbDoc(resource.data.doc_id))
+            || getAfter(kbDoc(resource.data.doc_id)).data.slug != slug);
+    }
+
+    // ---- server-written collections ------------------------------------------
+
+    match /audit_log/{entryId} {
+      allow read: if atLeast('lead');
+      allow write: if false;
+    }
+    match /backup_runs/{runId} {
+      allow read: if atLeast('member');
+      allow write: if false;
+    }
+    // Aggregates behind Analytics, Compare, Coverage and the checklist, kept by
+    // the onScoutEntryWritten / onRobotPhotoWritten functions.
+    match /team_event_stats/{statId} {
+      allow read: if atLeast('member');
+      allow write: if false;
+    }
+
+    // ---- The Blue Alliance cache ---------------------------------------------
+    // Written by the tbaProxy function for everyone, and by leads directly.
+
+    match /events/{eventKey} {
+      allow read: if atLeast('member');
+      allow write: if atLeast('lead');
+    }
+    match /event_teams/{rowId} {
+      allow read: if atLeast('member');
+      allow write: if atLeast('lead');
+    }
+
+    // ---- scouting forms ------------------------------------------------------
+    // Leads author. At most one form is active per season and kind: the pointer
+    // scout_form_active/{season}_{kind} names it, and a form may only say
+    // is_active when the pointer agrees after the write. Activating a form is one
+    // atomic batch (old form off, new form on, pointer moved).
+
+    function activePointer(season, kind) {
+      return /databases/$(database)/documents/scout_form_active/$(string(season) + '_' + kind);
+    }
+    function validForm(d) {
+      return d.keys().hasOnly(['season', 'kind', 'name', 'description', 'fields', 'is_active',
+          'created_by', 'created_at', 'updated_at'])
+        && d.season is int && d.season >= 2000 && d.season <= 2100
+        && d.kind in ['match', 'pit', 'strategy']
+        && reqString(d, 'name', 200) && d.name.trim().size() > 0
+        && optString(d, 'description', 4000)
+        && d.fields is list && d.fields.size() <= 200
+        && d.is_active is bool
+        && optUid(d, 'created_by');
+    }
+    function activeAgrees(formId, d) {
+      return !d.is_active
+        || getAfter(activePointer(d.season, d.kind)).data.form_id == formId;
+    }
+
+    match /scout_forms/{formId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('lead')
+        && validForm(incoming())
+        && activeAgrees(formId, incoming())
+        && stampedNow('created_at') && stampedNow('updated_at');
+      allow update: if atLeast('lead')
+        && validForm(incoming())
+        && unchanged('created_at')
+        && activeAgrees(formId, incoming())
+        && stampedNow('updated_at');
+      // A deleted form must not be left as the active one.
+      allow delete: if atLeast('lead')
+        && (!existsAfter(activePointer(resource.data.season, resource.data.kind))
+            || getAfter(activePointer(resource.data.season, resource.data.kind)).data.form_id != formId);
+    }
+
+    match /scout_form_active/{pointerId} {
+      allow read: if atLeast('member');
+      allow create, update: if atLeast('lead')
+        && incoming().keys().hasOnly(['form_id', 'season', 'kind'])
+        && incoming().form_id is string
+        && pointerId == string(incoming().season) + '_' + incoming().kind
+        && getAfter(/databases/$(database)/documents/scout_forms/$(incoming().form_id)).data.is_active == true
+        && getAfter(/databases/$(database)/documents/scout_forms/$(incoming().form_id)).data.season == incoming().season
+        && getAfter(/databases/$(database)/documents/scout_forms/$(incoming().form_id)).data.kind == incoming().kind;
+      allow delete: if atLeast('lead');
+    }
+
+    // ---- scouting settings (singleton: scout_settings/main) ------------------
+
+    function settings() {
+      return get(/databases/$(database)/documents/scout_settings/main).data;
+    }
+    function hasSettings() {
+      return exists(/databases/$(database)/documents/scout_settings/main);
+    }
+    function validSettings(d) {
+      return d.keys().hasOnly(['active_event_key', 'lock_enabled', 'window_start', 'window_end',
+          'window_start_min', 'window_end_min', 'timezone', 'utc_offset_min', 'vision_model_url',
+          'vision_model_name', 'vision_model_labels', 'vision_model_size', 'updated_by', 'updated_at'])
+        && optString(d, 'active_event_key', 40)
+        && d.lock_enabled is bool
+        && d.window_start is string && d.window_start.matches('^[0-2][0-9]:[0-5][0-9]$')
+        && d.window_end is string && d.window_end.matches('^[0-2][0-9]:[0-5][0-9]$')
+        && d.window_start_min is int && d.window_start_min >= 0 && d.window_start_min < 1440
+        && d.window_end_min is int && d.window_end_min >= 0 && d.window_end_min < 1440
+        && reqString(d, 'timezone', 80)
+        // The rules have no time-zone database, so the lead's browser records the
+        // zone's offset from UTC when it saves the window (east positive).
+        && d.utc_offset_min is int && d.utc_offset_min >= -840 && d.utc_offset_min <= 840
+        && optString(d, 'vision_model_url', 2000)
+        && optString(d, 'vision_model_name', 200)
+        && d.vision_model_labels is list && d.vision_model_labels.size() <= 1000
+        && d.vision_model_size is int && d.vision_model_size >= 64 && d.vision_model_size <= 2048;
+    }
+
+    match /scout_settings/{settingsId} {
+      allow read: if atLeast('member');
+      allow create, update: if atLeast('lead')
+        && settingsId == 'main'
+        && validSettings(incoming())
+        && incoming().updated_by == uid()
+        && stampedNow('updated_at');
+      allow delete: if false;
+    }
+
+    // ---- scouting entries ----------------------------------------------------
+    // Members record their own; leads may record for anyone and edit anything;
+    // members cannot delete. On create, for everyone: the id must be the one its
+    // fields derive (that is the one-per-match rule and the two-a-day limit), and
+    // the entry must fall inside the scouting window when a lead has locked one.
+    // For members only: it must be for the active event when one is set.
+    // The window is judged on recorded_at, the device's time at save, so an entry
+    // recorded inside the window on a phone with no signal still syncs later.
+
+    function dayOf(ts) {
+      return ts.year() * 10000 + ts.month() * 100 + ts.day();
+    }
+    function eventPart(d) {
+      return d.event_key == null ? 'none' : d.event_key;
+    }
+    function entryIdOf(d) {
+      return d.kind == 'match'
+        ? (d.match_key != null && d.scout_id != null
+            ? 'm:' + eventPart(d) + ':' + string(d.team_number) + ':' + d.match_key + ':' + d.scout_id
+            : 'u:' + d.client_uuid)
+        : 'p:' + eventPart(d) + ':' + string(d.team_number) + ':' + d.kind + ':' + d.scout_id
+            + ':' + string(d.recorded_day) + ':' + string(d.slot);
+    }
+    function validEntry(d) {
+      return d.keys().hasOnly(['client_uuid', 'form_id', 'kind', 'event_key', 'team_number',
+          'match_key', 'match_number', 'comp_level', 'alliance', 'data', 'notes', 'scout_id',
+          'recorded_at', 'recorded_day', 'slot', 'created_at'])
+        && reqString(d, 'client_uuid', 64)
+        && optString(d, 'form_id', 64)
+        && d.kind in ['match', 'pit', 'strategy']
+        && (d.event_key == null || (d.event_key is string && d.event_key.matches('^[0-9]{4}[a-z0-9]{1,20}$')))
+        && d.team_number is int && d.team_number > 0 && d.team_number < 100000
+        && (d.match_key == null || (d.match_key is string && d.match_key.matches('^[a-z0-9_]{1,40}$')))
+        && (d.match_number == null || d.match_number is int)
+        && (d.comp_level == null || d.comp_level in ['qm', 'ef', 'qf', 'sf', 'f'])
+        && (d.alliance == null || d.alliance in ['red', 'blue'])
+        // A match entry names its match and its alliance.
+        && (d.kind != 'match' || (d.match_number != null && d.alliance != null))
+        && d.data is map
+        && optString(d, 'notes', 8000)
+        && d.scout_id is string
+        && d.recorded_at is timestamp
+        && d.recorded_day == dayOf(d.recorded_at)
+        && (d.kind == 'match' ? d.slot == null : (d.slot == 1 || d.slot == 2));
+    }
+    function localMinute(ts, s) {
+      return (ts.hours() * 60 + ts.minutes() + s.utc_offset_min + 2880) % 1440;
+    }
+    function insideWindow(ts, s) {
+      let m = localMinute(ts, s);
+      return s.window_start_min <= s.window_end_min
+        ? (m >= s.window_start_min && m <= s.window_end_min)
+        : (m >= s.window_start_min || m <= s.window_end_min);
+    }
+    function scoutingAllows(d) {
+      let s = settings();
+      return (s.active_event_key == null || atLeast('lead') || d.event_key == s.active_event_key)
+        && (!s.lock_enabled || insideWindow(d.recorded_at, s));
+    }
+
+    match /scout_entries/{entryId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validEntry(incoming())
+        && entryId == entryIdOf(incoming())
+        && (incoming().scout_id == uid() || atLeast('lead'))
+        && stampedNow('created_at')
+        && (!hasSettings() || scoutingAllows(incoming()));
+      // A correction: the scout's own entry (or any, for a lead). What an entry is
+      // about cannot change, because its id says what it is about.
+      allow update: if validEntry(incoming())
+        && entryId == entryIdOf(incoming())
+        && unchanged('created_at')
+        && (atLeast('lead')
+            || (atLeast('member') && resource.data.scout_id == uid() && incoming().scout_id == uid()));
+      allow delete: if atLeast('lead');
+    }
+
+    // ---- robot photos --------------------------------------------------------
+    // Members add their own (a retake adds a document); only leads change or
+    // remove one. The id is the client's uuid, so a retried upload cannot
+    // duplicate.
+
+    function validPhoto(d) {
+      return d.keys().hasOnly(['client_uuid', 'event_key', 'team_number', 'angle', 'file', 'quality',
+          'taken_by', 'created_at'])
+        && reqString(d, 'client_uuid', 64)
+        && optString(d, 'event_key', 40)
+        && d.team_number is int && d.team_number > 0
+        && d.angle in ['front', 'side', 'rear', 'drivetrain', 'intake', 'scoring', 'other']
+        && d.file is map && d.file.id is string && d.file.bucket is string && d.file.path is string
+        && d.quality is map
+        && d.taken_by is string;
+    }
+
+    match /robot_photos/{photoId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validPhoto(incoming())
+        && photoId == incoming().client_uuid
+        && (incoming().taken_by == uid() || atLeast('lead'))
+        && stampedNow('created_at');
+      allow update: if atLeast('lead') && validPhoto(incoming());
+      allow delete: if atLeast('lead');
+    }
+
+    // ---- pick lists ----------------------------------------------------------
+    // Members read; leads edit. A locked list's entries are frozen for everyone,
+    // leads included, until a lead unlocks the list itself.
+
+    function validPicklist(d) {
+      return d.keys().hasOnly(['event_key', 'name', 'tiers', 'is_locked', 'locked_at', 'locked_by',
+          'created_by', 'created_at', 'updated_at'])
+        && reqString(d, 'event_key', 40)
+        && reqString(d, 'name', 200)
+        && d.tiers is list && d.tiers.size() <= 20
+        && d.is_locked is bool
+        && (d.locked_at == null || d.locked_at is timestamp)
+        && optUid(d, 'locked_by') && optUid(d, 'created_by');
+    }
+    function validPickEntry(d) {
+      return d.keys().hasOnly(['team_number', 'tier', 'position', 'note', 'overrides_ai',
+          'updated_by', 'updated_at'])
+        && d.team_number is int && d.team_number > 0
+        && reqString(d, 'tier', 40)
+        && d.position is number
+        && optString(d, 'note', 2000)
+        && d.overrides_ai is bool
+        && optUid(d, 'updated_by');
+    }
+
+    match /picklists/{listId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('lead') && validPicklist(incoming())
+        && stampedNow('created_at') && stampedNow('updated_at');
+      allow update: if atLeast('lead') && validPicklist(incoming())
+        && unchanged('event_key') && unchanged('created_at') && stampedNow('updated_at');
+      allow delete: if atLeast('lead');
+
+      function unlocked() {
+        return get(/databases/$(database)/documents/picklists/$(listId)).data.is_locked == false;
+      }
+      match /entries/{teamId} {
+        allow read: if atLeast('member');
+        allow create, update: if atLeast('lead')
+          && unlocked()
+          && validPickEntry(incoming())
+          && teamId == string(incoming().team_number)
+          && stampedNow('updated_at');
+        allow delete: if atLeast('lead') && unlocked();
+      }
+    }
+
+    // ---- collaboration notes (one per observer per team per event) -----------
+
+    function validCollab(d) {
+      return d.keys().hasOnly(['event_key', 'team_number', 'answered_questions', 'shared_strategy',
+          'showed_up_prepared', 'responsive_in_queue', 'communication_rating', 'coordination_rating',
+          'would_partner_again', 'note', 'observed_by', 'observed_at', 'created_at'])
+        && optString(d, 'event_key', 40)
+        && d.team_number is int && d.team_number > 0
+        && optBool(d, 'answered_questions') && optBool(d, 'shared_strategy')
+        && optBool(d, 'showed_up_prepared') && optBool(d, 'responsive_in_queue')
+        && optInt(d, 'communication_rating', 1, 5) && optInt(d, 'coordination_rating', 1, 5)
+        && optBool(d, 'would_partner_again')
+        && optString(d, 'note', 4000)
+        && d.observed_by is string
+        && d.observed_at is timestamp;
+    }
+
+    match /team_collaboration/{noteId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validCollab(incoming())
+        && noteId == eventPart(incoming()) + ':' + string(incoming().team_number) + ':' + incoming().observed_by
+        && (incoming().observed_by == uid() || atLeast('lead'))
+        && stampedNow('created_at');
+      allow update: if validCollab(incoming())
+        && unchanged('event_key') && unchanged('team_number') && unchanged('created_at')
+        && (atLeast('lead')
+            || (atLeast('member') && resource.data.observed_by == uid() && incoming().observed_by == uid()));
+      allow delete: if atLeast('lead');
+    }
+
+    // ---- vision sessions -----------------------------------------------------
+    // A member starts and updates their own session and writes frames only into
+    // it; leads manage all.
+
+    function validSession(d) {
+      return d.keys().hasOnly(['event_key', 'match_key', 'device_label', 'model', 'model_note',
+          'started_by', 'operator', 'started_at', 'ended_at', 'frame_count', 'observations',
+          'peak_count', 'count_sum', 'created_at'])
+        && optString(d, 'event_key', 40) && optString(d, 'match_key', 60)
+        && optString(d, 'device_label', 200)
+        && reqString(d, 'model', 200) && optString(d, 'model_note', 2000)
+        && d.started_by is string
+        && optString(d, 'operator', 120)
+        && d.started_at is timestamp
+        && (d.ended_at == null || d.ended_at is timestamp)
+        && d.frame_count is int && d.frame_count >= 0
+        && d.observations is int && d.observations >= 0
+        && (d.peak_count == null || d.peak_count is int)
+        && d.count_sum is int && d.count_sum >= 0;
+    }
+    function validObservation(d) {
+      return d.keys().hasOnly(['offset_ms', 'recorded_at', 'object_count', 'detections',
+          'team_number', 'created_at'])
+        && d.offset_ms is int
+        && d.object_count is int && d.object_count >= 0
+        && d.detections is list && d.detections.size() <= 300
+        && (d.team_number == null || d.team_number is int);
+    }
+
+    match /vision_sessions/{sessionId} {
+      allow read: if atLeast('member');
+      allow create: if atLeast('member')
+        && validSession(incoming())
+        && (incoming().started_by == uid() || atLeast('lead'))
+        && stampedNow('created_at');
+      allow update: if validSession(incoming())
+        && unchanged('created_at')
+        && (atLeast('lead')
+            || (atLeast('member') && resource.data.started_by == uid() && incoming().started_by == uid()));
+      allow delete: if atLeast('lead');
+
+      match /observations/{obsId} {
+        allow read: if atLeast('member');
+        allow create: if atLeast('member')
+          && validObservation(incoming())
+          && stampedNow('created_at')
+          && (atLeast('lead')
+              || get(/databases/$(database)/documents/vision_sessions/$(sessionId)).data.started_by == uid());
+        allow update, delete: if atLeast('lead');
+      }
+    }
+
+    // ---- repository sources (admins only write) ------------------------------
+
+    match /repo_sources/{sourceId} {
+      allow read: if atLeast('member');
+      allow write: if atLeast('admin');
+    }
+
+    // Anything not named above is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -19,3 +19,8 @@ nul.*
 SHA256SUMS.local
 
 dist-probe
+
+# Firebase emulator logs and local state.
+*-debug.log
+.firebase/
+functions/node_modules/

@@ -1,0 +1,45 @@
+{
+  "indexes": [
+    { "collectionGroup": "scout_entries", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "recorded_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "scout_entries", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "kind", "order": "ASCENDING" }, { "fieldPath": "recorded_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "scout_entries", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "team_number", "order": "ASCENDING" }, { "fieldPath": "recorded_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "scout_entries", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "team_number", "order": "ASCENDING" }, { "fieldPath": "kind", "order": "ASCENDING" }, { "fieldPath": "recorded_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "scout_entries", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "team_number", "order": "ASCENDING" }, { "fieldPath": "recorded_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "files", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "kind", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "files", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "season", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "files", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "kind", "order": "ASCENDING" }, { "fieldPath": "season", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "files", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "bucket", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "code_archives", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "season", "order": "DESCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "knowledge_docs", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "is_pinned", "order": "DESCENDING" }, { "fieldPath": "updated_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "events", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "year", "order": "ASCENDING" }, { "fieldPath": "start_date", "order": "ASCENDING" } ] },
+    { "collectionGroup": "event_teams", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "team_number", "order": "ASCENDING" } ] },
+    { "collectionGroup": "scout_forms", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "season", "order": "DESCENDING" }, { "fieldPath": "kind", "order": "ASCENDING" } ] },
+    { "collectionGroup": "robot_photos", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "team_number", "order": "ASCENDING" }, { "fieldPath": "created_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "picklists", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "updated_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "vision_sessions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "started_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "backup_runs", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "leg", "order": "ASCENDING" }, { "fieldPath": "started_at", "order": "DESCENDING" } ] },
+    { "collectionGroup": "team_event_stats", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "avg_score", "order": "DESCENDING" } ] },
+    { "collectionGroup": "team_event_stats", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "event_key", "order": "ASCENDING" }, { "fieldPath": "team_number", "order": "ASCENDING" } ] }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,117 @@
+rules_version = '2';
+
+// =============================================================================
+// Team 5805 portal — Cloud Storage rules.
+//
+// One bucket; the five "buckets" of the data model are its top-level folders:
+//   graphs/ code/ knowledge/ media/        private
+//   public-media/                          world-readable (sponsor logos, cleared photos)
+//
+// Roles come from Firestore (profiles/{uid}.role), the same source the Firestore
+// rules use. Every upload carries customMetadata.owner = the uploader's uid;
+// members may replace or delete only what they own, leads anything.
+// Size and type limits are per folder and enforced here, on the server.
+// =============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function myRole() {
+      return firestore.exists(/databases/(default)/documents/profiles/$(request.auth.uid))
+        ? firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.role
+        : 'pending';
+    }
+    function rank(r) {
+      return {'pending': 0, 'viewer': 1, 'member': 2, 'lead': 3, 'mentor': 4, 'admin': 5}[r];
+    }
+    function atLeast(minimum) {
+      return signedIn() && rank(myRole()) >= rank(minimum);
+    }
+    function ownsIncoming() {
+      return request.resource.metadata != null && request.resource.metadata.owner == request.auth.uid;
+    }
+    function ownsExisting() {
+      return resource.metadata != null && resource.metadata.owner == request.auth.uid;
+    }
+    function mb(n) {
+      return n * 1024 * 1024;
+    }
+
+    // What an internal folder allows: a member creates what they own, and replaces
+    // or deletes only their own; a lead replaces or deletes anything.
+    function mayCreate() {
+      return atLeast('member') && ownsIncoming();
+    }
+    function mayReplace() {
+      return atLeast('lead') || (atLeast('member') && ownsExisting() && ownsIncoming());
+    }
+    // One rule for both kinds of write, decided by whether an object is already
+    // there, so an overwrite can never slip through as a "create".
+    function mayWrite() {
+      return resource == null ? mayCreate() : mayReplace();
+    }
+    function mayDelete() {
+      return atLeast('lead') || (atLeast('member') && ownsExisting());
+    }
+
+    match /graphs/{path=**} {
+      function fits() {
+        return request.resource.size <= mb(100)
+          && request.resource.contentType in ['application/json', 'text/html', 'image/svg+xml',
+              'application/gzip', 'application/x-tar', 'application/zip'];
+      }
+      allow read: if atLeast('member');
+      allow create, update: if mayWrite() && fits();
+      allow delete: if mayDelete();
+    }
+
+    match /code/{path=**} {
+      function fits() {
+        return request.resource.size <= mb(500)
+          && request.resource.contentType in ['application/zip', 'application/gzip',
+              'application/x-tar', 'application/octet-stream', 'text/plain', 'application/json'];
+      }
+      allow read: if atLeast('member');
+      allow create, update: if mayWrite() && fits();
+      allow delete: if mayDelete();
+    }
+
+    match /knowledge/{path=**} {
+      function fits() {
+        return request.resource.size <= mb(50)
+          && request.resource.contentType in ['application/pdf', 'image/png', 'image/jpeg',
+              'image/webp', 'text/markdown', 'text/plain'];
+      }
+      allow read: if atLeast('member');
+      allow create, update: if mayWrite() && fits();
+      allow delete: if mayDelete();
+    }
+
+    // Team media includes pit photos, which are material about minors: the
+    // signed-in team (viewer and up) only, never public.
+    match /media/{path=**} {
+      function fits() {
+        return request.resource.size <= mb(500)
+          && request.resource.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/avif',
+              'video/mp4', 'video/quicktime', 'application/pdf', 'text/markdown'];
+      }
+      allow read: if atLeast('viewer');
+      allow create, update: if mayWrite() && fits();
+      allow delete: if mayDelete();
+    }
+
+    match /public-media/{path=**} {
+      function fits() {
+        return request.resource.size <= mb(25)
+          && request.resource.contentType in ['image/png', 'image/jpeg', 'image/webp', 'image/avif',
+              'image/svg+xml'];
+      }
+      allow read: if true;
+      allow create, update: if atLeast('lead') && ownsIncoming() && fits();
+      allow delete: if atLeast('lead');
+    }
+  }
+}
