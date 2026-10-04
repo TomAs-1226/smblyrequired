@@ -90,7 +90,7 @@ export default function Control() {
           a daylight-saving change this card and the rules can differ by an hour
           until a lead re-saves the window. */}
       <div className={`${css.status} ${openNow ? css.statusOpen : css.statusClosed}`}>
-        <span className={css.statusDot} aria-hidden="true" />
+        <Icon name={openNow ? 'check' : 'alert'} size={20} className={css.statusIcon} />
         <div>
           <span className={css.statusHead}>
             Scouting is {openNow ? 'open' : 'closed'} right now

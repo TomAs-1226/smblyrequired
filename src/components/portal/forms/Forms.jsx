@@ -335,7 +335,7 @@ function FormRow({ form, index, busy, canWrite, onEdit, onDuplicate, onPublish, 
       <div className={styles.rowMain}>
         <span className={styles.rowTitle}>
           {form.name}
-          {form.is_active && <span className={b.liveTag}>Live</span>}
+          {form.is_active && <span className={b.liveTag}>In use</span>}
         </span>
         {form.description && <span className={styles.rowDesc}>{form.description}</span>}
         <span className={styles.rowMeta}>

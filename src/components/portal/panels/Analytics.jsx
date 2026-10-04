@@ -129,10 +129,7 @@ function Header({ eventKey, count, base, hasEpa, onRefresh }) {
   return (
     <header className={styles.hero}>
       <div className={styles.heroMain}>
-        <span className={styles.heroEyebrow}>
-          <span className={styles.heroDot} aria-hidden="true" />
-          Catalyst engine
-        </span>
+        <span className={styles.heroEyebrow}>Catalyst engine</span>
         <h2 className={styles.heroTitle}>Power rankings</h2>
         <p className={styles.heroSub}>
           <code className={styles.heroEvent}>{eventKey}</code>

@@ -22,16 +22,6 @@
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-lg);
   box-shadow: var(--card-depth);
-  position: relative;
-  overflow: hidden;
-}
-/* A faint data-glow bleeding from the top-right — the "engine is warm" cue. */
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 140% at 100% 0%, var(--accent-data-wash), transparent 55%);
-  pointer-events: none;
 }
 .heroMain {
   position: relative;
@@ -39,27 +29,15 @@
   min-width: 0;
 }
 .heroEyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-display);
-  font-size: var(--fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-data);
+  display: block;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
   margin-bottom: var(--sp-2);
 }
-.heroDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
-}
+/* Under the page's own h1, so one step down from it — not a second headline. */
 .heroTitle {
-  font-size: var(--fs-h2);
-  line-height: 1;
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  line-height: 1.1;
   margin-bottom: var(--sp-2);
 }
 .heroSub {
@@ -357,7 +335,6 @@
   width: var(--w, 0%);
   border-radius: inherit;
   background: linear-gradient(90deg, var(--accent-action), var(--accent-data));
-  box-shadow: var(--glow-data);
 }
 
 .colTrend {

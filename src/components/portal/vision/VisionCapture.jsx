@@ -547,7 +547,6 @@ export default function VisionCapture({ onSessionEnd }) {
 
         {live && cameraLive && (
           <div className={styles.hud} aria-hidden="true">
-            <span className={styles.hudDot} />
             <span className={styles.hudCount}>{stats.count}</span>
             <span className={styles.hudLabel}>
               {focusOption.id === 'all' ? 'objects' : focusOption.label.toLowerCase()}

@@ -247,7 +247,11 @@
   color: var(--text-body);
   font-size: var(--fs-small);
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* One line, cut cleanly: a long name used to wrap under the number and push
+     the row's two status chips out of line with every other row. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .flags {

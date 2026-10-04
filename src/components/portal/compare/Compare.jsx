@@ -371,7 +371,7 @@ function Picker({ results, query, onQuery, selected, statsBy, onToggle }) {
         </p>
       )}
 
-      <ul className={css.pickList}>
+      <ul className={css.pickList} data-lenis-prevent>
         {results.map((t) => {
           const on = selected.includes(t.team_number)
           const s = statsBy.get(t.team_number)

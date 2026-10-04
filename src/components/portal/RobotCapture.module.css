@@ -99,7 +99,6 @@
   position: absolute;
   inset: 0;
   background: var(--accent-data);
-  box-shadow: var(--glow-data);
   transform: scaleX(var(--p, 0));
   transform-origin: left;
   transition: transform var(--dur-panel) var(--ease-out);
@@ -517,7 +516,6 @@
     color: var(--text-on-cyan);
     background: var(--accent-data);
     border-color: var(--accent-data);
-    box-shadow: var(--glow-data);
   }
   .actionOverride:hover:not(:disabled) {
     color: var(--text-on-gold);
@@ -532,7 +530,6 @@
 }
 .actionPrimary:focus-visible {
   color: var(--text-on-cyan);
-  box-shadow: var(--glow-data);
 }
 .actionOverride:focus-visible {
   color: var(--text-on-gold);
@@ -575,7 +572,6 @@
 @media (hover: hover) and (pointer: fine) {
   .shutter:hover:not(:disabled) {
     border-color: var(--accent-data);
-    box-shadow: var(--glow-data);
   }
   .shutter:hover:not(:disabled) .shutterCore {
     background: var(--accent-data);
@@ -583,7 +579,6 @@
 }
 .shutter:focus-visible {
   border-color: var(--accent-data);
-  box-shadow: var(--glow-data);
 }
 .shutter:focus-visible .shutterCore {
   background: var(--accent-data);

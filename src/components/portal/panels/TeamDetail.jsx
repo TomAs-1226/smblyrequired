@@ -514,7 +514,7 @@ function Picker({ results, query, onQuery, team, onPick }) {
         </div>
       </div>
 
-      <ul className={css.pickList}>
+      <ul className={css.pickList} data-lenis-prevent>
         {results.map((t) => {
           const on = t.team_number === team
           return (
@@ -577,7 +577,6 @@ function Header({ team, info, stat }) {
 
       <div className={css.headMeta}>
         <span className={`${css.conf} ${css[`conf_${conf.tier}`]}`}>
-          <span className={css.confDot} aria-hidden="true" />
           {conf.label}
         </span>
         <span className={css.matchCount}>

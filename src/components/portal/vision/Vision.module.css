@@ -180,17 +180,6 @@
   border: 1px solid var(--border-accent);
   border-radius: var(--r-md);
 }
-.hudDot {
-  position: absolute;
-  top: var(--sp-2);
-  right: var(--sp-2);
-  width: 8px;
-  height: 8px;
-  border-radius: var(--r-pill);
-  background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
-  animation: pulse 1.6s var(--ease-in-out) infinite;
-}
 .hudCount {
   font-family: var(--font-display);
   font-size: clamp(2rem, 8vw, 3.25rem);
@@ -203,14 +192,6 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hudDot { animation: none; }
 }
 
 /* --- Model chip -------------------------------------------------------------- */
@@ -344,7 +325,6 @@
 .startBtn {
   background: var(--accent-data);
   color: var(--text-on-cyan);
-  box-shadow: var(--glow-data);
 }
 .startBtn:hover:not(:disabled) {
   filter: brightness(1.08);

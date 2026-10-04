@@ -855,12 +855,9 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
 
         <div className={b.barActions}>
           {dirty && (
-            <span className={b.dirty}>
-              <span className={b.dirtyDot} aria-hidden="true" />
-              Unsaved
-            </span>
+            <span className={b.dirty}>Unsaved changes</span>
           )}
-          {meta.is_active && <span className={b.liveTag}>Live</span>}
+          {meta.is_active && <span className={b.liveTag}>In use</span>}
           <button
             type="button"
             className="btn btn--ghost"

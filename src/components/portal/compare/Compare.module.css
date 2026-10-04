@@ -79,12 +79,20 @@
 .pickList {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
   gap: 6px;
-  max-height: 260px;
+  max-height: 264px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-right: 4px;
+  /* A list that scrolls inside itself has to look like it does: the last row in
+     view fades out, and the padding is what the fade lands on at the end. */
+  padding-bottom: var(--sp-4);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--sp-4)), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--sp-4)), transparent);
+}
+.pickList > li {
+  min-width: 0;
 }
 
 .pickBtn {
@@ -129,7 +137,7 @@
   background: color-mix(in srgb, var(--accent-data) 10%, transparent);
   /* A lit cyan edge on the selected chip — the selection reads instantly in a
      grid of sixty. */
-  box-shadow: var(--edge-hi), inset 2px 0 0 -1px var(--accent-data-glow);
+  box-shadow: var(--edge-hi);
 }
 
 .pickNum {
@@ -269,7 +277,6 @@
 .tallyPick {
   border-color: color-mix(in srgb, var(--accent-gold) 40%, transparent);
   background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
-  box-shadow: var(--glow-gold);
 }
 .tallyPick .tallyTeam,
 .tallyPick .tallyCount {
@@ -676,7 +683,6 @@
   inset: 0 0 auto 0;
   height: 2px;
   background: var(--accent-data);
-  box-shadow: var(--glow-data);
   transform-origin: left;
   transform: scaleX(1);
 }
@@ -976,8 +982,8 @@
     font-size: 1.25rem;
   }
   .pickList {
-    grid-template-columns: 1fr;
-    max-height: 232px;
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 248px;
   }
 }
 
