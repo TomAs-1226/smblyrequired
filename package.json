@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Official website of FRC Team 5805 — SMbly Required, Santa Margarita Catholic High School.",
+  "description": "Official website of FRC Team 5805 \u2014 SMbly Required, Santa Margarita Catholic High School.",
   "scripts": {
     "dev": "vite",
     "dev:emulators": "vite --mode emulators --port 5174 --strictPort",
@@ -16,11 +16,12 @@
     "test:markdown": "node scripts/test/markdown-safety.mjs",
     "test:portal": "node scripts/test/portal.mjs",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-frc5805 \"node --test firebase/test/rules.test.mjs\"",
-    "test:db": "node scripts/test/run-db-tests.mjs"
+    "test:functions": "firebase --config firebase.functions-test.json emulators:exec --project demo-frc5805 \"node --test functions/test/*.test.mjs\"",
+    "test": "npm run test:markdown && npm run test:portal && npm run test:rules && npm run test:functions",
+    "deploy:backend": "firebase deploy --only firestore:rules,firestore:indexes,storage,functions"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
-    "@supabase/supabase-js": "^2.110.7",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",
     "fflate": "^0.8.3",

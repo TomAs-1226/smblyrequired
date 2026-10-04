@@ -4,8 +4,8 @@
  *
  *   npm run test:portal   (or: node scripts/test/upload-types.mjs)
  *
- * Buckets enforce allowed_mime_types (migration 0002) against what the browser
- * reports, and Windows reports .zip as application/x-zip-compressed while .md,
+ * The storage rules enforce each folder's allowed content types against what the
+ * upload declares, and Windows reports .zip as application/x-zip-compressed while .md,
  * .7z and CAD files arrive with no type at all. These cases are the uploads
  * that were being refused.
  */
@@ -45,15 +45,16 @@ check('a .docx is refused up front for knowledge',
   !t('knowledge', 'plan.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').ok)
 check('a video is refused up front for knowledge', !t('knowledge', 'clip.mp4', 'video/mp4').ok)
 
-// BUCKET_TYPES must stay a mirror of the migration, or the pre-check above
-// refuses (or admits) the wrong things.
-const sql = readFileSync(path.join(ROOT, 'supabase/migrations/0002_storage.sql'), 'utf8')
+// BUCKET_TYPES must stay a mirror of firebase/storage.rules, or the pre-check
+// above refuses (or admits) the wrong things. Each folder's rule lists its
+// types in `request.resource.contentType in [...]`.
+const rules = readFileSync(path.join(ROOT, 'firebase/storage.rules'), 'utf8')
 for (const [bucket, types] of Object.entries(BUCKET_TYPES)) {
-  const row = new RegExp(`\\('${bucket}', '${bucket}',[^;]*?array\\[([^\\]]*)\\]`, 's').exec(sql)
-  const fromSql = row ? [...row[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort() : null
-  check(`BUCKET_TYPES.${bucket} matches 0002_storage.sql`,
-    JSON.stringify(fromSql) === JSON.stringify([...types].sort()),
-    `sql=${JSON.stringify(fromSql)}`)
+  const block = new RegExp(`match /${bucket}/\\{path=\\*\\*\\}[\\s\\S]*?contentType in \\[([^\\]]*)\\]`).exec(rules)
+  const fromRules = block ? [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort() : null
+  check(`BUCKET_TYPES.${bucket} matches firebase/storage.rules`,
+    JSON.stringify(fromRules) === JSON.stringify([...types].sort()),
+    `rules=${JSON.stringify(fromRules)}`)
 }
 
 console.log(`\n${passed} upload-type case(s) passed`)

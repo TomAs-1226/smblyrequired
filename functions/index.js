@@ -9,7 +9,8 @@
 //   hold an API key                      tbaProxy, nexusProxy, ai
 //   (and cache a public API politely)    statboticsProxy
 //   keep what SQL kept with views,       onScoutEntryWritten, onRobotPhotoWritten,
-//   triggers and foreign keys            onKnowledgeDocUpdated, onFileDeleted
+//   triggers and foreign keys            onKnowledgeDocUpdated, onKnowledgeDocDeleted,
+//                                        onFileDeleted
 //
 // This file is only the list. Each function's reasoning lives with its code in
 // src/, and docs/FIREBASE.md is the contract they all follow.
@@ -26,7 +27,7 @@ import { onCall } from 'firebase-functions/https'
 import { handleAi } from './src/ai.js'
 import { NEXUS_KEY, OPENAI_API_KEY, REGION, TBA_KEY } from './src/config.js'
 import { cascadeFileDelete } from './src/files.js'
-import { snapshotKnowledgeDoc } from './src/knowledge.js'
+import { removeKnowledgeHistory, snapshotKnowledgeDoc } from './src/knowledge.js'
 import { deleteMember as removeMember, setMemberRole as changeRole } from './src/members.js'
 import { handleNexus } from './src/nexus.js'
 import { guarded } from './src/roles.js'
@@ -80,7 +81,7 @@ export const ai = onCall(
 )
 
 // ---- Firestore triggers -----------------------------------------------------
-// `retry` is on for all four: each does work that is safe to repeat, and a
+// `retry` is on for all of them: each does work that is safe to repeat, and a
 // statistic that is quietly never updated is worse than one computed twice.
 
 export const onScoutEntryWritten = onDocumentWritten(
@@ -96,6 +97,11 @@ export const onRobotPhotoWritten = onDocumentWritten(
 export const onKnowledgeDocUpdated = onDocumentUpdated(
   { document: 'knowledge_docs/{id}', region: REGION, retry: true },
   snapshotKnowledgeDoc
+)
+
+export const onKnowledgeDocDeleted = onDocumentDeleted(
+  { document: 'knowledge_docs/{id}', region: REGION, retry: true },
+  removeKnowledgeHistory
 )
 
 export const onFileDeleted = onDocumentDeleted(

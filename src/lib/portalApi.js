@@ -1,6 +1,6 @@
 import {
-  collection, doc, query, where, orderBy, limit as limitTo, getDoc as fsGetDoc, getDocs, setDoc, updateDoc,
-  deleteDoc, writeBatch, getAggregateFromServer, count, sum,
+  collection, doc, query, where, orderBy, limit as limitTo, getDocFromServer as fsGetDoc,
+  getDocsFromServer as getDocs, runTransaction, getAggregateFromServer, count, sum,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, getBlob, deleteObject } from 'firebase/storage'
 import { db, storage } from './firebase'
@@ -18,6 +18,14 @@ import { uploadType, describeAllowed } from './uploadTypes'
 // sentence a student can read. None of them enforce permissions — the Firestore
 // and Storage rules do that, on the server. The UI is not the thing making the
 // decision; it only has to report the answer.
+//
+// Two habits, both about being honest when the network is not there:
+//   - reads ask the server (getDocFromServer / getDocsFromServer). A plain read
+//     with no connection answers from an empty cache — "no files" — instead of
+//     saying it could not reach the server.
+//   - writes are transactions. A plain write with no connection does not fail;
+//     it waits, and lands whenever the connection returns, long after the screen
+//     said nothing. A transaction fails, and the reader is told.
 // -----------------------------------------------------------------------------
 
 const objectRef = (bucket, path) => ref(storage, `${bucket}/${path}`)
@@ -133,8 +141,13 @@ export async function uploadFile({ bucket, path, file, metadata }) {
     uploaded_by: uid,
   }
   try {
-    await setDoc(doc(db, 'files', id), { ...fields, created_at: now(), updated_at: now() })
+    await runTransaction(db, async (tx) => {
+      const at = doc(db, 'files', id)
+      if ((await tx.get(at)).exists()) throw Object.assign(new Error(`A file already exists at ${path}.`), { taken: true })
+      tx.set(at, { ...fields, created_at: now(), updated_at: now() })
+    })
   } catch (e) {
+    if (e?.taken) return { data: null, error: e.message }
     // The object landed but its index document did not. Leaving the orphan would
     // make the file invisible to the portal *and* to the nightly manifest, so it
     // is removed rather than left as a silent inconsistency.
@@ -151,7 +164,8 @@ export async function removeFile(fileRow) {
   if (!isConfigured) return notConnected()
   try {
     await deleteObject(objectRef(fileRow.bucket, fileRow.path)).catch(() => {})
-    await deleteDoc(doc(db, 'files', fileRow.id ?? fileId(fileRow.bucket, fileRow.path)))
+    const at = doc(db, 'files', fileRow.id ?? fileId(fileRow.bucket, fileRow.path))
+    await runTransaction(db, async (tx) => tx.delete(at))
     return { data: true, error: null }
   } catch (e) {
     return { data: null, error: wrap(e) }
@@ -195,25 +209,27 @@ export async function createGraph(graph) {
   const uid = currentUid()
   try {
     const at = doc(db, 'graphs', graph.slug)
-    if ((await fsGetDoc(at)).exists()) {
-      return { data: null, error: `A graph with the slug "${graph.slug}" already exists.` }
-    }
-    await setDoc(at, {
-      slug: graph.slug,
-      title: graph.title,
-      summary: graph.summary ?? null,
-      source: graph.source ?? null,
-      node_count: graph.node_count ?? null,
-      edge_count: graph.edge_count ?? null,
-      community_count: graph.community_count ?? null,
-      god_nodes: graph.god_nodes ?? [],
-      generated_at: ts(graph.generated_at ?? new Date()),
-      file: graph.file ?? null,
-      html_file: graph.html_file ?? null,
-      created_by: uid,
-      created_at: now(),
-      updated_at: now(),
+    const taken = await runTransaction(db, async (tx) => {
+      if ((await tx.get(at)).exists()) return true
+      tx.set(at, {
+        slug: graph.slug,
+        title: graph.title,
+        summary: graph.summary ?? null,
+        source: graph.source ?? null,
+        node_count: graph.node_count ?? null,
+        edge_count: graph.edge_count ?? null,
+        community_count: graph.community_count ?? null,
+        god_nodes: graph.god_nodes ?? [],
+        generated_at: ts(graph.generated_at ?? new Date()),
+        file: graph.file ?? null,
+        html_file: graph.html_file ?? null,
+        created_by: uid,
+        created_at: now(),
+        updated_at: now(),
+      })
+      return false
     })
+    if (taken) return { data: null, error: `A graph with the slug "${graph.slug}" already exists.` }
     return { data: { id: graph.slug }, error: null }
   } catch (e) {
     return { data: null, error: wrap(e) }
@@ -238,7 +254,7 @@ export async function createCodeArchive(archive) {
   if (!isConfigured) return notConnected()
   try {
     const at = doc(collection(db, 'code_archives'))
-    await setDoc(at, {
+    await runTransaction(db, async (tx) => tx.set(at, {
       repo: archive.repo,
       ref: archive.ref ?? null,
       commit_sha: archive.commit_sha ?? null,
@@ -248,7 +264,7 @@ export async function createCodeArchive(archive) {
       created_by: currentUid(),
       created_at: now(),
       updated_at: now(),
-    })
+    }))
     return { data: { id: at.id }, error: null }
   } catch (e) {
     return { data: null, error: wrap(e) }
@@ -304,31 +320,32 @@ export async function saveDoc({ id, slug, title, body_md, category }) {
   if (secret) return { data: null, error: secretRefusal(secret) }
 
   const uid = currentUid()
+  const at = id ? doc(db, 'knowledge_docs', id) : doc(collection(db, 'knowledge_docs'))
+  const fields = { slug, title, body_md, category: category || null, updated_by: uid, updated_at: now() }
   try {
-    // A slug belongs to one doc. Claiming one in use is refused by the rules; the
-    // read is what lets the answer be a sentence.
-    const index = await fsGetDoc(doc(db, 'kb_slugs', slug))
-    if (index.exists() && index.data().doc_id !== id) {
-      return { data: null, error: `Another doc already uses the slug "${slug}". Pick a different one.` }
-    }
-
-    const batch = writeBatch(db)
-    const at = id ? doc(db, 'knowledge_docs', id) : doc(collection(db, 'knowledge_docs'))
-    const fields = { slug, title, body_md, category: category || null, updated_by: uid, updated_at: now() }
-    if (id) {
-      const before = await fsGetDoc(at)
-      if (!before.exists()) return { data: null, error: 'That doc no longer exists.' }
-      batch.update(at, fields)
-      // A rename moves the slug: the new index in, the old one out, in one write.
-      if (before.data().slug !== slug) {
-        batch.set(doc(db, 'kb_slugs', slug), { doc_id: at.id })
-        batch.delete(doc(db, 'kb_slugs', before.data().slug))
+    // One transaction: the doc and its slug index move together, and a slug in
+    // use by another doc is refused with a sentence rather than by the rules.
+    const refusal = await runTransaction(db, async (tx) => {
+      const index = await tx.get(doc(db, 'kb_slugs', slug))
+      if (index.exists() && index.data().doc_id !== at.id) {
+        return `Another doc already uses the slug "${slug}". Pick a different one.`
       }
-    } else {
-      batch.set(at, { ...fields, is_pinned: false, created_by: uid, created_at: now() })
-      batch.set(doc(db, 'kb_slugs', slug), { doc_id: at.id })
-    }
-    await batch.commit()
+      if (id) {
+        const before = await tx.get(at)
+        if (!before.exists()) return 'That doc no longer exists.'
+        tx.update(at, fields)
+        // A rename moves the slug: the new index in, the old one out.
+        if (before.data().slug !== slug) {
+          tx.set(doc(db, 'kb_slugs', slug), { doc_id: at.id })
+          tx.delete(doc(db, 'kb_slugs', before.data().slug))
+        }
+      } else {
+        tx.set(at, { ...fields, is_pinned: false, created_by: uid, created_at: now() })
+        tx.set(doc(db, 'kb_slugs', slug), { doc_id: at.id })
+      }
+      return null
+    })
+    if (refusal) return { data: null, error: refusal }
     return {
       data: { id: at.id, slug, title, body_md, category: category || null, updated_at: new Date().toISOString() },
       error: null,
@@ -387,7 +404,7 @@ export async function setMemberRole(targetId, role) {
 export async function updateMember(id, patch) {
   if (!isConfigured) return notConnected()
   try {
-    await updateDoc(doc(db, 'profiles', id), { ...patch, updated_at: now() })
+    await runTransaction(db, async (tx) => tx.update(doc(db, 'profiles', id), { ...patch, updated_at: now() }))
     return { data: true, error: null }
   } catch (e) {
     return { data: null, error: wrap(e) }

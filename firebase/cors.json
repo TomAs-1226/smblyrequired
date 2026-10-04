@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://frc5805.com", "https://tomas-1226.github.io", "http://localhost:5173", "http://localhost:5174"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Range"],
+    "maxAgeSeconds": 3600
+  }
+]

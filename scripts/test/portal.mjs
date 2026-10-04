@@ -10,7 +10,8 @@
  * analytics-math the spreads, sample sizes and win odds Compare/Analytics show
  *
  * No network and no browser: each suite imports a pure module from src/lib.
- * The database rules are tested separately by `npm run test:db`.
+ * The security rules are tested separately by `npm run test:rules`, and the
+ * Cloud Functions by `npm run test:functions`; both need the Firebase emulators.
  */
 
 for (const suite of [

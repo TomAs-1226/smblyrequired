@@ -1,5 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore'
-import './admin.js'
+import { db } from './admin.js'
 
 /**
  * Keeps the previous title and body of a knowledge doc whenever either changes.
@@ -32,4 +32,16 @@ export async function snapshotKnowledgeDoc(event) {
     // ALREADY_EXISTS: this delivery is a repeat.
     if (err?.code !== 6) throw err
   }
+}
+
+/**
+ * When a knowledge doc is deleted, its history goes with it.
+ *
+ * Deleting a Firestore document leaves its subcollections where they were, so
+ * without this the versions of a deleted doc would stay forever, readable by
+ * path and attached to nothing. (Only a lead can delete a doc; this is the other
+ * half of what the SQL schema did with ON DELETE CASCADE.)
+ */
+export async function removeKnowledgeHistory(event) {
+  await db.recursiveDelete(db.collection('knowledge_docs').doc(event.params.id).collection('versions'))
 }

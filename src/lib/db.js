@@ -1,4 +1,4 @@
-import { Timestamp, serverTimestamp, collection, getDocs } from 'firebase/firestore'
+import { Timestamp, serverTimestamp, collection, getDocsFromServer } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, db, functions, isConfigured } from './firebase'
 
@@ -74,7 +74,11 @@ export function isTransportError(error) {
 
 /**
  * Call a Cloud Function. Functions answer with their data directly and refuse
- * with an HttpsError whose message is already written for the reader.
+ * with an HttpsError whose message is already written for the reader ("Your
+ * account is still pending approval…", "You cannot change your own role."), so
+ * unlike a rules refusal, the message is kept: only a failure to reach the
+ * function at all is replaced with the generic sentence. The client SDK appends
+ * the HTTP status ("… [404]"); that is stripped.
  */
 export async function call(name, payload) {
   if (!isConfigured) return notConnected()
@@ -82,22 +86,32 @@ export async function call(name, payload) {
     const res = await httpsCallable(functions, name)(payload ?? {})
     return { data: res.data, error: null }
   } catch (e) {
-    return { data: null, error: wrap(e) }
+    if (isTransportError(e)) return { data: null, error: wrap(e) }
+    const message = String(e?.message ?? '').replace(/\s*\[\d{3}\]$/, '').trim()
+    const bare = !message || /^(internal|unknown)$/i.test(message)
+    return { data: null, error: bare ? 'The server could not do that just now. Try again in a moment.' : message }
   }
 }
 
-// uid -> full name, for rows that used to join the scout's or actor's profile.
-// The roster is small (one read of a few dozen documents) and kept for the session.
+// uid -> profile, for rows that used to join the scout's or actor's profile.
+// The roster is small (one read of a few dozen documents) and is kept for two
+// minutes, and per signed-in user: a roster read by one account is not served to
+// the next one to sign in on the same browser.
 let roster = null
 let rosterAt = 0
+let rosterFor = null
 export async function memberNames({ fresh = false } = {}) {
   if (!isConfigured) return new Map()
-  if (!roster || fresh || Date.now() - rosterAt > 5 * 60_000) {
+  const uid = currentUid()
+  if (!roster || fresh || rosterFor !== uid || Date.now() - rosterAt > 2 * 60_000) {
     try {
-      const snap = await getDocs(collection(db, 'profiles'))
+      const snap = await getDocsFromServer(collection(db, 'profiles'))
       roster = new Map(snap.docs.map((d) => [d.id, d.data()]))
       rosterAt = Date.now()
+      rosterFor = uid
     } catch {
+      // No roster (offline, or a role that may not read it): names are simply absent.
+      if (rosterFor !== uid) roster = new Map()
       roster = roster ?? new Map()
     }
   }

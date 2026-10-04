@@ -1,10 +1,10 @@
 // =============================================================================
 // The Content-Type an upload is sent with, per bucket.
 //
-// Supabase enforces each bucket's allowed_mime_types (migration 0002) against
-// the type the BROWSER puts on the multipart part — and supabase-js ignores the
-// `contentType` option for a File, using file.type as-is. Browsers report that
-// type from the operating system, which is where it went wrong:
+// firebase/storage.rules allows each folder ("bucket") a list of content types,
+// checked against the type the upload declares. Left to itself that is the type
+// the BROWSER reports, which it takes from the operating system — and that is
+// where it went wrong:
 //
 //   - Windows reports .zip as application/x-zip-compressed, which no bucket
 //     allows, so a code archive uploaded from a school laptop was refused;
@@ -17,7 +17,8 @@
 // scripts/test/upload-types.mjs can pin it in Node.
 // =============================================================================
 
-// Mirrors allowed_mime_types in supabase/migrations/0002_storage.sql.
+// Mirrors the `contentType in [...]` lists in firebase/storage.rules; a test holds
+// the two to each other.
 export const BUCKET_TYPES = {
   graphs: ['application/json', 'text/html', 'image/svg+xml', 'application/gzip',
     'application/x-tar', 'application/zip'],

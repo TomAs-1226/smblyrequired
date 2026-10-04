@@ -207,14 +207,19 @@ or an `HttpsError` whose message is already written for the reader):
 
 | Function | Floor | Does |
 |---|---|---|
-| `setMemberRole({ targetId, role })` | admin | the only way a role changes: not your own, never the last admin; writes `audit_log` |
+| `setMemberRole({ targetId, role })` | admin | the only way a role changes: not your own, never the last admin; writes `audit_log` (`role.change`) |
+| `deleteMember({ targetId })` | admin | removes a member's profile and their sign-in: not yourself, never the last admin; writes `audit_log` (`member.delete`) |
 | `tbaProxy({ action, … })` | member | The Blue Alliance, with `events` / `event_teams` cached in Firestore |
 | `nexusProxy({ action:'event_status', eventKey, force })` | member | frc.nexus live queuing |
 | `statboticsProxy({ action, … })` | member | Statbotics EPA |
 | `ai({ task, … })` | member | scouting summaries and pick-list help (OpenAI) |
 
 Triggers: `onScoutEntryWritten`, `onRobotPhotoWritten` (stats),
-`onKnowledgeDocUpdated` (history), `onFileDeleted` (cascade).
+`onKnowledgeDocUpdated` (history), `onKnowledgeDocDeleted` (history goes with its
+doc), `onFileDeleted` (cascade).
+
+`rate_limits/{uid}_ai` holds the AI function's per-member rate limit. The rules
+name no such collection, so no client can read or write it.
 
 Secrets (set with `firebase functions:secrets:set NAME`, never in the repo):
 `TBA_KEY`, `NEXUS_KEY`, `OPENAI_API_KEY`.

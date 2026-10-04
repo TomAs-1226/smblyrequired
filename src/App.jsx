@@ -13,40 +13,50 @@ import Footer from './components/Footer'
 import BackToTop from './components/BackToTop'
 
 import HomePage from './pages/HomePage'
-import TeamPage from './pages/TeamPage'
-import MentorsPage from './pages/MentorsPage'
-import RobotsPage from './pages/RobotsPage'
-import SeasonPage from './pages/SeasonPage'
-import SponsorPage from './pages/SponsorPage'
-import CatalystPage from './pages/CatalystPage'
-import GalleryPage from './pages/GalleryPage'
-import ContactPage from './pages/ContactPage'
-import JoinPage from './pages/JoinPage'
-import NotFound from './pages/NotFound'
-import RobotDetail from './components/RobotDetail'
-import BlogIndex from './components/BlogIndex'
-import BlogPost from './components/BlogPost'
-import Donate from './components/Donate'
-// Split out of the main bundle: the portal pulls in the Supabase client, and
-// the overwhelming majority of visitors are sponsors and prospective students
-// who will never sign in. They should not pay to download it.
+
+// Only the landing page is in the main bundle. Every other page is its own chunk,
+// fetched when it is first opened — and, so that opening one is still instant, all
+// of them are fetched quietly once the landing page has settled (see below).
+const loaders = {
+  '/team': () => import('./pages/TeamPage'),
+  '/join': () => import('./pages/JoinPage'),
+  '/mentors': () => import('./pages/MentorsPage'),
+  '/robots': () => import('./pages/RobotsPage'),
+  '/season': () => import('./pages/SeasonPage'),
+  '/sponsor': () => import('./pages/SponsorPage'),
+  '/catalyst': () => import('./pages/CatalystPage'),
+  '/gallery': () => import('./pages/GalleryPage'),
+  '/contact': () => import('./pages/ContactPage'),
+  '/blog': () => import('./components/BlogIndex'),
+  '/donate': () => import('./components/Donate'),
+}
+const RobotDetail = lazy(() => import('./components/RobotDetail'))
+const BlogPost = lazy(() => import('./components/BlogPost'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+// The portal pulls in the Firebase client, and the overwhelming majority of
+// visitors are sponsors and prospective students who will never sign in. They
+// should not pay to download it, so it is never part of the background fetch.
 const Portal = lazy(() => import('./components/portal/Portal'))
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 const ROUTES = {
   '/': HomePage,
-  '/team': TeamPage,
-  '/join': JoinPage,
-  '/mentors': MentorsPage,
-  '/robots': RobotsPage,
-  '/season': SeasonPage,
-  '/sponsor': SponsorPage,
-  '/catalyst': CatalystPage,
-  '/gallery': GalleryPage,
-  '/contact': ContactPage,
-  '/blog': BlogIndex,
-  '/donate': Donate,
+  ...Object.fromEntries(Object.entries(loaders).map(([path, load]) => [path, lazy(load)])),
+}
+
+// Warm the page chunks while the browser is idle, a few seconds after first
+// paint, so a click on the nav does not wait on the network. Skipped on a
+// connection that asked to save data.
+function prefetchPages() {
+  if (navigator.connection?.saveData) return
+  const run = () => {
+    for (const load of Object.values(loaders)) load().catch(() => {})
+    import('./components/RobotDetail').catch(() => {})
+    import('./components/BlogPost').catch(() => {})
+  }
+  if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 6000 })
+  else setTimeout(run, 4000)
 }
 
 // Resolve a path to a component + props (handles dynamic /robots/:slug, /blog/:slug).
@@ -100,6 +110,11 @@ export default function App() {
     },
     { scope: root }
   )
+
+  useEffect(() => {
+    const t = setTimeout(prefetchPages, 2500)
+    return () => clearTimeout(t)
+  }, [])
 
   const isPortal = path.startsWith('/portal')
 
