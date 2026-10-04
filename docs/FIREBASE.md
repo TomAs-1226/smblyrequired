@@ -74,6 +74,10 @@ int`, `god_nodes string[]`, `generated_at? timestamp`, `file? {id,bucket,path}`
 ### `code_archives/{autoId}`
 `repo`, `ref?`, `commit_sha? hex 7–40`, `season? int`, `notes?`,
 `file? {id,bucket,path,byte_size}`, `created_by`, `created_at`, `updated_at`.
+Rows the repo archiver writes (`scripts/backup/repo-archive.mjs`) carry the
+source's `created_by` here, or null when the source has none; the same value
+goes in `uploaded_by` on the matching `files` document. One row per repo,
+commit and season: a re-archive updates it rather than adding another.
 
 ### `knowledge_docs/{autoId}` and `kb_slugs/{slug}`
 `slug`, `title`, `body_md`, `category?`, `is_pinned bool`, `created_by`,
@@ -97,7 +101,13 @@ Leads read.
 `leg`, `status` (`running|ok|failed|partial`), `started_at`, `finished_at?`,
 `object_count?`, `byte_total?`, `db_dump_bytes?`, `manifest_sha?`,
 `restore_tested_at?`, `error?`, `created_at`. "Health" (latest run per leg, ok and
-under 36 hours old) is computed in the browser.
+under 36 hours old) is computed in the browser. Rows come from two scripts in
+`scripts/backup/`: `mirror.mjs` opens a `leg: 'firebase->server'` row as `running`
+and closes it with the counts, `manifest_sha` and any problems joined into
+`error`; `report.mjs` writes the `leg: 'server->optiplex'` row and stamps
+`restore_tested_at` on the `firebase->server` rows with a given `manifest_sha`.
+`db_dump_bytes` holds the size of the Firestore and Auth exports. Runbook:
+`docs/BACKUP.md`.
 
 ### `events/{eventKey}` and `event_teams/{eventKey}_{teamNumber}` — TBA cache
 events: `key`, `year int`, `name`, `short_name?`, `event_type?`, `city?`,
@@ -194,7 +204,14 @@ observations: `offset_ms int`, `recorded_at`, `object_count int`,
 `detections array`, `team_number? int`, `created_at`.
 
 ### `repo_sources/{autoId}`
-As the SQL table; admins write. No UI uses it.
+Admins write; the nightly archiver (`scripts/backup/repo-archive.mjs`) reads the
+enabled rows and updates them. No UI uses it. Fields: `label`, `provider`
+(`github` or a plain `url` source), `owner`, `repo`, `git_ref?`, `url`,
+`enabled bool`, `interval_hours? int` (default 24), `created_by?`, and the
+archiver's own bookkeeping: `last_synced_at`, `last_status`
+(`running|ok|failed`), `last_error?` (cut to 500 characters), `last_sha?`,
+`updated_at`. A source whose `last_sha` equals the current commit is skipped
+unless `--force` is given.
 
 ## Storage
 

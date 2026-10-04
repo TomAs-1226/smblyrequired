@@ -126,28 +126,32 @@ These are real, were found the hard way, and are easy to reintroduce.
    `sha256sum -c` then fails to find every file listed, which looks exactly like
    total backup corruption. Enforced in `.gitattributes`.
 
-10. **A public-only `pg_dump` is not restorable.** `public.profiles.id` is a
-   foreign key onto `auth.users`. pg_dump adds constraints *after* loading data,
-   and `ADD CONSTRAINT` runs a validation scan that `session_replication_role =
-   replica` does **not** suppress — so the restore dies on `profiles_id_fkey`.
-   The backup therefore writes two files: `auth_users.sql.gz` (`--data-only`,
-   because auth.users' DDL carries a trigger referencing a `public` function
-   that does not exist yet at that point) and `db.sql.gz`. Restore order is
-   stub-auth-and-roles → auth data → public. Verified by actually doing it; do
-   not "simplify" it back to one file.
+10. **A whole-number double cannot be restored through the Node Admin SDK.** It
+   sends any number with no fraction as an integer, so `2.0` comes back as `2`,
+   and the rules check `is int` and `is timestamp`, so the encoding keeps the
+   difference (`{"$double":"2"}`). `restore.mjs` therefore writes every
+   document that holds one through the Firestore REST API (`toRestFields` in
+   `scripts/backup/encoding.mjs`), and the round-trip test compares through the
+   REST API too, so an encoder and a decoder that are wrong in the same way
+   cannot agree their way to a pass. Do not "simplify" the restore back to
+   `set()` for everything.
 
-11. **A public-only, `--no-acl` dump also drops the signup trigger and every
-   grant.** `on_auth_user_created` lives on `auth.users`, not in `public`, and
-   `--no-acl` discards every GRANT/REVOKE. A project restored from the dump
-   alone looks complete but silently stops onboarding: new signups get no
-   profile row (so `set_member_role()` answers "no such member" and they can
-   never be approved), and `profiles.role` loses its column-level lock, one of
-   the two independent guards on it. `scripts/backup/post-restore.sql` puts both
-   back, and `restore-test.sh` applies it and fails if the trigger is missing.
-   Found by restoring a dump into a scratch DB and inspecting it, not by
-   reading the dump script.
+11. **The Auth password-hash parameters are in no snapshot.** The export carries
+   each account's hash, but the signer key, salt separator, rounds and memory
+   cost that make a hash usable live only in the Firebase console, and the
+   signer key is a secret that must not sit beside the hashes it protects. A
+   restore needs them as `AUTH_HASH_*`; without them every account still comes
+   back, with the same uid, and members sign in by email link or reset. Keep
+   them in the password manager (`docs/BACKUP.md`, *Install → 5*).
 
-12. **Storage rules must decide create-vs-overwrite by `resource == null`.**
+12. **A snapshot is not point-in-time, and discovery has one blind spot.** The
+   Postgres dump was one transaction; the Firestore walk is not, so a document
+   and its slug index written at the wrong second can disagree in one night's
+   snapshot. Subcollections whose parents are all deleted are found only for
+   the names in `KNOWN_SUBCOLLECTIONS` in `scripts/backup/lib.mjs`. Add a name
+   there when the data model gains a subcollection.
+
+13. **Storage rules must decide create-vs-overwrite by `resource == null`.**
    Storage can evaluate an overwrite of an existing object as a *create*, so a
    rule split into `allow create` (members) and `allow update` (owners) let a
    member overwrite another member's file until it became one `create, update`
@@ -155,7 +159,7 @@ These are real, were found the hard way, and are easy to reintroduce.
    already there and applies the create or the replace condition accordingly.
    Do not split it back; `npm run test:rules` has the overwrite case.
 
-13. **A plain Firestore write does not fail offline, and a plain read answers
+14. **A plain Firestore write does not fail offline, and a plain read answers
    from an empty cache.** The SDK queues a write and lands it later, with the
    promise pending, and a `getDoc` with no connection can resolve with a
    document that "does not exist". Both look like success. So reads that must be
@@ -164,7 +168,7 @@ These are real, were found the hard way, and are easy to reintroduce.
    queue (`src/lib/offlineQueue.js`) is built on this: it writes with
    transactions so that *it*, not the SDK, decides when to retry.
 
-14. **The callable SDK decorates messages, and function messages are the
+15. **The callable SDK decorates messages, and function messages are the
    function's own.** The client appends the HTTP status (` [404]`) to a callable
    error's message, and a `permission-denied` from a *function* is a sentence the
    function wrote for the reader ("You cannot change your own role."), unlike a
@@ -173,11 +177,11 @@ These are real, were found the hard way, and are easy to reintroduce.
    is replaced by the generic one. Do not route function errors through `wrap()`
    alone.
 
-15. **`node --test <dir>` fails on Node 24.** It treats the directory as a module
+16. **`node --test <dir>` fails on Node 24.** It treats the directory as a module
    to load. Name the file or use a glob (`node --test functions/test/*.test.mjs`),
    as the `test:*` scripts do.
 
-16. **Lazy page chunks load their CSS after `index.css`.** On a lazy page (the
+17. **Lazy page chunks load their CSS after `index.css`.** On a lazy page (the
    portal, the robot and blog pages, `NotFound`) a CSS-module rule now beats a
    global rule of equal specificity, because its stylesheet arrives later.
    Components in the main bundle (Nav, Footer, the landing page) still load before
@@ -225,9 +229,18 @@ npm run test:markdown    # 21 XSS cases + 12 feature cases for the kb renderer
 npm run test:portal      # offline queue, upload types, CSV export, analytics maths (node, no network)
 npm run test:rules       # 52 tests of the Firestore and Storage rules, against the emulator
 npm run test:functions   # 53 tests of the Cloud Functions, against the emulator
+npm run seed:demo        # demo data (scripts/firebase/seed-demo.mjs)
 npm run deploy:backend   # firestore rules + indexes, storage rules, functions
 npm run deploy           # fetch TBA data, build, push dist/ to gh-pages
+
+# the backup scripts have their own package.json (Node 22+, `npm ci` in scripts/backup first)
+cd scripts/backup && npm test               # the encoding, value by value; no emulator
+cd scripts/backup && npm run test:emulators # mirror -> wipe -> restore round trip + archiver, on emulators
 ```
+
+`npm run test:rules` runs on its own emulator ports through `firebase.rules-test.json`,
+so it can run while the dev emulators are up. The backup's emulator suite does the
+same through `firebase.backup-test.json`.
 
 **Run `npm run test:rules` after touching `firebase/firestore.rules` or
 `firebase/storage.rules`, and `npm run test:functions` after touching
@@ -236,7 +249,7 @@ placeholder project `demo-frc5805`, never a real one. The 52 rules tests are the
 actual proof that the access model holds — that a member cannot escalate, that a
 signed-out visitor reads nothing, that a member cannot overwrite another member's
 file. Reading the rules is not the same as testing them; the overwrite hole in
-gotcha 12 was found this way. Changing a rule means changing
+gotcha 13 was found this way. Changing a rule means changing
 `docs/FIREBASE.md`, the functions and the client too: they are one contract.
 
 The five `VITE_FIREBASE_*` variables must be present **at build time** — Vite

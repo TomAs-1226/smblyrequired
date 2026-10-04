@@ -258,11 +258,19 @@ Capability by role, read off `firebase/firestore.rules` and `firebase/storage.ru
 | Change someone's role; edit another member's profile; manage `repo_sources` | `admin` |
 
 Portal tabs mirror these floors: Overview and Files at `viewer`; Scout, Coverage, Compare,
-Analytics, Team detail, Pick list, Vision, Graphs, Code and Knowledge at `member`; Forms,
+Analytics, Team detail, Pick list, Field data, Vision, Graphs, Code and Knowledge at `member`; Forms,
 Event control and Team at `lead`; Admin at `admin`. That gate is convenience only — it just
 avoids showing people doors that will not open. **The rules are the actual boundary**, and they
 apply the same whether the request comes from the portal, `curl`, or anything else holding the
 public web config.
+
+### Field data
+
+The **Field data** tab (Strategy group, `member` and up) lists every team at an event from
+public numbers: Statbotics EPA and The Blue Alliance OPR, shown beside our own scouting
+averages and labelled as public data. It is fetched by the `publicData` function and cached
+for ten minutes. EPA needs nothing; OPR needs the `TBA_KEY` function secret (step 8), and
+without it the OPR columns are simply empty.
 
 ### A new account is `pending` and sees nothing
 
