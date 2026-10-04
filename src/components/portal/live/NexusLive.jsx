@@ -4,7 +4,7 @@ import { nexusStatus } from '../../../lib/scoutingApi'
 import css from './NexusLive.module.css'
 
 // -----------------------------------------------------------------------------
-// Live event status from Nexus for FRC, via the nexus-proxy edge function.
+// Live event status from Nexus for FRC, via the nexusProxy Cloud Function.
 //
 // This card lives in a pit: loud, and on a venue network that is a captive
 // portal about as often as it is real internet. Three rules follow from that:

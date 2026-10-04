@@ -11,13 +11,14 @@ import b from './FormBuilder.module.css'
 // A mentor authors the season's questions here instead of writing SQL. Two
 // things make that harder than it sounds, and most of this file is about them.
 //
-// 1. `validate_scout_fields()` (migration 0005) is the real authority. It
-//    rejects non-snake_case keys, unknown types, duplicate keys, missing labels
-//    and option-less selects — as a Postgres exception, at save time, after the
-//    mentor has typed thirty fields. So every one of those rules is mirrored
-//    here and enforced BEFORE save. The mirror is not a replacement: if the
-//    server still refuses, its message is shown word for word, because it was
-//    written to be read by exactly this person.
+// 1. `validateFields()` in lib/scoutingApi.js is the authority. It rejects
+//    non-snake_case keys, unknown types, duplicate keys, missing labels and
+//    option-less selects — at save time, after the mentor has typed thirty
+//    fields. (The security rules only check that `fields` is a list; leads are
+//    the only writers, so this guards against a mistake, not an attacker.) So
+//    every one of those rules is enforced here BEFORE the write is attempted.
+//    If a save is still refused, the message is shown word for word, because it
+//    was written to be read by exactly this person.
 //
 // 2. A key is data, not a label. Renaming one on a form that already has
 //    entries orphans every answer stored under the old name, and does it
@@ -101,13 +102,14 @@ export const FIELD_TYPES = [
 /**
  * THE THREE PROTECTED KEYS.
  *
- * `team_event_stats` (migration 0005) reads these three out of `data` by name:
+ * `team_event_stats` (functions/src/stats.js, kept by the onScoutEntryWritten
+ * function) reads these three out of `data` by name:
  *
- *     avg((e.data ->> 'total_score')::numeric)
- *     count(*) filter (where (e.data ->> 'broke')::boolean)
- *     count(*) filter (where (e.data ->> 'no_show')::boolean)
+ *     total_score  — averaged
+ *     broke        — counted when true
+ *     no_show      — counted when true
  *
- * The pick list and every AI summary are built on that view. A match or pit form
+ * The pick list and every AI summary are built on those statistics. A match or pit form
  * without them produces entries that are perfectly valid and completely
  * invisible to the analysis — every team shows a null average and a flawless
  * reliability record, and nothing raises an error to say why.
@@ -197,8 +199,8 @@ const ALLOWED = new Set(FIELD_TYPES.map((t) => t.type))
 const NEEDS_OPTIONS = new Set(['select', 'multiselect'])
 const NUMERIC = new Set(['counter', 'number', 'rating'])
 
-// The trigger's own regex, character for character. Diverging from it here would
-// mean the UI accepts something the database then refuses.
+// The same pattern validateFields() in lib/scoutingApi.js applies. Diverging from
+// it here would mean the UI accepts something the save then refuses.
 const KEY_RE = /^[a-z][a-z0-9_]*$/
 
 // --- pure helpers -------------------------------------------------------------
@@ -206,7 +208,7 @@ const KEY_RE = /^[a-z][a-z0-9_]*$/
 /**
  * label -> lower_snake_case key.
  *
- * The leading-letter rule is not cosmetic: the trigger requires `^[a-z]`, so a
+ * The leading-letter rule is not cosmetic: validateFields requires `^[a-z]`, so a
  * label like "2026 goals" cannot simply be slugified — "2026_goals" would be
  * rejected at save time, long after the mentor stopped thinking about it.
  */
@@ -231,7 +233,7 @@ function uniqueKey(base, taken) {
  * A working block -> the object that actually gets stored.
  *
  * Optional properties are dropped rather than written as empty strings, so the
- * stored JSON stays the shape migration 0005 documents instead of accumulating
+ * stored JSON stays the shape docs/FIREBASE.md documents instead of accumulating
  * `"help": ""` on every field anyone ever opened.
  */
 export function cleanField(f) {
@@ -254,13 +256,14 @@ export function cleanField(f) {
 }
 
 /**
- * Every rule `validate_scout_fields()` enforces, checked before the round trip.
+ * Every rule `validateFields()` in lib/scoutingApi.js enforces, checked before
+ * the round trip.
  *
- * Two rules here are deliberately STRICTER than the trigger. It accepts a label
+ * Two rules here are deliberately STRICTER than that function. It accepts a label
  * of `""` (it only tests for null) and lets a `heading` have no label at all —
  * both produce a field that renders as a blank space in front of a student, so
  * the builder refuses them. Being stricter is safe; being looser would mean
- * promising a save that the database is going to reject.
+ * promising a save that the server is going to reject.
  */
 export function validateFields(fields) {
   const problems = []
@@ -509,7 +512,7 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
 
   const changeKey = useCallback((uid, raw) => {
     // Typing is not corrected as it happens — that fights the person — but the
-    // characters the trigger cannot accept are simply not accepted.
+    // characters a key cannot hold are simply not accepted.
     const key = raw.toLowerCase().replace(/[^a-z0-9_]/g, '_')
     setBlocks((bs) =>
       bs.map((blk) => (blk.uid === uid ? { ...blk, autoKey: false, field: { ...blk.field, key } } : blk))
@@ -702,7 +705,7 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
     setSaving(false)
 
     if (error) {
-      // Verbatim. `saveForm` already forwards the trigger's own wording for a
+      // Verbatim. `saveForm` already forwards validateFields's own wording for a
       // field problem and its own sentence for an activation collision, and both
       // were written for the person reading this screen.
       setServerError(error)

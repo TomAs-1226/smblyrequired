@@ -21,7 +21,8 @@
 // powerhouse separates from the pack by qualification match six or so.
 const K_PRIOR = 4
 
-// PostgREST serialises `numeric` columns as strings, so every value that feeds a
+// Stored numbers can arrive as strings (a numeric string typed into a form, or a
+// value that came through JSON), so every value that feeds a
 // calculation goes through here first — `"42.5" * 1` is fine but `"42.5" + 1` is
 // "42.51", and a rating engine that does the second is worse than none.
 const num = (v) => {

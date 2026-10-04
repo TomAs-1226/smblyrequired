@@ -470,7 +470,7 @@
   border-color: rgba(240, 99, 99, 0.35);
 }
 
-/* Pit estimate is walled off from match play (migration 0009). Its own block,
+/* Pit estimate is walled off from match play (functions/src/stats.js keeps it apart). Its own block,
    its own left accent, and a label that never says "score". */
 .pitBlock {
   margin-top: var(--sp-3);

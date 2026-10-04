@@ -15,9 +15,9 @@ import BackupLeg from '../BackupLeg'
 import styles from '../Portal.module.css'
 
 // The admin panel is the one place role changes, approvals, and the security
-// record all live. It is admin-only in PANELS, but that gate is cosmetic — RLS
-// and the set_member_role() RPC are the real boundary, and every write here goes
-// through them. Nothing on this screen trusts the UI's own idea of who you are.
+// record all live. It is admin-only in PANELS, but that gate is cosmetic — the
+// security rules and the setMemberRole Cloud Function are the real boundary, and
+// every write here goes through them. Nothing on this screen trusts the UI's own idea of who you are.
 export default function Admin() {
   const { user } = useAuth()
   const [s, setS] = useState({ loading: true, error: null })
@@ -352,8 +352,8 @@ function AdminMemberRow({ member, index, isSelf, saving, onRole, onField }) {
       </div>
 
       {isSelf ? (
-        // The database blocks an admin changing their own role (set_member_role
-        // and the guard trigger both refuse it). The UI says so plainly instead
+        // The setMemberRole function refuses an admin changing their own role (and
+        // the rules refuse any client write to `role`). The UI says so plainly instead
         // of offering a control that would only ever error.
         <span
           className={`${styles.roleTag} ${styles[`role_${member.role}`] ?? ''}`}

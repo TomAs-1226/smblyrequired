@@ -1,7 +1,7 @@
 // =============================================================================
 // Reading the `picklist_help` answer.
 //
-// IMPORTANT, because it constrains everything below: the `ai` edge function
+// IMPORTANT, because it constrains everything below: the `ai` Cloud Function
 // returns PROSE, not structured tiers. Its response is
 //
 //   { task, event_key, teams_considered, answer, model, usage }
@@ -11,7 +11,7 @@
 //
 // So the split is:
 //
-//   * The answer is rendered VERBATIM, always, unparsed. The edge function is
+//   * The answer is rendered VERBATIM, always, unparsed. The function is
 //     prompted to lead with sample size and to refuse to rank teams it does not
 //     have the matches to rank, and that disclosure is the most valuable thing
 //     on the screen. Summarising it here would delete exactly the part that was

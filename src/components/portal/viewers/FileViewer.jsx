@@ -26,15 +26,17 @@ const PdfViewer = lazy(() => import('./PdfViewer'))
 const ArchiveViewer = lazy(() => import('./ArchiveViewer'))
 const HtmlViewer = lazy(() => import('./HtmlViewer'))
 
-// Long enough to read a file, short enough that a URL pasted into a group chat
-// is dead by the time anyone clicks it. Archives get longer because the entry
-// lister issues range requests against the same URL over the session.
+// How long the link was meant to live. `signedUrl` now returns a Firebase
+// download URL, which does not expire and ignores this value; the constants stay
+// so the call sites say how long they need the link for. Archives want longer
+// because the entry lister issues range requests against the same URL over the
+// session.
 const TTL_DEFAULT = 600
 const TTL_ARCHIVE = 900
 
-// Supabase honours `?download=` on a signed URL by setting Content-Disposition;
-// it is what the SDK's own `download` option appends, and it is not covered by
-// the signature (which signs the object path, not the query string). Appending
+// Supabase honoured `?download=` on a signed URL by setting Content-Disposition.
+// TODO(verify): whether a Firebase download URL does the same; if it does not,
+// the button still opens the file, but the browser picks the filename. Appending
 // it here avoids having to change lib/portalApi's signature.
 function withDownload(url, filename) {
   if (!url) return url

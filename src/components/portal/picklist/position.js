@@ -1,8 +1,8 @@
 // =============================================================================
 // Sparse ordering for pick list entries.
 //
-// `picklist_entries.position` is a `numeric` spaced 10, 20, 30 … (migration
-// 0006). The spacing is not decoration: it is what makes a drag ONE row update
+// `picklists/{id}/entries/{team}.position` is a number spaced 10, 20, 30 … (see
+// docs/FIREBASE.md). The spacing is not decoration: it is what makes a drag ONE row update
 // instead of a renumber of everything below the drop point.
 //
 // The scenario this is built for is the one where it matters. Alliance

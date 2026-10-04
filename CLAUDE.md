@@ -14,12 +14,16 @@ branch. Source lives on `main`.
 ## Stack
 
 Vite 6 · React 18 · GSAP + `@gsap/react` (ScrollTrigger) · Lenis smooth scroll ·
-CSS Modules + a global token sheet · Supabase (Postgres + Storage + Auth) for the
-portal only.
+CSS Modules + a global token sheet · Firebase (Auth + Firestore + Cloud Storage +
+Cloud Functions) for the portal only.
 
-Static frontend. There is no server — the portal talks to Supabase directly from
-the browser, and RLS is the access boundary. Do not introduce a build step that
-requires a Node runtime at request time; it would break the hosting model.
+Static frontend. There is no server — the portal talks to Firebase directly from
+the browser, and `firebase/firestore.rules` and `firebase/storage.rules` are the
+access boundary. Cloud Functions (`functions/`) exist only for what a browser must
+not do: change a role, hold an API key, keep aggregates. Do not introduce a build
+step that requires a Node runtime at request time; it would break the hosting
+model. The data model and the rules/functions/client contract are in
+`docs/FIREBASE.md`; setup is in `docs/PORTAL.md`.
 
 ## Layout
 
@@ -29,10 +33,12 @@ requires a Node runtime at request time; it would break the hosting model.
 | `src/index.css` | The design system. Single source of truth for tokens. |
 | `src/components/` | Public-site components, one CSS module each. |
 | `src/components/portal/` | The private portal. Lazy-loaded. |
-| `src/lib/` | Router, auth, Supabase client, markdown, motion helpers. |
-| `supabase/migrations/` | Schema + RLS. Apply in numeric order. |
+| `src/lib/` | Router, auth, Firebase client, markdown, motion helpers. |
+| `firebase/` | `firestore.rules`, `storage.rules`, indexes, Storage CORS, and `test/` (the rules tests). |
+| `functions/` | Cloud Functions (region `us-west1`) and their tests in `functions/test/`. |
 | `scripts/backup/` | The nightly mirror, restore test, systemd units. |
-| `docs/` | `PORTAL.md` (setup), `BACKUP.md` (the backup runbook). |
+| `scripts/firebase/` | `seed-emulators.mjs`, the local test accounts. |
+| `docs/` | `PORTAL.md` (setup), `FIREBASE.md` (data model and contract), `BACKUP.md` (the backup runbook). |
 
 ## Design system — the rules that matter
 
@@ -109,10 +115,12 @@ These are real, were found the hard way, and are easy to reintroduce.
    circles into rectangles while focused. `index.css` is injected after the CSS
    modules, so it wins.
 
-8. **Hash routing vs. Supabase auth.** The site is hash-routed (`#/team`), and
-   Supabase's default implicit flow returns the session in the URL *hash* — the
-   two collide. The client is configured with `flowType: 'pkce'`, which returns
-   `?code=` in the query string instead. Do not change this.
+8. **Hash routing vs. auth.** The site is hash-routed (`#/team`), so anything
+   that returns to it in the URL *hash* collides with the route. Firebase's
+   email-link and password-reset links come back with query parameters
+   (`?mode=…&oobCode=…`) instead, and `src/main.jsx` sees them on a hash-less
+   URL and opens `#/portal`; `src/lib/auth.jsx` then reads them and strips them
+   from the address bar. Do not move the return URL into the hash.
 
 9. **`SHA256SUMS` must be LF.** Windows autocrlf rewrites it on checkout and
    `sha256sum -c` then fails to find every file listed, which looks exactly like
@@ -139,23 +147,66 @@ These are real, were found the hard way, and are easy to reintroduce.
    Found by restoring a dump into a scratch DB and inspecting it, not by
    reading the dump script.
 
+12. **Storage rules must decide create-vs-overwrite by `resource == null`.**
+   Storage can evaluate an overwrite of an existing object as a *create*, so a
+   rule split into `allow create` (members) and `allow update` (owners) let a
+   member overwrite another member's file until it became one `create, update`
+   rule: `mayWrite()` in `firebase/storage.rules` checks whether an object is
+   already there and applies the create or the replace condition accordingly.
+   Do not split it back; `npm run test:rules` has the overwrite case.
+
+13. **A plain Firestore write does not fail offline, and a plain read answers
+   from an empty cache.** The SDK queues a write and lands it later, with the
+   promise pending, and a `getDoc` with no connection can resolve with a
+   document that "does not exist". Both look like success. So reads that must be
+   true use `getDocFromServer` / `getDocsFromServer`, and writes that must be
+   acknowledged are transactions (sent now or failed now). The offline scouting
+   queue (`src/lib/offlineQueue.js`) is built on this: it writes with
+   transactions so that *it*, not the SDK, decides when to retry.
+
+14. **The callable SDK decorates messages, and function messages are the
+   function's own.** The client appends the HTTP status (` [404]`) to a callable
+   error's message, and a `permission-denied` from a *function* is a sentence the
+   function wrote for the reader ("You cannot change your own role."), unlike a
+   rules refusal, which has no sentence at all. `call()` in `src/lib/db.js`
+   strips the suffix and keeps the message; only a failure to reach the function
+   is replaced by the generic one. Do not route function errors through `wrap()`
+   alone.
+
+15. **`node --test <dir>` fails on Node 24.** It treats the directory as a module
+   to load. Name the file or use a glob (`node --test functions/test/*.test.mjs`),
+   as the `test:*` scripts do.
+
+16. **Lazy page chunks load their CSS after `index.css`.** On a lazy page (the
+   portal, the robot and blog pages, `NotFound`) a CSS-module rule now beats a
+   global rule of equal specificity, because its stylesheet arrives later.
+   Components in the main bundle (Nav, Footer, the landing page) still load before
+   `index.css`, so there the global rule wins. Check which bundle a component is in
+   before assuming an order.
+
 ## Security posture
 
-- The repo is **public**. The Supabase **anon key ships in the bundle** and that
-  is fine — it is a public identifier, and what it can read is decided by RLS.
-- The **service-role key bypasses RLS entirely**. It must never carry a `VITE_`
-  prefix, never appear in this repo, and never reach the frontend. It lives only
-  on the backup host. See `docs/BACKUP.md`.
-- Default deny: RLS is on for every table, and no policy grants `anon` anything.
-  A new signup lands in the `pending` role and can read nothing until a lead
-  promotes them. **Signing up is not the same as being on the team.**
-- `profiles.role` has no column-level UPDATE grant for `authenticated`. The only
-  path that writes it is the `set_member_role()` RPC, which checks the caller is
-  an admin. Do not add a direct update path.
-- `knowledge_docs` has a database-side trigger that rejects common secret
-  patterns (private/tailnet IPs, private keys, GitHub/AWS/Supabase tokens) on
-  write. It is a backstop for the obvious accident, **not** a guarantee — it
-  only catches patterns it knows. Read what you are about to store.
+- The repo is **public**. The Firebase **web config** (`VITE_FIREBASE_*`) ships in
+  the bundle and that is fine — it identifies the project, it is not a secret,
+  and what a signed-in user can read or write is decided by the security rules.
+- A **service-account key bypasses the rules entirely**. It must never carry a
+  `VITE_` prefix, never appear in this repo, and never reach the frontend. It
+  lives only on the backup host. See `docs/BACKUP.md`.
+- Default deny: `firebase/firestore.rules` ends in a catch-all
+  (`match /{document=**}`) that refuses everything not named above it, and
+  signed-out users read nothing. A new account lands in the `pending` role and can
+  read nothing but its own profile until an admin promotes it. **Signing in is not
+  the same as being on the team.**
+- `profiles.role` is written only by the `setMemberRole` Cloud Function, which
+  checks the caller is an admin (from `profiles`, not a token claim), refuses
+  your own role and the last admin, and writes the audit log. The rules refuse any
+  client write that touches `role`. Do not add a direct update path.
+- `knowledge_docs` bodies are checked in the rules (`looksSecret`) against common
+  secret patterns (private/tailnet IPs, private keys, GitHub/AWS/API keys,
+  `service_role` assignments), and `src/lib/secretPatterns.js` holds the same six
+  so the portal can say which matched. Keep the two in step. It is a backstop for
+  the obvious accident, **not** a guarantee — it only catches patterns it knows.
+  Read what you are about to store.
 - `src/lib/markdown.js` is safe by construction: it escapes HTML *first*, then
   applies formatting to already-escaped text. **Do not reverse that ordering**
   and do not add a rule that re-emits raw input. `npm run test:markdown` runs 21
@@ -164,24 +215,31 @@ These are real, were found the hard way, and are easy to reintroduce.
 ## Commands
 
 ```bash
-npm run dev            # local dev server
-npm run build          # production build -> dist/
-npm run test:markdown  # 21 XSS cases + 12 feature cases for the kb renderer
-npm run test:portal    # offline queue, upload types, CSV export, analytics maths (node, no network)
-npm run test:db        # apply every migration to a throwaway local DB, run the 3 SQL suites
-npm run deploy         # fetch TBA data, build, push dist/ to gh-pages
+npm run dev              # local dev server (real Firebase project, from .env.local)
+npm run build            # production build -> dist/
+npm run emulators        # Auth + Firestore + Storage + Functions, locally (needs Java 21+)
+npm run seed:emulators   # one test account per role in the running emulators
+npm run dev:emulators    # dev server pointed at the emulators, http://localhost:5174
+npm test                 # everything below, in order
+npm run test:markdown    # 21 XSS cases + 12 feature cases for the kb renderer
+npm run test:portal      # offline queue, upload types, CSV export, analytics maths (node, no network)
+npm run test:rules       # 52 tests of the Firestore and Storage rules, against the emulator
+npm run test:functions   # 53 tests of the Cloud Functions, against the emulator
+npm run deploy:backend   # firestore rules + indexes, storage rules, functions
+npm run deploy           # fetch TBA data, build, push dist/ to gh-pages
 ```
 
-**Run `npm run test:db` after touching anything in `supabase/migrations/`.** It
-needs a local PostgreSQL 15+ and never touches a Supabase project. The 46
-assertions across the three suites in `supabase/local-test/` (`01_rls_tests.sql`
-for the access model, `02_scouting_tests.sql` and `03_portal_tests.sql` for the
-scouting and portal rules) are the actual proof that the access model holds —
-that a member cannot escalate, that `anon` reads nothing, that the last admin
-cannot be deleted. Reading the policies is not the same as testing them; two
-real holes were found this way.
+**Run `npm run test:rules` after touching `firebase/firestore.rules` or
+`firebase/storage.rules`, and `npm run test:functions` after touching
+`functions/`.** Both need Java 21+ for the emulators and run under the
+placeholder project `demo-frc5805`, never a real one. The 52 rules tests are the
+actual proof that the access model holds — that a member cannot escalate, that a
+signed-out visitor reads nothing, that a member cannot overwrite another member's
+file. Reading the rules is not the same as testing them; the overwrite hole in
+gotcha 12 was found this way. Changing a rule means changing
+`docs/FIREBASE.md`, the functions and the client too: they are one contract.
 
-The two `VITE_SUPABASE_*` variables must be present **at build time** — Vite
+The five `VITE_FIREBASE_*` variables must be present **at build time** — Vite
 inlines them. A build without them still succeeds; the portal simply renders its
 "not configured" state and the public site is unaffected. That is deliberate.
 

@@ -9,7 +9,7 @@ import styles from './Vision.module.css'
 //
 // This is the honesty lever made operable. The default is a generic model that
 // cannot tell a robot from a referee; here a lead points the pipeline at a real
-// FRC-trained detector instead. The model runs ON THE PHONE (migration 0012
+// FRC-trained detector instead. The model runs ON THE PHONE (scout_settings
 // stores only its URL + class names), so this is not a third-party service — it
 // is your model, hosted wherever you like, executed locally.
 //

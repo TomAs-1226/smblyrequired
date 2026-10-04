@@ -313,9 +313,9 @@
 .tier2 { --lane-accent: var(--tier-silver); }
 .tier3 { --lane-accent: var(--tier-bronze); }
 .tier4 { --lane-accent: var(--text-muted); }
-/* A tier key on an entry that no longer exists in picklists.tiers. The migration
-   is explicit that renaming a tier must not orphan its entries, so they get a
-   lane of their own instead of vanishing off the board. */
+/* A tier key on an entry that no longer exists in the list's `tiers`. Renaming a
+   tier must not orphan its entries, so they get a lane of their own instead of
+   vanishing off the board. */
 .tierOrphan { --lane-accent: var(--danger); }
 
 .laneCards {
@@ -701,7 +701,7 @@
 }
 
 /* Rendered exactly as returned — pre-wrap, no markdown pass, nothing dropped.
-   The edge function is prompted to lead with sample size and to refuse to rank
+   The ai function is prompted to lead with sample size and to refuse to rank
    what it cannot rank; that disclosure is the most valuable text on this screen
    and it reaches the reader unedited. */
 .proposalAnswer {

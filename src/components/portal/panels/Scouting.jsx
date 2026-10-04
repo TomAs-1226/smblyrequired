@@ -57,10 +57,10 @@ export default function Scouting() {
   // server could not be reached. Said out loud so nobody mistakes it for live.
   const [formOffline, setFormOffline] = useState(false)
 
-  // The active event and scouting window are leadership's to set (migration
-  // 0010). A scout follows them: the event picker locks to the active event, and
+  // The active event and scouting window are leadership's to set
+  // (scout_settings). A scout follows them: the event picker locks to the active event, and
   // saving is blocked when the window is closed. This is the friendly mirror of
-  // the database trigger — the trigger is what actually enforces it.
+  // the rules — firestore.rules is what actually enforces it.
   //
   // Re-read every minute and whenever the tab comes back. It used to be read
   // once on mount, and scouts keep this tab open all day: a page opened at 07:55
@@ -92,7 +92,7 @@ export default function Scouting() {
   const lockedToEvent = control?.active_event_key && !atLeast('lead')
   const scoutingClosed = control?.lock_enabled && control?.open_now === false
 
-  // Pit and strategy are capped at 2 per team per day (migration 0007). Check
+  // Pit and strategy are capped at 2 per team per day (two slots in the entry id). Check
   // the remaining allowance when the team changes, so the scout learns the limit
   // before filling the form rather than at submit. Match scouting is unlimited.
   useEffect(() => {

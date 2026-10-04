@@ -9,9 +9,10 @@ import css from './Control.module.css'
 // -----------------------------------------------------------------------------
 // Event control — leadership sets the active event and the scouting window.
 //
-// These are the two levers migration 0010 enforces in the database. This screen
-// only presents them; a scout who never sees it is still held to whatever a lead
-// sets here, because the trigger — not this form — is the authority. min: 'lead'
+// These are the two levers firestore.rules enforces when an entry is created
+// (scout_settings/main). This screen only presents them; a scout who never sees
+// it is still held to whatever a lead sets here, because the rules — not this
+// form — are the authority. min: 'lead'
 // keeps it out of a scout's tabs, but that is convenience, not the boundary.
 // -----------------------------------------------------------------------------
 
@@ -84,8 +85,10 @@ export default function Control() {
 
   return (
     <div className={styles.stack}>
-      {/* Live status, the same computation the enforcement trigger uses, so this
-          card and the database can never disagree about whether scouting is open. */}
+      {/* Live status, computed in the browser from the saved settings. The rules
+          judge the window from the UTC offset recorded when it was saved, so after
+          a daylight-saving change this card and the rules can differ by an hour
+          until a lead re-saves the window. */}
       <div className={`${css.status} ${openNow ? css.statusOpen : css.statusClosed}`}>
         <span className={css.statusDot} aria-hidden="true" />
         <div>

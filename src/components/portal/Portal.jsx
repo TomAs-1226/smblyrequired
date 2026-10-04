@@ -24,7 +24,7 @@ import { ErrorState } from './ui'
 import styles from './Portal.module.css'
 
 // Panels are declared with the privilege floor they require. The gate below is
-// convenience only — RLS in the database is the actual boundary. Hiding a tab
+// convenience only — the security rules are the actual boundary. Hiding a tab
 // the server would refuse anyway just avoids showing people doors that do not
 // open for them.
 const PANELS = [
@@ -44,18 +44,18 @@ const PANELS = [
   // workable they are as a partner. The strategy-analysis cluster's detail view.
   { id: 'team', label: 'Team detail', icon: 'user', min: 'member', Component: TeamDetail },
   // Members can read the board — everyone benefits from knowing the ranking.
-  // Editing is lead+, enforced in RLS: one careless drag during selection is
+  // Editing is lead+, enforced in firestore.rules: one careless drag during selection is
   // expensive and hard to notice.
   { id: 'picks', label: 'Pick list', icon: 'trophy', min: 'member', Component: PickList },
   // The master-device vision pipeline: a phone runs an object detector on-device
   // and streams timestamped counts into scouting. `cpu` icon, not a camera one,
   // deliberately — the honest framing is "on-device model", not "it sees the
-  // game". Member floor: running it is a scout's job, RLS (0011) is the real gate.
+  // game". Member floor: running it is a scout's job, firestore.rules is the real gate.
   { id: 'vision', label: 'Vision', icon: 'cpu', min: 'member', Component: VisionPanel },
   // Authoring the season's questions is a mentor/lead job, not a scout's.
   { id: 'forms', label: 'Forms', icon: 'cog', min: 'lead', Component: Forms },
   // Leadership sets the active event and the scouting window here; both are
-  // enforced in the database (migration 0010), not just this screen.
+  // enforced in firestore.rules (scout_settings), not just this screen.
   { id: 'control', label: 'Event control', icon: 'calendar', min: 'lead', Component: Control },
   { id: 'files', label: 'Files', icon: 'folder', min: 'viewer', Component: Files },
   { id: 'graphs', label: 'Graphs', icon: 'share', min: 'member', Component: Graphs },
@@ -64,7 +64,7 @@ const PANELS = [
   { id: 'roster', label: 'Team', icon: 'users', min: 'lead', Component: Roster },
   // Last, and admin-only. Approvals, role changes, the audit trail, and storage
   // health — the controls a lead can see the results of but only an admin may
-  // touch. RLS is the real gate; `min: 'admin'` just hides a door that would not
+  // touch. The rules are the real gate; `min: 'admin'` just hides a door that would not
   // open anyway.
   { id: 'admin', label: 'Admin', icon: 'cog', min: 'admin', Component: Admin },
 ]
@@ -216,7 +216,8 @@ function NotConfigured() {
 }
 
 // Signing up is not the same as being on the team. New accounts land here until
-// an admin grants them a role — see the `pending` default in migration 0001.
+// an admin grants them a role — firestore.rules accepts a new profile only as
+// `pending`.
 //
 // The role is re-read when the tab regains focus and on "Check again", so the
 // approval shows up the moment it happens. Previously the profile was fetched

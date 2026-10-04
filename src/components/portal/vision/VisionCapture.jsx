@@ -20,7 +20,7 @@ import styles from './Vision.module.css'
 // do — a per-instant object count and the boxes that produced it, timestamped so
 // they can be lined up against a match later.
 //
-// WHICH detector runs is a SETTING now (migration 0012), not a constant. Out of
+// WHICH detector runs is a SETTING now (scout_settings), not a constant. Out of
 // the box it is COCO-SSD, a GENERIC model that counts everyday objects and knows
 // nothing about robots or game pieces — a pipeline stand-in and training-data
 // collector. A lead can point it at a real FRC-trained YOLO model (the format

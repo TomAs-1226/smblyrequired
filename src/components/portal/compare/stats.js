@@ -74,7 +74,7 @@ export const SEPARATION = 2
  */
 export const SEPARATION_LEAN = 1
 
-/** Postgres numerics can arrive as strings. Anything unusable becomes null. */
+/** A stored number can arrive as a string (typed into a form). Anything unusable becomes null. */
 export function num(v) {
   if (v == null || v === '') return null
   const n = Number(v)
@@ -84,8 +84,8 @@ export function num(v) {
 /**
  * Population SD -> sample SD, for a spread computed by dividing by n.
  *
- * NOT applied to `team_event_stats.score_stddev`: that has been `stddev_samp`
- * since migration 0009 (and still is in 0013). Correcting it again inflated
+ * NOT applied to `team_event_stats.score_stddev`: that has always been a
+ * sample SD (functions/src/stats.js divides by n-1, null at n < 2). Correcting it again inflated
  * every spread by sqrt(n/(n-1)) — about 22% at n = 3 — which widened the
  * standard errors and made Compare under-call real differences. Kept for a
  * caller that genuinely holds a population SD.
@@ -413,7 +413,7 @@ export const RESERVED_KEYS = new Set(['total_score', 'broke', 'no_show'])
  * Keys whose name says a higher number is worse.
  *
  * A GUESS, and treated as one everywhere it surfaces: the form schema
- * (migration 0005) records a field's type but never its polarity, so there is
+ * (`scout_forms.fields`) records a field's type but never its polarity, so there is
  * no way to know from the data whether more `defense_played` is good. Every
  * dynamic row is therefore marked as assumed and can be flipped by the reader.
  *
@@ -655,7 +655,7 @@ export function buildRows(columns, fieldMeta, flipped) {
 
   // --- whatever this season's form actually asks -----------------------------
   //
-  // The form is user-defined (scout_forms.fields, migration 0005) and changes
+  // The form is user-defined (scout_forms.fields) and changes
   // during build season, so there is no fixed metric list to hardcode. Every
   // numeric and boolean key that appears in the compared teams' match entries
   // becomes a row, labelled from the active form where it still defines the key.

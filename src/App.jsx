@@ -66,7 +66,7 @@ function resolve(path) {
   if (path.startsWith('/blog/')) return [BlogPost, { slug: path.slice(6) }]
   // `/portal` and `/portal/<panel>` both resolve here; the panel decides its own
   // gate. Nothing about the portal is reachable without a session — but the
-  // route existing is not itself a leak, since every read is behind RLS.
+  // route existing is not itself a leak, since every read is behind the security rules.
   if (path === '/portal') return [Portal, { sub: '' }]
   if (path.startsWith('/portal/')) return [Portal, { sub: path.slice(8) }]
   return [NotFound, {}]

@@ -14,8 +14,8 @@ import styles from './Vision.module.css'
 // that is exactly the feedback that tells you what a trained model needs to fix.
 //
 // The heavy detail (thousands of frames) is fetched only when a session is
-// expanded, never for the list — the list reads the summary VIEW (migration
-// 0011), which is one row per session with the aggregates already computed.
+// expanded, never for the list — the list reads the session documents alone, whose
+// counters (frame_count, observations, count_sum) already hold the aggregates.
 // =============================================================================
 
 const fmtClock = (start, end) => {

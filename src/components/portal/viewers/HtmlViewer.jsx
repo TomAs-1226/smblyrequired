@@ -13,7 +13,7 @@ import styles from './Viewers.module.css'
 //
 //   - Omitting allow-same-origin forces the framed document into an opaque
 //     origin. It cannot read this page's DOM, its cookies, its localStorage, or
-//     the Supabase session sitting in it. It cannot call our fetch wrappers or
+//     the Firebase session sitting in it. It cannot call our fetch wrappers or
 //     reuse our access token.
 //   - Adding allow-same-origin back — for any reason, including "the styles
 //     looked wrong" — cancels that, because a same-origin sandboxed frame can

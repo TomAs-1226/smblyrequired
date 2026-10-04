@@ -11,8 +11,8 @@ type, cyan data lines, and gold reserved for what's been *earned*.
 Vite 6 · React 18 · GSAP + `@gsap/react` (ScrollTrigger) · Lenis smooth scroll · split-type ·
 CSS Modules + a global design-token sheet. The public site is static — no backend required.
 
-The private team portal at `#/portal` adds Supabase (Postgres + Storage + Auth) on top, but it
-is entirely optional: without credentials the portal reports itself unconfigured and every
+The private team portal at `#/portal` adds Firebase (Auth + Firestore + Cloud Storage + Cloud
+Functions) on top, but it is entirely optional: without credentials the portal reports itself unconfigured and every
 public page works exactly as before. See **[Team portal](#team-portal)** below.
 
 ## Run it
@@ -69,19 +69,22 @@ the portal chunk is lazy-loaded, so a sponsor reading the front page never downl
 | Where | What's in it |
 |---|---|
 | `src/components/portal/` | The portal UI — `Portal.jsx`, `SignIn.jsx`, and the panels |
-| `src/lib/` | `supabase.js` (client), `auth.jsx` (session + roles), `portalApi.js` (data access) |
-| `supabase/migrations/` | The four SQL migrations: identity/roles, storage buckets, content, audit + backup |
-| `supabase/local-test/` | Throwaway-database harness — `npm run test:db` applies the migrations and asserts the access rules |
+| `src/lib/` | `firebase.js` (client), `auth.jsx` (session + roles), `portalApi.js` and `scoutingApi.js` (data access) |
+| `firebase/` | `firestore.rules`, `storage.rules`, indexes, Storage CORS, and `test/` — `npm run test:rules` proves the access rules against the emulator |
+| `functions/` | Cloud Functions: role changes, API proxies, statistics, cascades. `npm run test:functions` tests them |
 | `scripts/backup/` | The nightly two-leg mirror, the restore test, and their systemd units |
 
-- **[`docs/PORTAL.md`](docs/PORTAL.md)** — Supabase setup, environment variables, the six roles
-  and what each can do, how to bootstrap the first admin, the five storage buckets, and what
-  must never be stored in there.
+- **[`docs/PORTAL.md`](docs/PORTAL.md)** — Firebase setup, environment variables, running it
+  locally with the emulators, the six roles and what each can do, how to bootstrap the first
+  admin, the five storage folders, and what must never be stored in there.
+- **[`docs/FIREBASE.md`](docs/FIREBASE.md)** — the data model and the contract between the
+  rules, the functions and the client.
 - **[`docs/BACKUP.md`](docs/BACKUP.md)** — installing the nightly backup on the backup server,
   verifying it, the restore test, and the restore runbook.
 
-Accounts are created by a team lead. Public signup is turned off, and a new account lands in
-the `pending` role which can see nothing until someone promotes it.
+A new account lands in the `pending` role, which can see nothing until an admin promotes it.
+Optionally, sign-up can be turned off so that accounts exist only when a lead adds them; see
+`docs/PORTAL.md`.
 
 ## Deploy
 
@@ -89,9 +92,9 @@ the `pending` role which can see nothing until someone promotes it.
 GitHub Pages, Netlify, Cloudflare Pages, or even opened from disk. Just deploy `dist/`.
 
 Full instructions are in `DEPLOY.md` — the flow is unchanged. One thing to know if you use the
-portal: Vite inlines `VITE_`-prefixed variables at **build** time, so `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` must be set on whichever machine runs the build or the deployed portal
-renders as unconfigured. See `docs/PORTAL.md`.
+portal: Vite inlines `VITE_`-prefixed variables at **build** time, so the five `VITE_FIREBASE_*`
+values must be set on whichever machine runs the build or the deployed portal renders as
+unconfigured. See `docs/PORTAL.md`.
 
 ## TODO / QC checklist (hand-off)
 

@@ -195,7 +195,7 @@ export default function Nav() {
                 and prospective students, and the gold CTA is the one thing on
                 this bar that should read as an invitation. A plain anchor, not
                 a router import: the portal is lazy-loaded so the public bundle
-                never pays for the Supabase client, and touching auth from here
+                never pays for the Firebase client, and touching auth from here
                 would drag it back into index-*.js. */}
             <a href="#/portal" className={styles.signIn}>
               <Icon name="user" size={15} className={styles.signInIcon} />

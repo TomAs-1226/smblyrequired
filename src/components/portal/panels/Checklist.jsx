@@ -6,8 +6,9 @@ import styles from '../Portal.module.css'
 import c from '../forms/Checklist.module.css'
 
 // -----------------------------------------------------------------------------
-// "Who have we scouted?" — the team_scout_checklist view (migration 0007) as a
-// screen, plus event_scout_coverage (0006) as the one-line answer at the top.
+// "Who have we scouted?" — the per-team checklist as a screen, plus the event
+// coverage as the one-line answer at the top. Both are computed in the browser
+// from event_teams and team_event_stats (docs/FIREBASE.md).
 //
 // This is read walking around a venue on a phone, usually by someone deciding
 // where to send the next free scout. So the screen is built around finding the

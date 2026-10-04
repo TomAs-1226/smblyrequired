@@ -25,13 +25,14 @@ import css from './TeamDetail.module.css'
 // scouting portal shares and this screen cannot survive without — never letting
 // a number look more certain than the sample behind it. A team seen twice does
 // not get to look like a team seen fifteen times, the pit guess never blends
-// into the match average (migration 0009 fixed exactly that), and a workability
+// into the match average (the old SQL view did exactly that; functions/src/stats.js
+// no longer does), and a workability
 // note nobody has corroborated is withheld rather than shown as a verdict about
 // somebody else's students.
 //
 // Nothing here writes. It reads team_event_stats, scout_entries, robot_photos,
-// team_collaboration_summary and the active forms, all through scoutingApi.js,
-// and mints signed URLs for photos through portalApi.
+// team collaboration notes (summarised here in the browser) and the active forms,
+// all through scoutingApi.js, and gets photo download URLs through portalApi.
 // -----------------------------------------------------------------------------
 
 const SEASON = new Date().getFullYear()
@@ -43,17 +44,17 @@ const EVENT_KEY = 'frc5805.event'
 // finding the same team still open is most of the value.
 const teamStoreKey = (eventKey) => `frc5805.team.${eventKey}`
 
-// Confidence tiers by match sample size. THIN is the migration-0009 / Compare
-// floor of 3, below which a spread means nothing; SOLID is where a read stops
+// Confidence tiers by match sample size. THIN is the Compare floor of 3, below which a spread means nothing; SOLID is where a read stops
 // being provisional. The whole point of the header chip is that a 2-match team
 // looks visibly less authoritative than a 12-match one, so these drive both the
 // wording and the styling.
 const THIN_N = 3
 const SOLID_N = 12
 
-// Signed URLs are minted once per photo at load. Long enough to sit in an
-// alliance-selection meeting with the tab open; short enough that a link is dead
-// well before it could be pasted anywhere it should not be.
+// Photo URLs are fetched once per photo at load. This lifetime was meant to be
+// long enough to sit in an alliance-selection meeting with the tab open; a
+// Firebase download URL does not expire and `signedUrl` ignores the value, so it
+// is only kept so the call says what it needs.
 const PHOTO_TTL = 3600
 
 // Mirrors RobotCapture's capture sequence so photos read in the order they were
@@ -95,8 +96,8 @@ export function rememberDetailTeam(eventKey, teamNumber) {
 
 // --- small pure helpers -------------------------------------------------------
 
-// PostgREST hands `numeric` columns back as strings; coerce before any maths so
-// avg + stddev never accidentally string-concatenate.
+// A stored number can arrive as a string (typed into a form); coerce before any
+// maths so avg + stddev never accidentally string-concatenate.
 const num = (v) => (v == null || v === '' ? null : Number(v))
 const int = (v) => {
   const n = num(v)
@@ -302,7 +303,7 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
       teamCollaboration(eventKey, team),
       teamPhotos(eventKey, team),
       // TBA's official numbers, alongside what the scouts saw. It goes through
-      // the edge proxy (the TBA key is server-side), and a failure here — no
+      // the tbaProxy function (the TBA key is server-side), and a failure here — no
       // results yet, key unset, network — must never sink the rest of the page,
       // so it is swallowed to null rather than propagated.
       syncFromTba('team_event_detail', { eventKey, teamNumber: team }).catch(() => ({ data: null })),
@@ -310,7 +311,7 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
     // A team switched away from mid-flight must not overwrite the new one.
     if (req !== reqRef.current) return
 
-    // Sign each photo. A row whose object was deleted (file null) is dropped
+    // Get each photo's URL. A row whose object was deleted (file null) is dropped
     // rather than rendered as a broken tile.
     const withUrls = await Promise.all(
       (photos.data ?? [])
@@ -383,8 +384,9 @@ export default function TeamDetail({ teamNumber: teamProp = null }) {
     setAi({ running: true, done: false, error: null, payload: null })
     const res = await askAi('scouting_summary', { eventKey, teamNumber: team })
     if (req !== reqRef.current) return
-    // Two envelopes: askAi returns invoke()'s parsed body without unwrapping the
-    // edge function's own { data, error }, so the summary sits at res.data.data.
+    // askAi returns call()'s { data, error }, and the ai function's answer is
+    // res.data. The `?.data` fallback is a leftover from the old edge function,
+    // which wrapped its own { data, error } inside the response; it is harmless.
     const payload = res.data?.data ?? res.data
     setAi({ running: false, done: true, error: res.error ?? null, payload: payload ?? null })
   }, [eventKey, team])
@@ -811,7 +813,7 @@ function Performance({ stat }) {
       </div>
 
       {/* Pit estimate, walled off in its own block. Merging it into the average
-          above is the exact bug migration 0009 unpicked, so it is labelled as a
+          above is the exact bug the old SQL view had, so it is labelled as a
           different measurement and never shares a tile with match play. */}
       {pit != null && (
         <div className={css.pitBlock}>
@@ -1072,9 +1074,9 @@ function Lightbox({ photos, index, onIndex, onClose }) {
 
 function Workability({ collab, team }) {
   const observers = int(collab?.observers)
-  // The view nulls `workability` until two independent observers agree. Below
+  // scoutingApi nulls `workability` until two independent observers agree. Below
   // that floor we show nothing quantitative — a single opinion about another
-  // school's students is precisely what migration 0008 refuses to surface.
+  // school's students is precisely what the collaboration summary refuses to surface.
   const corroborated = collab && observers >= 2 && collab.workability != null
 
   return (
