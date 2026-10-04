@@ -13,6 +13,7 @@ nul.*
 .env
 .env.*
 !.env.example
+!.env.emulators
 
 # Backup snapshots, if anyone ever runs the mirror from inside a checkout.
 /backup/

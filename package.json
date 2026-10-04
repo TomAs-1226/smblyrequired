@@ -6,6 +6,9 @@
   "description": "Official website of FRC Team 5805 — SMbly Required, Santa Margarita Catholic High School.",
   "scripts": {
     "dev": "vite",
+    "dev:emulators": "vite --mode emulators --port 5174 --strictPort",
+    "emulators": "firebase emulators:start --project demo-frc5805",
+    "seed:emulators": "node scripts/firebase/seed-emulators.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "fetch:tba": "node scripts/fetch-tba.mjs",

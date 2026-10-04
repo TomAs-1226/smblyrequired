@@ -69,7 +69,7 @@ const PANELS = [
   { id: 'admin', label: 'Admin', icon: 'cog', min: 'admin', Component: Admin },
 ]
 
-// AuthProvider lives here rather than in App so that the Supabase client is
+// AuthProvider lives here rather than in App so that the Firebase client is
 // reached only through this module — which App lazy-loads. A sponsor reading
 // the public site never downloads the auth stack at all.
 export default function Portal({ sub = '' }) {
@@ -204,7 +204,7 @@ function NotConfigured() {
         <span className={`pill ${styles.centerPill}`}>Backend not connected</span>
         <h1 className={styles.title}>The portal is not set up yet</h1>
         <p className={styles.centerText}>
-          This build has no Supabase credentials, so there is nothing to sign in to. The public
+          This build has no Firebase configuration, so there is nothing to sign in to. The public
           site is unaffected. Setup steps are in <code>docs/PORTAL.md</code>.
         </p>
         <button type="button" className="btn btn--ghost" onClick={() => navigate('/')}>

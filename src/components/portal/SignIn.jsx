@@ -4,13 +4,13 @@ import { useAuth } from '../../lib/auth'
 import styles from './Portal.module.css'
 
 export default function SignIn() {
-  const { signIn, signInWithLink, sendPasswordReset } = useAuth()
-  // 'password' | 'link' | 'reset'
-  const [mode, setMode] = useState('password')
+  const { signIn, signInWithLink, sendPasswordReset, completeLinkSignIn, linkNeedsEmail, linkError } = useAuth()
+  // 'password' | 'link' | 'reset' | 'finish' (a sign-in link opened in a browser that did not ask for it)
+  const [mode, setMode] = useState(linkNeedsEmail ? 'finish' : 'password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(linkError)
   const [sent, setSent] = useState(false)
 
   async function onSubmit(e) {
@@ -22,18 +22,21 @@ export default function SignIn() {
     const result =
       mode === 'password'
         ? await signIn(email.trim(), password)
-        : mode === 'link'
-          ? await signInWithLink(email.trim())
-          : await sendPasswordReset(email.trim())
+        : mode === 'finish'
+          ? await completeLinkSignIn(email.trim())
+          : mode === 'link'
+            ? await signInWithLink(email.trim())
+            : await sendPasswordReset(email.trim())
 
     setBusy(false)
     if (result?.error) {
       setError(result.error)
       return
     }
-    // On success in password mode the auth listener swaps this whole view out.
-    // The two email flows stay and explain the next step is in the inbox.
-    if (mode !== 'password') setSent(true)
+    // On success in password mode (or finishing a link) the auth listener swaps
+    // this whole view out. The two email flows stay and explain the next step is
+    // in the inbox.
+    if (mode === 'link' || mode === 'reset') setSent(true)
   }
 
   if (sent) {
@@ -46,7 +49,7 @@ export default function SignIn() {
           <p className={styles.centerText}>
             If <strong>{email}</strong> has an account, {isReset ? 'a link to set your password' : 'a sign-in link'}{' '}
             is on its way. It expires shortly, so use it soon.
-            {isReset && ' Opening it brings you back here to choose a password.'}
+            {isReset && ' Opening it lets you choose a password, then brings you back here to sign in.'}
           </p>
           <button
             type="button"
@@ -67,11 +70,13 @@ export default function SignIn() {
     <div className={`container ${styles.wrap}`}>
       <div className={styles.authCard}>
         <span className={styles.eyebrow}>Team Portal</span>
-        <h1 className={styles.authTitle}>{mode === 'reset' ? 'Set a password' : 'Sign in'}</h1>
+        <h1 className={styles.authTitle}>{mode === 'reset' ? 'Set a password' : mode === 'finish' ? 'Finish signing in' : 'Sign in'}</h1>
         <p className={styles.authLead}>
           {mode === 'reset'
             ? 'Enter your email and we will send a link to choose a password — this also works if you have never set one.'
-            : 'For team members. Everything public lives on the main site — this is the internal side.'}
+            : mode === 'finish'
+              ? 'You opened a sign-in link in a different browser from the one that asked for it. Confirm the email it was sent to.'
+              : 'For team members. Everything public lives on the main site — this is the internal side.'}
         </p>
 
         <form className={styles.form} onSubmit={onSubmit} noValidate>
@@ -117,11 +122,11 @@ export default function SignIn() {
             {busy ? (
               <>
                 <span className={styles.spinnerSm} aria-hidden="true" />
-                {mode === 'password' ? 'Signing in…' : 'Sending…'}
+                {mode === 'password' || mode === 'finish' ? 'Signing in…' : 'Sending…'}
               </>
             ) : (
               <>
-                {mode === 'password' ? 'Sign in' : mode === 'link' ? 'Email me a link' : 'Send the link'}
+                {mode === 'password' ? 'Sign in' : mode === 'finish' ? 'Finish signing in' : mode === 'link' ? 'Email me a link' : 'Send the link'}
                 <Icon name="arrowRight" size={17} className="arrow" />
               </>
             )}
@@ -152,8 +157,7 @@ export default function SignIn() {
         </div>
 
         <p className={styles.authFoot}>
-          No account? Accounts are created by a team lead — ask in the build channel rather than
-          signing up here.
+          New here? Ask a team lead. A new account can see nothing until a lead approves it.
         </p>
       </div>
     </div>

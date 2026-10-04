@@ -3,12 +3,11 @@ import Icon from '../Icon'
 import { useAuth } from '../../lib/auth'
 import styles from './Portal.module.css'
 
-// Two jobs, one form:
-//   - Recovery/first-password: AuthProvider renders <SetPassword/> with no props
-//     when a recovery link is active. Cancel signs out.
-//   - Change password while signed in: rendered with onClose as a dismissible
-//     dialog from the portal header. Cancel just closes. Either way it calls
-//     updatePassword(), which works for any authenticated session with no email.
+// Change password while signed in: a dismissible dialog from the portal header.
+// (A forgotten or first password is set on Firebase's own page, reached from the
+// reset email; the full-page form below remains for a caller that passes no
+// onClose.) Firebase asks for a recent sign-in before changing a password, and
+// says so in the error when the session is too old.
 export default function SetPassword({ onClose }) {
   const { updatePassword, signOut } = useAuth()
   const dismissible = typeof onClose === 'function'
@@ -22,7 +21,7 @@ export default function SetPassword({ onClose }) {
     e.preventDefault()
     if (busy) return
     setError(null)
-    // Checked here as well as by Supabase so the message is instant and specific,
+    // Checked here as well as by Firebase so the message is instant and specific,
     // rather than a round trip to be told the two fields differ.
     if (pw.length < 8) return setError('Use at least 8 characters.')
     if (pw !== confirm) return setError('The two passwords do not match.')

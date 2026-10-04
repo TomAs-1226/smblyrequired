@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import Icon from '../../Icon'
 import { useAuth } from '../../../lib/auth'
-import { supabase } from '../../../lib/supabase'
-import { listCodeArchives, signedUrl, formatBytes } from '../../../lib/portalApi'
+import { listCodeArchives, createCodeArchive, signedUrl, formatBytes } from '../../../lib/portalApi'
 import Uploader from '../Uploader'
 import { Loading, Empty, ErrorState, Row } from '../ui'
 import styles from '../Portal.module.css'
@@ -35,21 +34,19 @@ export default function CodeArchive() {
   }
 
   const commit = async ({ fileRow, meta, season }) => {
-    const { data: userRes } = await supabase.auth.getUser()
-    const { error } = await supabase.from('code_archives').insert({
+    const { error } = await createCodeArchive({
       repo: (meta.repo || fileRow.title || 'unknown').trim(),
       ref: meta.ref || null,
-      // The check constraint wants 7–40 hex chars, so an empty or malformed
-      // value has to become null rather than being sent through and rejected.
+      // The rules want 7–40 hex chars, so an empty or malformed value has to
+      // become null rather than being sent through and refused.
       commit_sha: /^[a-f0-9]{7,40}$/i.test(meta.commit_sha ?? '')
         ? meta.commit_sha.toLowerCase()
         : null,
       season,
       notes: meta.notes || null,
-      file_id: fileRow.id,
-      created_by: userRes?.user?.id ?? null,
+      file: { id: fileRow.id, bucket: fileRow.bucket, path: fileRow.path, byte_size: fileRow.byte_size ?? null },
     })
-    return { error: error?.message ?? null }
+    return { error }
   }
 
   const uploader = atLeast('member') ? (

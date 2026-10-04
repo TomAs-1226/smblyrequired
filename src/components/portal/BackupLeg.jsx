@@ -5,6 +5,8 @@ import styles from './Portal.module.css'
 // Kept generic on purpose — this repo is public, so machine names stay out of
 // it. Rename here if the team prefers something more specific internally.
 const LEG_LABEL = {
+  'firebase->server': 'Cloud → backup server',
+  // Runs recorded before the move to Firebase.
   'supabase->server': 'Cloud → backup server',
   'server->optiplex': 'Backup server → OptiPlex',
 }

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import Icon from '../../Icon'
 import { useAuth, ROLES } from '../../../lib/auth'
-import { supabase } from '../../../lib/supabase'
 import {
   listMembers,
   listAuditLog,
   storageSummary,
   backupHealth,
   formatBytes,
+  setMemberRole,
+  updateMember,
 } from '../../../lib/portalApi'
 import { Loading, Empty, ErrorState, StatTile, Row } from '../ui'
 import BackupLeg from '../BackupLeg'
@@ -61,25 +62,25 @@ export default function Admin() {
   async function setRole(id, role) {
     setSaving(id)
     setActionError(null)
-    const { error } = await supabase.rpc('set_member_role', { target_id: id, new_role: role })
+    const { error } = await setMemberRole(id, role)
     setSaving(null)
     if (error) {
-      setActionError(error.message)
+      setActionError(error)
       return
     }
     load()
   }
 
-  // subteam and grad_year DO carry a column grant (migration 0001), and the
-  // admins-manage-all policy lets an admin write any member's row, so these are
-  // a plain update rather than an RPC.
+  // Name, subteam and grad year are the profile fields the rules let a client
+  // write, and an admin may write them on any member's profile, so these are a
+  // plain update rather than a function call.
   async function saveField(id, patch) {
     setSaving(id)
     setActionError(null)
-    const { error } = await supabase.from('profiles').update(patch).eq('id', id)
+    const { error } = await updateMember(id, patch)
     setSaving(null)
     if (error) {
-      setActionError(error.message)
+      setActionError(error)
       return
     }
     load()

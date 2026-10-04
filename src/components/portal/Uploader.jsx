@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import Icon from '../Icon'
-import { supabase } from '../../lib/supabase'
-import { uploadFile, sha256Hex, formatBytes } from '../../lib/portalApi'
+import { uploadFile, removeFile, sha256Hex, formatBytes } from '../../lib/portalApi'
 import styles from './Portal.module.css'
 
 // -----------------------------------------------------------------------------
@@ -98,8 +97,7 @@ export default function Uploader({
           // The bytes are stored but the domain row failed. Remove the orphan
           // rather than leaving a file that nothing references and no listing
           // will ever show.
-          await supabase.storage.from(bucket).remove([path])
-          await supabase.from('files').delete().eq('id', fileRow.id)
+          await removeFile(fileRow)
           throw new Error(commitErr)
         }
       }

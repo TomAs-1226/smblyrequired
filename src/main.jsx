@@ -18,6 +18,13 @@ function syncScrollRestoration() {
     ScrollTrigger.clearScrollMemory(isHome() ? 'manual' : 'auto')
   }
 }
+// Arriving from a sign-in or password-reset email: Firebase sends people back to
+// the site's root with its parameters in the query string. Open the portal, which
+// is what reads them (src/lib/auth.jsx).
+if (!window.location.hash && /[?&](portal=signin|mode=signIn)/.test(window.location.search)) {
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/portal`)
+}
+
 syncScrollRestoration()
 if (isHome()) window.scrollTo(0, 0)
 window.addEventListener('hashchange', syncScrollRestoration)

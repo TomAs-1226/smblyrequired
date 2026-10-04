@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../../lib/auth'
-import { listMembers } from '../../../lib/portalApi'
-import { supabase } from '../../../lib/supabase'
+import { listMembers, setMemberRole } from '../../../lib/portalApi'
 import { ROLES } from '../../../lib/auth'
 import { Loading, Empty, ErrorState, Row } from '../ui'
 import styles from '../Portal.module.css'
@@ -32,13 +31,10 @@ export default function Roster() {
   async function setRole(id, role) {
     setSaving(id)
     setActionError(null)
-    const { error } = await supabase.rpc('set_member_role', {
-      target_id: id,
-      new_role: role,
-    })
+    const { error } = await setMemberRole(id, role)
     setSaving(null)
     if (error) {
-      setActionError(error.message)
+      setActionError(error)
       return
     }
     load()
