@@ -18,6 +18,7 @@ import { useOfflineQueue } from '../../../hooks/useOfflineQueue'
 import { navigate } from '../../../lib/router'
 import { Loading, ErrorState, StatTile, Empty } from '../ui'
 import BackupLeg from '../BackupLeg'
+import { rememberDetailTeam } from './TeamDetail'
 import ExportButton from '../ExportButton'
 import SyncBadge from '../SyncBadge'
 import styles from '../Portal.module.css'
@@ -185,12 +186,11 @@ function LiveAgo({ since, stale, online }) {
   // the last good copy. Say why, calmly — offline is a normal state, not a fault.
   const note = stale ? (online ? ' · reconnecting…' : ' · offline') : ''
   return (
-    <span className={d.updated} title="Time since the overview last refreshed">
-      <span
-        className={`${d.updatedDot} ${stale ? d.updatedDotStale : ''}`}
-        aria-hidden="true"
-      />
-      updated {ago} ago{note}
+    <span
+      className={`${d.updated} ${stale ? d.updatedStale : ''}`}
+      title="Time since the overview last refreshed"
+    >
+      Updated {ago} ago{note}
     </span>
   )
 }
@@ -249,7 +249,7 @@ const INITIAL = {
 }
 
 export default function Dashboard() {
-  const { atLeast, profile, role } = useAuth()
+  const { atLeast, profile } = useAuth()
   // Everything but the roster and team media is member+ in the security rules,
   // and the rules refuse a read outright rather than answering it empty. So a
   // viewer's overview does not ask for what it may not have: those widgets keep
@@ -573,123 +573,138 @@ export default function Dashboard() {
     .toISOString()
     .slice(0, 10)}.csv`
 
+  const pendingApprovals = atLeast('admin') && c.pending > 0
+  const unscouted = Boolean(s.eventKey && s.coverage && !s.coverage.fully_covered)
+  const needsAttention = queued > 0 || pendingApprovals || unscouted
+  const openTeam = (teamNumber) => {
+    rememberDetailTeam(s.eventKey, teamNumber)
+    navigate('/portal/team')
+  }
+
   return (
-    <div className={styles.stack}>
-      {/* Header band: who you are and what day it is, framed off from the
-          numbers so they have a context to sit in. Static — read every visit. */}
-      <header className={d.hero}>
-        <div className={d.heroText}>
-          <span className={d.heroEyebrow}>Overview</span>
-          <p className={d.heroGreeting}>{first ? `Hello, ${first}.` : 'Welcome back.'}</p>
-          <p className={d.heroSub}>Here's where things stand.</p>
-          {profile?.id && (
-            <p className={d.heroContrib}>
-              You've recorded <strong>{myEntries.toLocaleString()}</strong>{' '}
-              {myEntries === 1 ? 'entry' : 'entries'}.
-            </p>
-          )}
-        </div>
-        <div className={d.heroMeta}>
-          {/* Live status cluster: when the numbers last refreshed, a manual
-              refresh, and the offline-queue trust chip — the screen's proof it
-              is current and that nothing has been lost. */}
-          <div className={d.liveBar}>
-            <LiveAgo since={s.lastUpdated} stale={s.stale} online={queue.online} />
-            <button
-              type="button"
-              className={d.refreshBtn}
-              onClick={onRefresh}
-              disabled={manualBusy}
-              aria-label="Refresh overview"
-              title="Refresh now"
-            >
-              {manualBusy ? (
-                <span className={styles.spinnerSm} aria-hidden="true" />
-              ) : (
-                <RefreshGlyph />
-              )}
-            </button>
-            <SyncBadge />
-          </div>
-          {role && (
-            <span className={d.identChip}>
-              <span className={d.identLabel}>Signed in as</span>
-              <span className={`${styles.roleTag} ${styles[`role_${role}`] ?? ''}`}>{role}</span>
-            </span>
-          )}
-          <span className="data-tag">
+    <div className={d.page}>
+      {/* Who, when, and whether what is on screen is current. A plain line of
+          text, not a card: it frames the numbers, it is not one of them. */}
+      <header className={d.top}>
+        <div className={d.topText}>
+          <h2 className={d.greeting}>{first ? `Hello, ${first}.` : 'Welcome back.'}</h2>
+          <p className={d.topSub}>
             <time dateTime={today.toISOString().slice(0, 10)}>
               {today.toLocaleDateString(undefined, {
-                weekday: 'short',
-                month: 'short',
+                weekday: 'long',
+                month: 'long',
                 day: 'numeric',
               })}
             </time>
-          </span>
+            {profile?.id && isMember && (
+              <>
+                {' · '}you have recorded <strong>{myEntries.toLocaleString()}</strong>{' '}
+                {myEntries === 1 ? 'entry' : 'entries'}
+              </>
+            )}
+          </p>
+        </div>
+        <div className={d.status}>
+          <LiveAgo since={s.lastUpdated} stale={s.stale} online={queue.online} />
+          <button
+            type="button"
+            className={d.refreshBtn}
+            onClick={onRefresh}
+            disabled={manualBusy}
+            aria-label="Refresh overview"
+            title="Refresh now"
+          >
+            {manualBusy ? <span className={styles.spinnerSm} aria-hidden="true" /> : <RefreshGlyph />}
+          </button>
+          {isMember && <SyncBadge />}
         </div>
       </header>
 
-      {/* Never losing data: any scouting saved on this device but not yet synced
-          is called out plainly and reassuringly. Amber when waiting to sync,
-          muted when offline — offline is a safe, normal state, never an error. */}
-      {queued > 0 && (
-        <div
-          className={`${d.saveState} ${queue.online ? d.saveStatePending : d.saveStateOffline}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span className={d.saveStateDot} aria-hidden="true" />
-          <span className={d.saveStateText}>
-            <strong>{queued.toLocaleString()}</strong> scouting{' '}
-            {queued === 1 ? 'entry' : 'entries'} saved on this device
-            {queue.online
-              ? queue.syncing
-                ? ', syncing now — nothing is lost.'
-                : ', waiting to sync — nothing is lost.'
-              : " — they'll sync automatically when you're back online. Nothing is lost."}
-          </span>
+      {/* Everything that is waiting on somebody, together and first. */}
+      {needsAttention && (
+        <div className={d.attention}>
+          {/* Never losing data: scouting saved on this device but not yet synced
+              is called out plainly. Offline is a safe, normal state, never an
+              error. */}
+          {queued > 0 && (
+            <p className={d.saveState} role="status" aria-live="polite">
+              <Icon name={queue.online ? 'arrowUp' : 'alert'} size={16} />
+              <span>
+                <strong>{queued.toLocaleString()}</strong> scouting{' '}
+                {queued === 1 ? 'entry' : 'entries'} saved on this device
+                {queue.online
+                  ? queue.syncing
+                    ? ', syncing now — nothing is lost.'
+                    : ', waiting to sync — nothing is lost.'
+                  : " — they'll sync automatically when you're back online. Nothing is lost."}
+              </span>
+            </p>
+          )}
+
+          {/* Pending approvals: the only item here that blocks another person
+              from working — and it is invisible unless someone looks. */}
+          {pendingApprovals && (
+            <button type="button" className={styles.alertRow} onClick={() => navigate('/portal/admin')}>
+              <Icon name="users" size={17} />
+              <span>
+                <strong>{c.pending}</strong> {c.pending === 1 ? 'person is' : 'people are'} waiting
+                for approval — they can see nothing until promoted.
+              </span>
+              <Icon name="arrowRight" size={15} />
+            </button>
+          )}
+
+          {unscouted && (
+            <button
+              type="button"
+              className={styles.alertRow}
+              onClick={() => navigate('/portal/checklist')}
+            >
+              <Icon name="alert" size={16} />
+              <span>
+                <strong>{s.coverage.teams_unscouted}</strong>{' '}
+                {s.coverage.teams_unscouted === 1 ? 'team' : 'teams'} at {s.eventKey} still{' '}
+                {s.coverage.teams_unscouted === 1 ? 'has' : 'have'} no match data.
+              </span>
+              <Icon name="arrowRight" size={15} />
+            </button>
+          )}
         </div>
       )}
 
-      {/* Pending approvals lead, because this is the only item here that blocks
-          another person from working — and it is invisible unless someone looks. */}
-      {atLeast('admin') && c.pending > 0 && (
-        <button type="button" className={styles.alertRow} onClick={() => navigate('/portal/admin')}>
-          <Icon name="users" size={17} />
-          <span>
-            <strong>{c.pending}</strong> {c.pending === 1 ? 'person is' : 'people are'} waiting for
-            approval — they can see nothing until promoted.
-          </span>
-          <Icon name="arrowRight" size={15} />
-        </button>
-      )}
-
-      {/* Headline: the scouting numbers people open this for, a 14-day pulse of
-          activity, and the data export. The one raised, primary block here. */}
-      <section className={d.headline}>
-        <div className={d.headlineTop}>
-          <h2 className={d.headTitle}>
-            <Icon name="flag" size={15} />
-            Scouting
-          </h2>
+      {/* The scouting numbers people open this for. The one raised block on the
+          screen: coverage and the two counts on the left, who is leading on the
+          right, a fortnight of activity underneath. */}
+      <section className={d.card}>
+        <div className={d.cardHead}>
+          <div className={d.cardHeadText}>
+            <h2 className={d.cardTitle}>Scouting</h2>
+            {s.eventKey && <span className={d.eventKey}>{s.eventKey}</span>}
+          </div>
           {atLeast('member') && (
             <ExportButton load={loadScoutRows} columns={scoutColumns} filename={exportName}>
-              Export scouting data
+              Export CSV
             </ExportButton>
           )}
         </div>
 
-        {/* Active event + coverage. The event key frames every number in this
-            block; with none selected, a calm prompt to pick one rather than a
-            row of dashes that reads as broken. */}
-        {s.eventKey ? (
-          <div className={d.coverage}>
-            <div className={d.coverageHead}>
-              <span className={d.coverageLabel}>Active event</span>
-              <span className={d.coverageEvent}>{s.eventKey}</span>
-            </div>
-            {cov ? (
-              <>
+        <div className={`${d.scoutGrid} ${s.eventKey ? '' : d.scoutGridSolo}`}>
+          <div className={d.scoutMain}>
+            {/* Active event + coverage. With none selected, a calm prompt to
+                pick one rather than a row of dashes that reads as broken. */}
+            {!s.eventKey ? (
+              <button type="button" className={d.noEvent} onClick={() => navigate('/portal/scout')}>
+                <Icon name="compass" size={16} />
+                <span>No active event — pick one in Scout.</span>
+                <Icon name="arrowRight" size={15} />
+              </button>
+            ) : cov ? (
+              <div className={d.coverage}>
+                <p className={d.coverageFigure}>
+                  <span className={d.coverageBig}>{cov.teams_scouted}</span>
+                  <span className={d.coverageOf}>of {cov.teams_at_event} teams scouted</span>
+                  <span className={d.coveragePct}>{covPct}%</span>
+                </p>
                 <div
                   className={d.progress}
                   role="progressbar"
@@ -698,154 +713,88 @@ export default function Dashboard() {
                   aria-valuemax={100}
                   aria-label={`${cov.teams_scouted} of ${cov.teams_at_event} teams scouted`}
                 >
-                  <div className={d.progressFill} style={{ width: `${covPct}%` }} />
+                  <div className={d.progressFill} style={{ '--pct': covPct / 100 }} />
                 </div>
-                <div className={d.coverageMeta}>
-                  <span>
-                    <strong>{cov.teams_scouted}</strong> of {cov.teams_at_event} teams scouted
+              </div>
+            ) : (
+              <p className={d.hint}>No teams loaded for {s.eventKey} yet — sync the roster in Scout.</p>
+            )}
+
+            <dl className={d.figures}>
+              <div className={d.figure}>
+                <dt className={d.figureLabel}>Entries recorded</dt>
+                <dd className={d.figureValue}>{c.entries.toLocaleString()}</dd>
+              </div>
+              <div className={d.figure}>
+                <dt className={d.figureLabel}>Team members</dt>
+                <dd className={d.figureValue}>{c.members}</dd>
+              </div>
+            </dl>
+
+            <div className={d.sparkWrap}>
+              <div className={d.sparkHead}>
+                <h3 className={d.subTitle}>Activity, last 14 days</h3>
+                {sparkTotal > 0 && (
+                  <span className={d.sparkStat}>
+                    {sparkTotal.toLocaleString()} {sparkTotal === 1 ? 'entry' : 'entries'} · busiest
+                    day {sparkPeak}
                   </span>
-                  <span className={d.coveragePct}>{covPct}%</span>
-                </div>
-              </>
-            ) : (
-              <p className={d.coverageHint}>
-                No teams loaded for {s.eventKey} yet — sync the roster in Scout.
-              </p>
-            )}
-          </div>
-        ) : (
-          <button type="button" className={d.noEvent} onClick={() => navigate('/portal/scout')}>
-            <Icon name="compass" size={16} />
-            <span>No active event — pick one in Scout.</span>
-            <Icon name="arrowRight" size={15} />
-          </button>
-        )}
-
-        <div className={d.figures}>
-          <div className={d.figure}>
-            <span className={d.figureLabel}>Entries recorded</span>
-            <span className={d.figureValue}>{c.entries.toLocaleString()}</span>
-          </div>
-          <div className={d.figure}>
-            <span className={d.figureLabel}>Team members</span>
-            <span className={d.figureValue}>{c.members}</span>
-          </div>
-        </div>
-
-        {/* Top-teams leaderboard — the single most-requested overview view. Only
-            with an event active; empty until a match actually carries a score. */}
-        {s.eventKey && (
-          <div className={d.board}>
-            <div className={d.boardHead}>
-              <span className={d.boardTitle}>
-                <Icon name="trophy" size={14} />
-                Top teams
-              </span>
-              {leaders.length > 0 && <span className={d.boardBy}>by avg score</span>}
+                )}
+              </div>
+              <Sparkline buckets={buckets} />
             </div>
-            {leaders.length === 0 ? (
-              <p className={d.boardEmpty}>No match data yet for {s.eventKey}.</p>
-            ) : (
-              <ol className={d.boardList}>
-                {leaders.map((t, i) => {
-                  const matches = t.matches_scouted ?? 0
-                  return (
-                    <li key={t.team_number} className={d.boardRow}>
-                      <span className={d.boardRank}>{i + 1}</span>
-                      <span className={d.boardTeam}>
-                        <span className={d.boardNum}>{t.team_number}</span>
-                        {matches > 0 && (
-                          <span className={d.boardMatches}>
-                            {matches.toLocaleString()} {matches === 1 ? 'match' : 'matches'}
-                          </span>
-                        )}
-                      </span>
-                      <span className={d.boardScore}>{Number(t.avg_score).toFixed(1)}</span>
-                    </li>
-                  )
-                })}
-              </ol>
-            )}
           </div>
-        )}
 
-        <div className={d.sparkWrap}>
-          <div className={d.sparkHead}>
-            <span className={d.sparkTitle}>Activity · last 14 days</span>
-            {sparkTotal > 0 && (
-              <span className={d.sparkStat}>
-                <strong>{sparkTotal.toLocaleString()}</strong> {sparkTotal === 1 ? 'entry' : 'entries'} ·
-                peak <strong>{sparkPeak}</strong>/day
-              </span>
-            )}
-          </div>
-          <Sparkline buckets={buckets} />
-        </div>
-
-        {s.coverage && !s.coverage.fully_covered && (
-          <button
-            type="button"
-            className={styles.alertRow}
-            onClick={() => navigate('/portal/checklist')}
-          >
-            <Icon name="alert" size={16} />
-            <span>
-              <strong>{s.coverage.teams_unscouted}</strong> teams at {s.eventKey} still have no
-              match data.
-            </span>
-            <Icon name="arrowRight" size={15} />
-          </button>
-        )}
-      </section>
-
-      {/* Secondary detail: plain sections, so the headline card above reads as
-          the primary one by contrast. */}
-      <section>
-        <h2 className={styles.sectionTitle}>
-          <Icon name="folder" size={15} />
-          Archive
-        </h2>
-        <div className={styles.statGrid}>
-          <StatTile label="Knowledge docs" value={c.docs} />
-          <StatTile label="Code archives" value={c.archives} />
-          <StatTile label="Graphs" value={c.graphs} />
-          <StatTile label="Vision sessions" value={visionCount} />
-        </div>
-      </section>
-
-      {canSeeBackups && (
-        <section>
-          <h2 className={styles.sectionTitle}>
-            <Icon name="check" size={15} />
-            Backup — as of last run
-          </h2>
-          <div className={styles.statGrid}>
-            <StatTile label="Objects stored" value={objects.toLocaleString()} />
-            <StatTile label="Total size" value={formatBytes(bytes)} />
-            <StatTile label="Buckets" value="5" />
-          </div>
-          {s.health.length === 0 ? (
-            <Empty icon="alert" title="No backup has ever run">
-              Everything here exists in exactly one place until the nightly mirror reports in.
-            </Empty>
-          ) : (
-            <ul className={styles.legList}>
-              {s.health.map((leg) => (
-                <BackupLeg key={leg.leg} leg={leg} />
-              ))}
-            </ul>
+          {/* Top-teams leaderboard — the single most-requested overview view.
+              Only with an event active; empty until a match carries a score. */}
+          {s.eventKey && (
+            <div className={d.board}>
+              <div className={d.boardHead}>
+                <h3 className={d.subTitle}>Top teams</h3>
+                {leaders.length > 0 && <span className={d.boardBy}>average score</span>}
+              </div>
+              {leaders.length === 0 ? (
+                <p className={d.hint}>No match data yet for {s.eventKey}.</p>
+              ) : (
+                <ol className={d.boardList}>
+                  {leaders.map((t, i) => {
+                    const matches = t.matches_scouted ?? 0
+                    return (
+                      <li key={t.team_number} className={d.boardRow}>
+                        <span className={d.boardRank}>{i + 1}</span>
+                        <button
+                          type="button"
+                          className={d.boardTeam}
+                          onClick={() => openTeam(t.team_number)}
+                          title={`Open team ${t.team_number}`}
+                        >
+                          <span className={d.boardNum}>{t.team_number}</span>
+                          {matches > 0 && (
+                            <span className={d.boardMatches}>
+                              {matches.toLocaleString()} {matches === 1 ? 'match' : 'matches'}
+                            </span>
+                          )}
+                        </button>
+                        <span className={d.boardScore}>{Number(t.avg_score).toFixed(1)}</span>
+                      </li>
+                    )
+                  })}
+                </ol>
+              )}
+            </div>
           )}
-        </section>
-      )}
+        </div>
+      </section>
 
-      <div className={styles.twoCol}>
+      {/* What changed most recently, side by side. */}
+      <div className={d.pair}>
         <section>
           <h2 className={styles.sectionTitle}>
             <Icon name="flag" size={15} />
             Latest scouting
           </h2>
           {s.activity.length === 0 ? (
-            <Empty title="Nothing scouted yet">Entries appear as soon as a phone syncs.</Empty>
+            <p className={d.quiet}>Nothing scouted yet. Entries appear as soon as a phone syncs.</p>
           ) : (
             <ul className={styles.miniList}>
               {s.activity.map((a, i) => (
@@ -867,7 +816,7 @@ export default function Dashboard() {
             Recently added
           </h2>
           {s.recent.length === 0 ? (
-            <Empty title="Nothing uploaded yet">Files added anywhere show up here.</Empty>
+            <p className={d.quiet}>Nothing uploaded yet. Files added anywhere show up here.</p>
           ) : (
             <ul className={styles.miniList}>
               {s.recent.map((f, i) => (
@@ -884,26 +833,71 @@ export default function Dashboard() {
         </section>
       </div>
 
+      {/* Reference numbers: what the library holds. Quiet tiles — nobody acts on
+          these, they are here to be glanced at. */}
       <section>
         <h2 className={styles.sectionTitle}>
-          <Icon name="spark" size={15} />
+          <Icon name="folder" size={15} />
+          Library
+        </h2>
+        <div className={styles.statGrid}>
+          <StatTile label="Knowledge docs" value={c.docs} />
+          <StatTile label="Code archives" value={c.archives} />
+          <StatTile label="Graphs" value={c.graphs} />
+          <StatTile label="Vision sessions" value={visionCount} />
+        </div>
+      </section>
+
+      {canSeeBackups && (
+        <section>
+          <h2 className={styles.sectionTitle}>
+            <Icon name="check" size={15} />
+            Backup, as of the last run
+          </h2>
+          {s.health.length === 0 ? (
+            <Empty icon="alert" title="No backup has ever run">
+              Everything here exists in exactly one place until the nightly mirror reports in.
+            </Empty>
+          ) : (
+            <>
+              <ul className={styles.legList}>
+                {s.health.map((leg) => (
+                  <BackupLeg key={leg.leg} leg={leg} />
+                ))}
+              </ul>
+              <p className={d.backupLine}>
+                {objects.toLocaleString()} objects stored · {formatBytes(bytes)} in total · 5 buckets
+              </p>
+            </>
+          )}
+        </section>
+      )}
+
+      <section>
+        <h2 className={styles.sectionTitle}>
+          <Icon name="arrowRight" size={15} />
           Jump to
         </h2>
         <div className={styles.quickGrid}>
+          {/* Only doors that open: a viewer may read files and nothing else, and
+              a link to a tab that answers "Restricted" is not a shortcut. */}
           {[
-            { to: '/portal/scout', icon: 'flag', label: 'Scout a match' },
-            { to: '/portal/checklist', icon: 'check', label: 'Coverage' },
-            { to: '/portal/compare', icon: 'bars', label: 'Compare teams' },
-            { to: '/portal/picks', icon: 'trophy', label: 'Pick list' },
-            { to: '/portal/vision', icon: 'cpu', label: 'Vision capture' },
-            { to: '/portal/graphs', icon: 'share', label: 'Graphs' },
-            { to: '/portal/kb', icon: 'book', label: 'Knowledge' },
-          ].map((q) => (
-            <a key={q.to} href={`#${q.to}`} className={styles.quickCard}>
-              <Icon name={q.icon} size={18} />
-              {q.label}
-            </a>
-          ))}
+            { to: '/portal/scout', icon: 'flag', label: 'Scout a match', min: 'member' },
+            { to: '/portal/checklist', icon: 'check', label: 'Coverage', min: 'member' },
+            { to: '/portal/compare', icon: 'bars', label: 'Compare teams', min: 'member' },
+            { to: '/portal/picks', icon: 'trophy', label: 'Pick list', min: 'member' },
+            { to: '/portal/vision', icon: 'cpu', label: 'Vision capture', min: 'member' },
+            { to: '/portal/graphs', icon: 'share', label: 'Graphs', min: 'member' },
+            { to: '/portal/kb', icon: 'book', label: 'Knowledge', min: 'member' },
+            { to: '/portal/files', icon: 'folder', label: 'Files', min: 'viewer' },
+          ]
+            .filter((q) => atLeast(q.min))
+            .map((q) => (
+              <a key={q.to} href={`#${q.to}`} className={styles.quickCard}>
+                <Icon name={q.icon} size={18} />
+                {q.label}
+              </a>
+            ))}
         </div>
       </section>
     </div>

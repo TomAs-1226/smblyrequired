@@ -2,426 +2,334 @@
    Overview (Dashboard) — presentation specific to the portal's front screen.
 
    The shared primitives it leans on (.statGrid/.stat, .alertRow, .miniList,
-   .sectionTitle, .roleTag, .leg*, .twoCol, .quickGrid) stay in
-   Portal.module.css and are imported alongside this file — a component may
-   import both. What lives here is only what the overview alone uses: its
-   header band, the headline scouting card, and the activity sparkline.
+   .sectionTitle, .leg*, .quickGrid) stay in Portal.module.css and are imported
+   alongside this file. What lives here is only what the overview alone uses.
 
-   Same discipline as the rest of the site: every colour is a token, never a
-   raw value. This screen is read on every single visit, so it holds still —
-   there is no motion here at all beyond the shared list stagger the mini-lists
-   already carry from Portal.module.css.
+   The screen has one order of importance and the layout says it:
+     1. a line of text — who, when, is this current;
+     2. whatever is waiting on a person (only drawn when something is);
+     3. ONE raised card, the scouting numbers;
+     4. everything else as plain sections under hairline headings.
+   Before, six blocks of equal weight were stacked and the eye had nowhere to
+   start.
+
+   Same discipline as the rest of the site: every colour is a token. This screen
+   is read on every visit, so it holds still — no motion beyond the shared list
+   stagger the mini-lists already carry.
    ========================================================================= */
 
-/* --- Header band -------------------------------------------------------- */
-/* Distinct from the body: a raised surface with a faint cyan corner wash, so
-   "who you are / what day it is" reads as a frame around the numbers rather
-   than as the first of them. */
-.hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  padding: var(--sp-5);
-  background:
-    radial-gradient(140% 160% at 100% 0%, var(--accent-data-wash), transparent 55%),
-    var(--surface-raised);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--r-lg);
-  box-shadow: var(--card-depth);
-}
-
-.heroText {
+.page {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-1);
+  gap: var(--sp-5);
+}
+
+/* --- Top line ----------------------------------------------------------- */
+
+.top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3) var(--sp-4);
+  flex-wrap: wrap;
+}
+.topText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
 }
-.heroEyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+.greeting {
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  line-height: 1.1;
 }
-.heroGreeting {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.5rem, 3.5vw, 2rem);
-  line-height: 1.05;
-  color: var(--text-primary);
-}
-.heroSub {
+.topSub {
   font-size: var(--fs-small);
   color: var(--text-muted);
 }
-/* A small, personal, motivating line — your own contribution, sitting under the
-   greeting. The number takes the cyan accent the header's corner wash already
-   uses, so it reads as "yours" without a second colour. */
-.heroContrib {
-  margin-top: var(--sp-2);
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-}
-.heroContrib strong {
+.topSub strong {
   font-weight: 600;
-  color: var(--accent-data);
+  color: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
 
-.heroMeta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--sp-2);
-  flex: none;
-}
-.identChip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-.identLabel {
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-/* --- Live status cluster ------------------------------------------------- */
-/* Sits at the top of the header's meta column: when the numbers last refreshed,
-   a manual refresh, and the offline-queue trust chip. Right-aligned to match the
-   identity/date beneath it, and allowed to wrap so it never crowds the greeting
-   on a narrow header. Static by default — the only motion is the refresh press
-   and the spinner while a manual refresh is in flight. */
-.liveBar {
+/* When the numbers were last read, a manual refresh, and the offline queue —
+   the screen's proof that it is current and that nothing has been lost. All
+   three say it in words. */
+.status {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: var(--sp-2);
   flex-wrap: wrap;
-  gap: var(--sp-2);
 }
-
-/* "updated Ns ago", in the mono data voice the rest of the header uses. A steady
-   dot — green while current, amber once the data on screen is a last-good copy
-   the latest refetch could not replace. It does not pulse: this line is glanced
-   at, not watched. */
 .updated {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.updatedDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex: none;
-  background: var(--success);
-  box-shadow: 0 0 8px rgba(63, 207, 142, 0.5);
-}
-.updatedDotStale {
-  background: var(--accent-gold);
-  box-shadow: none;
+/* The last refetch did not land; what is on screen is the last good copy. */
+.updatedStale {
+  color: var(--accent-gold);
 }
 
-/* A quiet icon-only control — the numbers are the point, not the button. Borrows
-   the rowAction affordance (cyan on hover/focus, a small press) at a smaller
-   size so it tucks into the header without competing with anything. */
 .refreshBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex: none;
   color: var(--text-muted);
   border: 1px solid var(--border-hairline);
-  border-radius: var(--r-sm);
+  border-radius: 50%;
   transition: color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out),
-    transform var(--dur-press) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
-.refreshBtn:disabled {
-  cursor: default;
-  opacity: 0.7;
+@media (hover: hover) and (pointer: fine) {
+  .refreshBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-strong);
+  }
+}
+.refreshBtn:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 .refreshBtn:active:not(:disabled) {
   transform: scale(0.92);
 }
-.refreshBtn:focus-visible {
-  color: var(--accent-data);
-  border-color: var(--accent-data);
-}
-@media (hover: hover) and (pointer: fine) {
-  .refreshBtn:hover:not(:disabled) {
-    color: var(--accent-data);
-    border-color: var(--accent-data);
-    background: var(--accent-data-wash);
-  }
+.refreshBtn:disabled {
+  cursor: default;
 }
 
-/* --- Offline queue: "nothing is lost" ----------------------------------- */
-/* A calm, reassuring status for scouting saved on this device but not yet on the
-   server. Reads as a raised note, not an alarm: amber accent while waiting to
-   sync, muted while offline. Never red — the data is safe, and colouring a safe
-   state as an error is exactly how you teach people to distrust the indicator. */
+/* --- Waiting on somebody ------------------------------------------------ */
+
+.attention {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* The shared alert row carries its own top margin for the places it follows a
+   block; in this stack the gap does that job. */
+.attention > * {
+  margin-top: 0;
+}
+
 .saveState {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-md);
+  padding: var(--sp-3);
   font-size: var(--fs-small);
+  line-height: 1.45;
   color: var(--text-body);
-  background: var(--surface-raised);
-  border: 1px solid var(--border-hairline);
-  box-shadow: var(--card-depth);
-}
-.saveStateDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-}
-.saveStateText {
-  flex: 1;
-  min-width: 0;
-}
-.saveStateText strong {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-/* Waiting to sync (online): amber, the same "unproven, not failed" note the
-   backup legs use for an unverified claim. */
-.saveStatePending {
-  border-color: rgba(245, 184, 46, 0.3);
-}
-.saveStatePending .saveStateDot {
-  background: var(--accent-gold);
-  box-shadow: 0 0 8px rgba(245, 184, 46, 0.4);
-}
-/* Offline: muted and sunken, so it reads as a resting state rather than an
-   attention-seeking one. */
-.saveStateOffline {
   background: var(--surface-sunken);
-  border-color: var(--border-strong);
-  box-shadow: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
 }
-.saveStateOffline .saveStateDot {
-  background: var(--text-muted);
+.saveState > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+.saveState strong {
+  color: var(--text-primary);
 }
 
-/* --- Headline scouting card --------------------------------------------- */
-/* The overview's centre of gravity: the three numbers people open this screen
-   for, and a 14-day pulse of activity beneath them. Raised like the header, so
-   it reads as primary — the Archive and Backup blocks below are plain sections
-   by contrast, and that contrast IS the hierarchy. */
-.headline {
-  padding: var(--sp-5);
+/* --- The scouting card -------------------------------------------------- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
   background: var(--surface-raised);
-  border: 1px solid var(--border-hairline);
+  border: 1px solid var(--border-strong);
   border-radius: var(--r-lg);
   box-shadow: var(--card-depth);
 }
 
-.headlineTop {
+.cardHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3);
+  flex-wrap: wrap;
+}
+.cardHeadText {
+  display: flex;
+  align-items: baseline;
   gap: var(--sp-3);
   flex-wrap: wrap;
-  margin-bottom: var(--sp-4);
-}
-/* The card's own title: the .sectionTitle look without its block margin, since
-   it sits in a flex row beside the export control rather than above content. */
-.headTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-display);
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-/* Three headline figures, separated by hairlines rather than boxed as cards —
-   an instrument readout, not three tiles. Each keeps the stat tiles' cyan tick
-   so a headline number and a detail tile read as one family. */
-.figures {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-4);
-}
-.figure {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
   min-width: 0;
 }
-.figure + .figure {
-  padding-left: var(--sp-4);
-  border-left: 1px solid var(--border-hairline);
+.cardTitle {
+  font-size: 1.3rem;
+  line-height: 1.1;
 }
-.figureLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.eventKey {
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
   color: var(--text-muted);
 }
-.figureLabel::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  flex: none;
-  background: var(--accent-data);
-  box-shadow: var(--glow-data);
+
+/* Coverage, counts and activity on the left; the leaderboard beside them. */
+.scoutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--sp-5) var(--sp-6);
+  align-items: start;
 }
-.figureValue {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(2rem, 4vw, 2.6rem);
-  letter-spacing: -0.01em;
-  line-height: 1;
-  color: var(--text-primary);
-  /* Keeps the row from reflowing as a counting value changes width. */
-  font-variant-numeric: tabular-nums;
+.scoutGridSolo {
+  grid-template-columns: minmax(0, 1fr);
+}
+.scoutMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
 }
 
-/* --- Active event + coverage progress ----------------------------------- */
-/* Sits directly under the card title: the event key that scopes every number
-   in this block, and a real bar for how much of the field has been seen. */
+/* Section-in-card heading: one step under the card's own title. */
+.subTitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.3;
+  color: var(--text-body);
+}
+
+.hint {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* --- Coverage ----------------------------------------------------------- */
+
 .coverage {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  margin-bottom: var(--sp-5);
 }
-.coverageHead {
+.coverageFigure {
   display: flex;
   align-items: baseline;
   gap: var(--sp-2);
   flex-wrap: wrap;
 }
-.coverageLabel {
+.coverageBig {
   font-family: var(--font-display);
-  font-size: var(--fs-label);
+  font-size: 2.6rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
-.coverageEvent {
+.coverageOf {
+  font-size: var(--fs-small);
+  color: var(--text-body);
+}
+.coveragePct {
+  margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.86rem;
-  letter-spacing: 0.04em;
+  font-size: 0.9rem;
   color: var(--accent-data);
-  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
-/* A sunken track with a cyan fill whose width is the coverage percentage. The
-   fill eases when the number changes, but only where motion is welcome — the
-   reduced-motion block at the foot of this file drops the transition. */
+
+/* The house wipe: scaleX from the left, never an animated width. */
 .progress {
-  height: 10px;
-  width: 100%;
+  position: relative;
+  height: 8px;
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-pill);
   overflow: hidden;
 }
 .progressFill {
-  height: 100%;
-  min-width: 2px;
-  border-radius: inherit;
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(var(--pct, 0));
   background: var(--accent-data);
-  transition: width var(--dur-panel) var(--ease-out);
+  transition: transform var(--dur-panel) var(--ease-out);
 }
-.coverageMeta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-}
-.coverageMeta strong {
-  font-weight: 600;
-  color: var(--text-body);
-  font-variant-numeric: tabular-nums;
-}
-.coveragePct {
-  flex: none;
-  font-family: var(--font-display);
-  font-weight: 600;
-  color: var(--accent-data);
-  font-variant-numeric: tabular-nums;
-}
-.coverageHint {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-}
-/* No event selected: a calm, tappable prompt rather than a wall of dashes. */
+
+/* No event chosen: one calm prompt in place of the coverage readout. */
 .noEvent {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
   width: 100%;
-  text-align: left;
-  margin-bottom: var(--sp-5);
+  min-height: 48px;
   padding: var(--sp-3);
+  text-align: left;
   font-size: var(--fs-small);
   color: var(--text-body);
   background: var(--surface-sunken);
-  border: 1px dashed var(--border-hairline);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
   transition: color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
-.noEvent span {
+.noEvent > span {
   flex: 1;
-  min-width: 0;
 }
-.noEvent svg {
-  color: var(--text-muted);
+.noEvent > svg {
   flex: none;
+  color: var(--text-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .noEvent:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-data);
+  }
+}
+.noEvent:focus-visible {
+  color: var(--text-primary);
+  border-color: var(--accent-data);
 }
 .noEvent:active {
   transform: scale(0.99);
 }
-.noEvent:focus-visible {
-  border-color: var(--accent-data);
-  color: var(--text-primary);
+
+/* --- The two counts ----------------------------------------------------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  padding-block: var(--sp-3);
+  border-block: 1px solid var(--border-hairline);
 }
-@media (hover: hover) and (pointer: fine) {
-  .noEvent:hover {
-    border-color: var(--accent-data);
-    color: var(--text-primary);
-  }
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.figureLabel {
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+.figureValue {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
-/* --- Top-teams leaderboard ---------------------------------------------- */
-/* Separated from the figures by a hairline, the same way the sparkline is —
-   one more readout in the same instrument, not a new panel. */
+/* --- Top teams ---------------------------------------------------------- */
+
 .board {
-  margin-top: var(--sp-5);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-hairline);
+  min-width: 0;
+  padding-left: var(--sp-5);
+  border-left: 1px solid var(--border-hairline);
 }
 .boardHead {
   display: flex;
@@ -431,109 +339,93 @@
   flex-wrap: wrap;
   margin-bottom: var(--sp-2);
 }
-.boardTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
 .boardBy {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-}
-.boardEmpty {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-  padding: var(--sp-2) 0;
 }
 .boardList {
   list-style: none;
   display: flex;
   flex-direction: column;
 }
-/* rank | team (+ match count) | score. min-width:0 on the middle column lets a
-   long team line shrink instead of shoving the score off the card at 360px; the
-   match count drops below the number rather than widening the row. */
 .boardRow {
   display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--sp-3);
-  padding: 10px 0;
   border-bottom: 1px solid var(--border-hairline);
 }
 .boardRow:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 .boardRank {
   font-family: var(--font-mono);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-  text-align: center;
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* The row's name is the way into that team's page. */
 .boardTeam {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: var(--sp-2);
   min-width: 0;
+  min-height: 44px;
+  padding-block: 10px;
+  text-align: left;
+  transition: color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 .boardNum {
   font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .boardMatches {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+@media (hover: hover) and (pointer: fine) {
+  .boardTeam:hover .boardNum {
+    color: var(--accent-data);
+  }
+}
+.boardTeam:focus-visible .boardNum {
+  color: var(--accent-data);
+}
+.boardTeam:active {
+  transform: scale(0.98);
 }
 .boardScore {
   font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 600;
-  font-size: 1.25rem;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
 /* --- Activity sparkline ------------------------------------------------- */
+
 .sparkWrap {
-  margin-top: var(--sp-5);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
 .sparkHead {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--sp-3);
+  gap: var(--sp-2) var(--sp-3);
   flex-wrap: wrap;
-  margin-bottom: var(--sp-3);
-}
-.sparkTitle {
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
 }
 .sparkStat {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-}
-.sparkStat strong {
-  font-weight: 600;
-  color: var(--text-body);
+  font-variant-numeric: tabular-nums;
 }
 /* A fixed viewBox stretched to fill the card width (preserveAspectRatio
    "none"). The line keeps a constant weight via a non-scaling stroke, so it
@@ -556,58 +448,85 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-/* No data in the window: a calm, grounded line and a plain sentence — never a
-   collapsed or jagged axis pretending there is a shape to read. */
+/* No data in the window: a plain sentence — never a collapsed or jagged axis
+   pretending there is a shape to read. */
 .sparkEmpty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 52px;
-  padding: 0 var(--sp-3);
-  text-align: center;
   font-size: var(--fs-small);
   color: var(--text-muted);
-  background: var(--surface-sunken);
-  border: 1px dashed var(--border-hairline);
-  border-radius: var(--r-md);
 }
 
-/* --- Narrow screens ----------------------------------------------------- */
-@media (max-width: 620px) {
-  .heroMeta {
-    align-items: flex-start;
+/* --- Under the card ----------------------------------------------------- */
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5) var(--sp-6);
+}
+
+/* A list with nothing in it yet is one quiet sentence, so an empty column does
+   not outweigh the full one beside it. */
+.quiet {
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.backupLine {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Responsive --------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .scoutGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
-  /* At this width the hairline divider between the two figures reads as a stray
-     indent, so drop it and let the grid gap do the separating. */
-  .figures {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .figure + .figure {
+  .board {
     padding-left: 0;
-    border-left: none;
+    border-left: 0;
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--border-hairline);
+  }
+}
+
+@media (max-width: 720px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .card {
+    padding: var(--sp-3) var(--sp-3) var(--sp-4);
+    border-radius: var(--r-md);
+  }
+  .coverageBig {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 860px), (pointer: coarse) {
+  .refreshBtn {
+    width: 44px;
+    height: 44px;
   }
 }
 
 /* --- Reduced motion ----------------------------------------------------- */
-/* The two transitions this screen adds — the coverage bar easing to its width,
-   and the no-event prompt's press — are the only motion here. Both go; the
-   colour/border feedback on the prompt stays, because that still communicates. */
 @media (prefers-reduced-motion: reduce) {
   .progressFill {
     transition: none;
   }
-  .noEvent {
+  .noEvent,
+  .refreshBtn,
+  .boardTeam {
     transition-property: color, border-color;
   }
-  .noEvent:active {
-    transform: none;
-  }
-  /* The refresh control keeps its colour/border feedback — that still
-     communicates — but drops the press movement. */
-  .refreshBtn {
-    transition-property: color, border-color, background-color;
-  }
-  .refreshBtn:active:not(:disabled) {
+  .noEvent:active,
+  .refreshBtn:active,
+  .boardTeam:active {
     transform: none;
   }
 }
