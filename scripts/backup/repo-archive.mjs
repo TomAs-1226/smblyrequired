@@ -1,74 +1,80 @@
 #!/usr/bin/env node
 /**
- * Repo archiver — the host-side version.
+ * Repo archiver.
  *
- * WHY THIS EXISTS SEPARATELY FROM supabase/functions/repo-sync
+ * For every enabled row in `repo_sources`: fetch the repository as a tarball,
+ * store it in the `code/` folder of the bucket, index it in `files`, and record
+ * it in `code_archives` so it shows up in the portal's Code tab.
  *
- * The edge function was the wrong shape for the job and failed in production
- * exactly as predicted: it buffers each tarball in isolate memory to hash and
- * upload, the edge runtime caps that around 60 MB, and the run died with
- * HTTP 546 after seven small repos. Worse, the isolate was killed mid-write, so
- * one row was left saying `running` forever — a status nothing can resolve and
- * nothing will retry.
+ * WHY THIS RUNS ON THE BACKUP HOST
  *
- * This runs on a machine with a disk. It streams each tarball STRAIGHT TO A
- * FILE, hashes it as the bytes pass, and uploads from that file. Memory use is
- * a 64 KB buffer regardless of whether the repo is 400 KB or 4 GB.
+ * The first version was a cloud function and was the wrong shape for the job: it
+ * buffered each tarball in memory to hash and upload it, the runtime capped that
+ * around 60 MB, and the run died after seven small repos — mid-write, leaving one
+ * row saying `running` for ever. This runs on a machine with a disk. It streams
+ * each tarball STRAIGHT TO A FILE, hashes it as the bytes pass, and uploads from
+ * that file. Memory use is a 64 KB buffer whether the repo is 400 KB or 4 GB.
  *
- * The edge function is still useful as a manual "sync this one now" button from
- * the portal for a small repo. This is what runs nightly and gets through
- * everything.
+ *   GOOGLE_APPLICATION_CREDENTIALS=...  the same key file the backup uses
+ *   FIREBASE_PROJECT_ID=...
+ *   FIREBASE_STORAGE_BUCKET=...
+ *   GITHUB_TOKEN=...                    optional; required for private repos
+ *   ARCHIVE_TMP=/var/tmp/frc5805        optional scratch dir
  *
- *   SUPABASE_URL=...                 https://<ref>.supabase.co
- *   SUPABASE_SERVICE_ROLE_KEY=...    secret key (sb_secret_… or the legacy JWT)
- *   GITHUB_TOKEN=...                 optional; required for private repos
- *   ARCHIVE_TMP=/var/tmp/frc5805     optional scratch dir
+ *   repo-archive.mjs                    everything that is due
+ *   repo-archive.mjs --force            everything enabled, changed or not
+ *   repo-archive.mjs --repo=<name>      one source: its repo, owner/repo or label
  *
  * Exit codes: 0 all done, 1 fatal, 2 some repos failed.
  */
 
-import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
-import { createReadStream, createWriteStream } from 'node:fs'
-import { mkdir, rm, stat } from 'node:fs/promises'
+import { createWriteStream } from 'node:fs'
+import { mkdir, rm } from 'node:fs/promises'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
 import path from 'node:path'
 import os from 'node:os'
 
-const URL_ = need('SUPABASE_URL')
-const KEY = need('SUPABASE_SERVICE_ROLE_KEY')
+import { connect, finish, Timestamp, FieldValue } from './lib.mjs'
+// The id the rules and the portal compute for a files document. Imported from
+// the site's own source so the two cannot disagree.
+import { fileId } from '../../src/lib/ids.js'
+
+const ctx = connect()
+const { db, bucket } = ctx
+
 const GH_TOKEN = process.env.GITHUB_TOKEN || ''
 const TMP = process.env.ARCHIVE_TMP || path.join(os.tmpdir(), 'frc5805-archive')
 
-// Storage rejects anything over the bucket's file_size_limit (500 MB on `code`,
-// migration 0002). Checked before uploading rather than after downloading a
-// gigabyte, so a runaway repo costs bandwidth once and then gets skipped loudly.
+// For the test suite, and honoured only against the emulators: a live run always
+// talks to GitHub itself and only ever fetches https.
+const GITHUB_API = (ctx.emulated && process.env.ARCHIVE_GITHUB_API) || 'https://api.github.com'
+
+// The Storage rules cap `code/` at 500 MB. The Admin SDK is not bound by the
+// rules, so the cap is applied here — and during the download, so a runaway repo
+// costs bandwidth once and then gets skipped loudly.
 const MAX_BYTES = 500 * 1024 * 1024
-
-function need(n) {
-  const v = process.env[n]
-  if (!v) {
-    console.error(`missing required env var: ${n}`)
-    process.exit(1)
-  }
-  return v
-}
-
-const supabase = createClient(URL_, KEY, { auth: { persistSession: false } })
+const RESUMABLE_FROM = 8 * 1024 * 1024
 
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a)
+
+const slug = (s) =>
+  String(s)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50)
 
 /** Resolve a ref to its commit SHA without downloading anything. */
 async function resolveSha(owner, repo, ref) {
   const headers = { Accept: 'application/vnd.github.sha', 'User-Agent': 'frc5805-archiver' }
   if (GH_TOKEN) headers.Authorization = `Bearer ${GH_TOKEN}`
-  const r = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/commits/${encodeURIComponent(ref || 'HEAD')}`,
-    { headers }
-  )
+  const r = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/commits/${encodeURIComponent(ref || 'HEAD')}`, { headers })
   if (!r.ok) throw new Error(`resolve ${owner}/${repo}@${ref}: HTTP ${r.status}`)
-  return (await r.text()).trim()
+  const sha = (await r.text()).trim()
+  if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error(`resolve ${owner}/${repo}@${ref}: not a commit sha`)
+  return sha
 }
 
 /**
@@ -95,99 +101,132 @@ async function download(url, dest, headers = {}) {
   return { sha256: hash.digest('hex'), bytes }
 }
 
-async function archiveOne(src) {
+/** What a `url` source is stored as. A tarball unless the URL plainly says otherwise. */
+function urlKind(url) {
+  const p = new URL(url).pathname.toLowerCase()
+  if (p.endsWith('.zip')) return { ext: 'zip', contentType: 'application/zip' }
+  if (p.endsWith('.tar')) return { ext: 'tar', contentType: 'application/x-tar' }
+  return { ext: 'tar.gz', contentType: 'application/gzip' }
+}
+
+async function archiveOne(src, force) {
   const label = src.label
-  const season = new Date().getFullYear()
-
-  await supabase
-    .from('repo_sources')
-    .update({ last_status: 'running', last_error: null })
-    .eq('id', src.id)
-
-  let url
-  let sha = null
-  let filename
-
-  if (src.provider === 'github') {
-    sha = await resolveSha(src.owner, src.repo, src.git_ref)
-    // Nothing changed since the last run — re-archiving an identical tree wastes
-    // storage and makes the backup diff meaningless.
-    if (src.last_sha && src.last_sha === sha) {
-      await supabase
-        .from('repo_sources')
-        .update({ last_status: 'ok', last_synced_at: new Date().toISOString(), last_error: null })
-        .eq('id', src.id)
-      return { label, skipped: true, reason: `unchanged at ${sha.slice(0, 7)}` }
-    }
-    url = `https://api.github.com/repos/${src.owner}/${src.repo}/tarball/${sha}`
-    filename = `${slug(label)}-${sha.slice(0, 7)}.tar.gz`
-  } else {
-    url = src.url
-    filename = `${slug(label)}-${Date.now()}`
+  const season = new Date().getUTCFullYear()
+  const source = db.doc(`repo_sources/${src.id}`)
+  const unchanged = async (sha) => {
+    await source.update({ last_status: 'ok', last_synced_at: Timestamp.now(), last_error: null, updated_at: FieldValue.serverTimestamp() })
+    return { label, skipped: true, reason: `unchanged at ${sha.slice(0, 7)}` }
   }
 
+  await source.update({ last_status: 'running', last_error: null, updated_at: FieldValue.serverTimestamp() })
   await mkdir(TMP, { recursive: true })
-  const tmpFile = path.join(TMP, filename)
-
-  const headers = { 'User-Agent': 'frc5805-archiver' }
-  if (GH_TOKEN && src.provider === 'github') headers.Authorization = `Bearer ${GH_TOKEN}`
+  const tmpFile = path.join(TMP, `${slug(label) || 'source'}-${src.id}.part`)
 
   try {
-    const { sha256, bytes } = await download(url, tmpFile, headers)
-    const storagePath = `${season}/${filename}`
+    let sha
+    let got
+    let repoName
+    let kind = { ext: 'tar.gz', contentType: 'application/gzip' }
 
-    // upsert:true so a retry after a partial upload completes instead of
-    // colliding — the same idempotency rule the offline queue uses.
-    const { error: upErr } = await supabase.storage
-      .from('code')
-      .upload(storagePath, createReadStream(tmpFile), {
-        contentType: 'application/gzip',
-        upsert: true,
-        duplex: 'half',
-      })
-    if (upErr) throw new Error(`upload: ${upErr.message}`)
+    if (src.provider === 'github') {
+      // These go into a URL path. Checked rather than escaped: a name GitHub
+      // would never issue is a mistake in the row, not something to encode.
+      if (!/^[A-Za-z0-9._-]{1,100}$/.test(src.owner ?? '') || !/^[A-Za-z0-9._-]{1,100}$/.test(src.repo ?? '')) {
+        throw new Error('owner and repo must be plain GitHub names')
+      }
+      if (src.git_ref && (!/^[A-Za-z0-9._\-/]{1,120}$/.test(src.git_ref) || src.git_ref.includes('..'))) {
+        throw new Error('git_ref is not a branch, tag or commit name')
+      }
+      repoName = `${src.owner}/${src.repo}`
+      sha = await resolveSha(src.owner, src.repo, src.git_ref)
+      // Nothing changed since the last run — re-archiving an identical tree
+      // wastes storage and makes the backup diff meaningless.
+      if (!force && src.last_sha === sha) return await unchanged(sha)
 
-    const { data: fileRow, error: fErr } = await supabase
-      .from('files')
-      .upsert(
-        {
-          bucket: 'code',
-          path: storagePath,
-          title: label,
-          description: `Automated archive of ${src.owner}/${src.repo}`,
-          kind: 'code',
-          season,
-          byte_size: bytes,
-          sha256,
-        },
-        { onConflict: 'bucket,path' }
-      )
-      .select('id')
-      .single()
-    if (fErr) throw new Error(`files: ${fErr.message}`)
+      const headers = { 'User-Agent': 'frc5805-archiver' }
+      if (GH_TOKEN) headers.Authorization = `Bearer ${GH_TOKEN}`
+      got = await download(`${GITHUB_API}/repos/${src.owner}/${src.repo}/tarball/${sha}`, tmpFile, headers)
+    } else {
+      const url = new URL(src.url)
+      const local = ctx.emulated && url.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(url.hostname)
+      if (url.protocol !== 'https:' && !local) throw new Error('url sources must be https')
+      repoName = label
+      kind = urlKind(src.url)
+      got = await download(src.url, tmpFile, { 'User-Agent': 'frc5805-archiver' })
+      // A URL has no commit to ask about, so its identity is its content. This
+      // used to be named by the clock instead, with nothing to compare — so
+      // every interval stored another copy of the same bytes.
+      sha = got.sha256.slice(0, 40)
+      if (!force && src.last_sha === sha) return await unchanged(sha)
+    }
 
-    const { error: aErr } = await supabase.from('code_archives').insert({
-      repo: src.provider === 'github' ? `${src.owner}/${src.repo}` : label,
-      ref: src.git_ref,
-      commit_sha: sha,
-      season,
-      notes: `Archived automatically from ${src.provider}`,
-      file_id: fileRow.id,
+    const sha7 = sha.slice(0, 7)
+    const storagePath = `${season}/${slug(label)}-${sha7}.${kind.ext}`
+    const objectName = `code/${storagePath}`
+    const owner = typeof src.created_by === 'string' ? src.created_by : null
+
+    // The same name for the same commit, so a retry after a partial upload — or a
+    // forced re-run — replaces the object instead of piling up beside it.
+    await bucket.upload(tmpFile, {
+      destination: objectName,
+      gzip: false,
+      resumable: got.bytes > RESUMABLE_FROM,
+      metadata: { contentType: kind.contentType, ...(owner ? { metadata: { owner } } : {}) },
     })
-    // A duplicate archive row on a forced re-run is not a failure.
-    if (aErr && aErr.code !== '23505') throw new Error(`code_archives: ${aErr.message}`)
 
-    await supabase
-      .from('repo_sources')
-      .update({
-        last_status: 'ok',
-        last_synced_at: new Date().toISOString(),
-        last_sha: sha,
-        last_error: null,
+    // Object first, then its index document; if the document cannot be written
+    // the object is taken back out, so nothing is stored that the portal cannot
+    // list (the same order the portal's own uploads use).
+    const id = fileId('code', storagePath)
+    const fileRef = db.doc(`files/${id}`)
+    const described = {
+      bucket: 'code',
+      path: storagePath,
+      title: `${label} @ ${sha7}`,
+      description: `Automated archive of ${repoName}`,
+      kind: 'code',
+      season,
+      byte_size: got.bytes,
+      sha256: got.sha256,
+      updated_at: FieldValue.serverTimestamp(),
+    }
+    try {
+      if ((await fileRef.get()).exists) await fileRef.update(described)
+      else await fileRef.set({ ...described, tags: [], uploaded_by: owner, created_at: FieldValue.serverTimestamp() })
+    } catch (err) {
+      await bucket.file(objectName).delete({ ignoreNotFound: true }).catch(() => {})
+      throw new Error(`files: ${err.message}`)
+    }
+
+    // One row per repo, commit and season. Firestore has no unique constraint to
+    // lean on — the SQL table had none either, which is why --force used to add
+    // a duplicate row every time — so the existing row is looked for and updated.
+    // Only `commit_sha` is in the query; the rest is matched here, so no
+    // composite index has to exist.
+    const file = { id, bucket: 'code', path: storagePath, byte_size: got.bytes }
+    const row = {
+      ref: src.git_ref ?? null,
+      notes: `Archived automatically from ${src.provider}`,
+      file,
+      updated_at: FieldValue.serverTimestamp(),
+    }
+    const found = await db.collection('code_archives').where('commit_sha', '==', sha).get()
+    const existing = found.docs.find((d) => d.get('repo') === repoName && d.get('season') === season)
+    if (existing) await existing.ref.update(row)
+    else {
+      await db.collection('code_archives').add({
+        repo: repoName, commit_sha: sha, season, ...row, created_by: owner, created_at: FieldValue.serverTimestamp(),
       })
-      .eq('id', src.id)
+    }
 
-    return { label, bytes, sha }
+    await source.update({
+      last_status: 'ok',
+      last_synced_at: Timestamp.now(),
+      last_sha: sha,
+      last_error: null,
+      updated_at: FieldValue.serverTimestamp(),
+    })
+    return { label, bytes: got.bytes, sha, path: objectName }
   } finally {
     // Always, including on failure — otherwise a few failed runs fill the disk
     // with half-downloaded tarballs nobody will ever look at.
@@ -195,31 +234,28 @@ async function archiveOne(src) {
   }
 }
 
-const slug = (s) =>
-  String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50)
-
+/** Returns the exit code. */
 async function main() {
   const force = process.argv.includes('--force')
-  const only = process.argv.find((a) => a.startsWith('--repo='))?.split('=')[1]
+  const only = process.argv.find((a) => a.startsWith('--repo='))?.slice('--repo='.length)
 
-  let q = supabase.from('repo_sources').select('*').eq('enabled', true).order('label')
-  if (only) q = q.eq('repo', only)
-  const { data: sources, error } = await q
-  if (error) {
-    console.error(`could not read repo_sources: ${error.message}`)
-    process.exit(1)
+  let sources
+  try {
+    const found = await db.collection('repo_sources').where('enabled', '==', true).get()
+    sources = found.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch (err) {
+    console.error(`could not read repo_sources: ${err.message}`)
+    return 1
   }
+  sources.sort((a, b) => String(a.label).localeCompare(String(b.label)))
+  if (only) sources = sources.filter((s) => only === s.repo || only === `${s.owner}/${s.repo}` || only === s.label)
 
   const now = Date.now()
   const due = force
     ? sources
     : sources.filter((s) => {
         if (!s.last_synced_at) return true
-        const age = (now - new Date(s.last_synced_at).getTime()) / 36e5
+        const age = (now - s.last_synced_at.toMillis()) / 36e5
         return age >= (s.interval_hours ?? 24)
       })
 
@@ -233,37 +269,35 @@ async function main() {
   // home connection with everything else in the house, and the job has all night.
   for (const src of due) {
     try {
-      const r = await archiveOne(src)
+      const r = await archiveOne(src, force)
       if (r.skipped) {
         skipped++
         log(`  skip  ${r.label} — ${r.reason}`)
       } else {
         ok++
-        log(`  ok    ${r.label}  ${(r.bytes / 1024 / 1024).toFixed(1)} MB`)
+        log(`  ok    ${r.label}  ${(r.bytes / 1024 / 1024).toFixed(1)} MB  ${r.path}`)
       }
     } catch (err) {
       const msg = String(err.message ?? err)
       failed.push({ label: src.label, msg })
       log(`  FAIL  ${src.label} — ${msg}`)
-      await supabase
-        .from('repo_sources')
-        .update({
-          last_status: 'failed',
-          last_error: msg.slice(0, 500),
-          last_synced_at: new Date().toISOString(),
-        })
-        .eq('id', src.id)
+      await db
+        .doc(`repo_sources/${src.id}`)
+        .update({ last_status: 'failed', last_error: msg.slice(0, 500), last_synced_at: Timestamp.now(), updated_at: FieldValue.serverTimestamp() })
+        .catch((e) => log(`  could not record the failure: ${e.message}`))
     }
   }
 
   await rm(TMP, { recursive: true, force: true }).catch(() => {})
 
-  log(`\ndone: ${ok} archived, ${skipped} unchanged, ${failed.length} failed`)
+  log(`done: ${ok} archived, ${skipped} unchanged, ${failed.length} failed`)
   for (const f of failed) log(`  ${f.label}: ${f.msg}`)
-  process.exit(failed.length ? 2 : 0)
+  return failed.length ? 2 : 0
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+main()
+  .catch((err) => {
+    console.error(err)
+    return 1
+  })
+  .then((code) => finish(ctx, code))

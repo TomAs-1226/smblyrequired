@@ -1,0 +1,16 @@
+{
+  "name": "frc5805-backup",
+  "private": true,
+  "description": "The nightly backup of the FRC Team 5805 portal: Firebase -> backup host -> second machine. Installed on the backup host only; the site does not depend on it.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node test/encoding.test.mjs",
+    "test:emulators": "cd ../.. && npx firebase --config firebase.backup-test.json emulators:exec --project demo-frc5805 \"node scripts/backup/test/roundtrip.test.mjs && node scripts/backup/test/repo-archive.test.mjs\""
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  }
+}

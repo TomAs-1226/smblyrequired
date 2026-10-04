@@ -1,345 +1,354 @@
 #!/usr/bin/env node
 /**
- * Leg 1 of the network backup: Supabase -> local disk on the backup server.
+ * Leg 1 of the network backup: Firebase -> local disk on the backup server.
  *
- * Pulls every object from every bucket, dumps the database, writes a SHA256SUMS
- * manifest, verifies each downloaded object against the checksum recorded at
- * upload time, and reports the result back into `backup_runs`.
+ * Writes every Firestore document, every Auth account and every Storage object
+ * into a dated snapshot directory, verifies each object against the checksum
+ * recorded at upload time, writes a SHA256SUMS manifest, and reports the result
+ * into `backup_runs`.
  *
- * Run with the SERVICE ROLE key. That key bypasses RLS — which is the point,
- * since the backup must see every row and object regardless of who owns it —
- * and is exactly why this script runs on the server and never in a browser.
+ * Runs with a service-account key through the Admin SDK. That bypasses the
+ * security rules — which is the point, since the backup must see every document
+ * and object regardless of who owns it — and is exactly why this script runs on
+ * the server and never in a browser.
  *
- *   SUPABASE_URL=...            https://<ref>.supabase.co
- *   SUPABASE_SERVICE_ROLE_KEY=... service_role, NOT anon
- *   SUPABASE_DB_URL=...         postgres://... (for pg_dump)
+ *   GOOGLE_APPLICATION_CREDENTIALS=...  path to the service-account key file
+ *   FIREBASE_PROJECT_ID=...             the project id
+ *   FIREBASE_STORAGE_BUCKET=...         the bucket name, without gs://
  *   BACKUP_ROOT=/srv/backup/frc5805
  *
- * Exit codes: 0 ok, 1 failed, 2 partial (some objects failed, dump succeeded).
+ * Exit codes: 0 ok, 1 failed, 2 partial (a usable snapshot exists, but not a
+ * complete and verified one).
  */
 
-import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
-import { mkdir, writeFile, readFile, stat } from 'node:fs/promises'
 import { createWriteStream } from 'node:fs'
-import { spawn } from 'node:child_process'
-import { createGzip } from 'node:zlib'
-import { Readable } from 'node:stream'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { pipeline } from 'node:stream/promises'
 import path from 'node:path'
 
-const URL_ = requireEnv('SUPABASE_URL')
-const KEY = requireEnv('SUPABASE_SERVICE_ROLE_KEY')
-const DB_URL = process.env.SUPABASE_DB_URL || ''
+import {
+  connect, finish, dumpFirestore, listAllUsers, hasPasswordProvider, JsonlWriter, sha256File, makeStamp,
+  runRow, Timestamp, LEG_MIRROR, FOLDERS,
+} from './lib.mjs'
+import { ENCODING_VERSION } from './encoding.mjs'
+
 const ROOT = process.env.BACKUP_ROOT || '/srv/backup/frc5805'
+const ctx = connect({ exact: true })
+const { db, auth, bucket } = ctx
 
-const BUCKETS = ['graphs', 'code', 'knowledge', 'media', 'public-media']
-
-function requireEnv(name) {
-  const v = process.env[name]
-  if (!v) {
-    console.error(`missing required env var: ${name}`)
-    process.exit(1)
-  }
-  return v
-}
-
-function requireServiceRole(key) {
-  // Guards against the easy and near-invisible mistake of pasting the anon key
-  // here. With anon, RLS applies, every table returns zero rows, and the job
-  // cheerfully reports a successful backup of nothing — strictly worse than no
-  // backup at all, because it also tells you that you have one.
-  //
-  // Two key formats exist. Classic keys are JWTs carrying a `role` claim.
-  // Newer projects issue opaque `sb_secret_…` / `sb_publishable_…` keys, which
-  // have no claims to read, so those are checked by prefix instead.
-  if (/^sb_secret_/.test(key)) return
-  if (/^sb_publishable_/.test(key)) {
-    console.error(
-      'SUPABASE_SERVICE_ROLE_KEY is a publishable key. It is subject to RLS, so this job\n' +
-        'would back up an empty set and report success. Use the secret key.'
-    )
-    process.exit(1)
-  }
-
-  const segments = key.split('.')
-  if (segments.length !== 3) {
-    console.error(
-      'SUPABASE_SERVICE_ROLE_KEY is neither a JWT nor an sb_secret_… key.\n' +
-        'Copy the service_role / secret key from Project Settings → API.'
-    )
-    process.exit(1)
-  }
-
-  try {
-    const payload = JSON.parse(Buffer.from(segments[1], 'base64url').toString())
-    if (payload.role !== 'service_role') {
-      console.error(
-        `SUPABASE_SERVICE_ROLE_KEY has role "${payload.role}", expected "service_role".\n` +
-          'With the anon key this job would back up an empty set and report success.'
-      )
-      process.exit(1)
-    }
-  } catch {
-    console.error('SUPABASE_SERVICE_ROLE_KEY looks like a JWT but its payload will not parse.')
-    process.exit(1)
-  }
-}
-requireServiceRole(KEY)
-
-const supabase = createClient(URL_, KEY, { auth: { persistSession: false } })
-
-// UTC, and colon-free so the path is valid on every filesystem the mirror might
-// later be copied onto.
-const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + 'Z'
+const stamp = makeStamp()
 const dest = path.join(ROOT, stamp)
 
-let runId = null
+let run = null
 
 async function openRun() {
-  const { data, error } = await supabase
-    .from('backup_runs')
-    .insert({ leg: 'supabase->server', status: 'running' })
-    .select('id')
-    .single()
-  if (error) {
-    console.warn(`could not open backup_runs row: ${error.message}`)
-    return
+  try {
+    run = await db.collection('backup_runs').add(runRow({ leg: LEG_MIRROR, status: 'running' }))
+  } catch (err) {
+    console.warn(`could not open backup_runs row: ${err.message}`)
   }
-  runId = data.id
 }
 
 async function closeRun(fields) {
-  if (!runId) return
-  const { error } = await supabase
-    .from('backup_runs')
-    .update({ finished_at: new Date().toISOString(), ...fields })
-    .eq('id', runId)
-  if (error) console.warn(`could not close backup_runs row: ${error.message}`)
-}
-
-/** Storage list() is paginated; without this only the first 100 objects copy. */
-async function listAll(bucket, prefix = '') {
-  const out = []
-  const PAGE = 100
-  for (let offset = 0; ; offset += PAGE) {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .list(prefix, { limit: PAGE, offset, sortBy: { column: 'name', order: 'asc' } })
-    if (error) throw new Error(`list ${bucket}/${prefix}: ${error.message}`)
-    if (!data?.length) break
-
-    for (const entry of data) {
-      const full = prefix ? `${prefix}/${entry.name}` : entry.name
-      // A row with no `id` is a synthetic folder, not an object — recurse.
-      if (entry.id === null) out.push(...(await listAll(bucket, full)))
-      else out.push(full)
-    }
-    if (data.length < PAGE) break
+  if (!run) return
+  try {
+    await run.update({ finished_at: Timestamp.now(), ...fields })
+  } catch (err) {
+    console.warn(`could not close backup_runs row: ${err.message}`)
   }
-  return out
 }
 
-async function download(bucket, objectPath) {
-  const { data, error } = await supabase.storage.from(bucket).download(objectPath)
-  if (error) throw new Error(error.message)
+/**
+ * Refuse a project this job cannot have been meant for.
+ *
+ * The old script's worst failure was a key that read nothing and a job that
+ * reported a successful backup of it — strictly worse than no backup, because it
+ * also tells you that you have one. A portal with no profiles is not a portal:
+ * it is the wrong project id, the wrong database, or a project nobody has signed
+ * in to yet, and none of those should produce a green row. Checked before
+ * anything is written anywhere, including backup_runs. False means stop.
+ */
+async function preflight() {
+  let probe
+  try {
+    probe = await db.collection('profiles').limit(1).get()
+  } catch (err) {
+    console.error(`cannot read Firestore in project "${ctx.projectId}": ${err.message}`)
+    console.error('The service account needs the Cloud Datastore User role: see docs/BACKUP.md.')
+    return false
+  }
+  if (probe.empty) {
+    console.error(
+      `project "${ctx.projectId}" has no profiles at all.\n` +
+        'That is the wrong project, the wrong database, or an empty one. Backing it up\n' +
+        'would record a successful backup of nothing, so this run stops here.'
+    )
+    return false
+  }
+  return true
+}
 
-  const target = path.join(dest, 'objects', bucket, objectPath)
+/**
+ * Where an object goes on disk, or null if its name cannot be a path. Storage
+ * allows names a filesystem does not: `..` segments, empty segments, control
+ * characters. Such an object is counted as a failure, never written somewhere
+ * surprising and never silently skipped.
+ */
+function localPath(name) {
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\\]/.test(name)) return null
+  const parts = name.split('/')
+  if (parts.some((p) => p === '' || p === '.' || p === '..')) return null
+  return path.join(dest, 'objects', ...parts)
+}
+
+async function download(file, target) {
   await mkdir(path.dirname(target), { recursive: true })
 
   // Streamed rather than buffered: CAD exports and season video will not fit
-  // comfortably in memory, and this job runs unattended.
+  // comfortably in memory, and this job runs unattended. `decompress: false`
+  // keeps the stored bytes as stored, which is what the checksum was taken of.
   const hash = createHash('sha256')
-  const source = Readable.fromWeb(data.stream())
-  source.on('data', (chunk) => hash.update(chunk))
-  await pipeline(source, createWriteStream(target))
-
-  const { size } = await stat(target)
-  return { sha256: hash.digest('hex'), bytes: size }
-}
-
-async function dumpDatabase() {
-  if (!DB_URL) {
-    console.warn('SUPABASE_DB_URL unset — skipping the database dump.')
-    console.warn('Object bytes alone are not a restorable backup: without the dump you lose')
-    console.warn('the knowledge base, every file title, and the whole roster.')
-    return 0
-  }
-  await mkdir(dest, { recursive: true })
-
-  // No shell, and no credentials in argv.
-  //
-  // The previous version built a `bash -c` string and escaped only `"`. Inside
-  // double quotes `$`, backticks and `\` are still live, so a password
-  // containing `$(...)` would have been executed. It also put the full DSN —
-  // password included — into a process argument, readable via `ps` by any local
-  // user. Parsing the URL into PG* environment variables avoids both: pg_dump
-  // is spawned directly with no shell, and the password never appears in argv.
-  const dsn = new URL(DB_URL)
-  const env = {
-    ...process.env,
-    PGHOST: dsn.hostname,
-    PGPORT: dsn.port || '5432',
-    PGUSER: decodeURIComponent(dsn.username),
-    PGPASSWORD: decodeURIComponent(dsn.password),
-    PGDATABASE: dsn.pathname.replace(/^\//, '') || 'postgres',
-  }
-  if (dsn.searchParams.get('sslmode')) env.PGSSLMODE = dsn.searchParams.get('sslmode')
-
-  // Two dumps, and the split is not cosmetic — verified against a real
-  // Postgres by restoring the result:
-  //
-  //   auth_users.sql.gz  data only, no DDL, no triggers
-  //   db.sql.gz          the whole public schema
-  //
-  // `public.profiles.id` is a foreign key onto `auth.users`. A public-only dump
-  // is therefore NOT RESTORABLE: pg_dump adds constraints after loading data,
-  // and ADD CONSTRAINT runs a validation scan that `session_replication_role =
-  // replica` does not suppress, so the restore dies on profiles_id_fkey. It
-  // also loses the email-to-profile mapping, which is the only record of who
-  // each roster row actually is.
-  //
-  // auth.users is dumped --data-only because its full DDL carries the
-  // on_auth_user_created trigger, which references a public function that does
-  // not exist yet at that point in the restore.
-  const dump = (args, outfile) =>
-    runDump(['--no-owner', '--no-acl', ...args], env, path.join(dest, outfile))
-
-  const authBytes = await dump(['--data-only', '--table=auth.users'], 'auth_users.sql.gz')
-  const publicBytes = await dump(['--clean', '--if-exists', '--schema=public'], 'db.sql.gz')
-  return authBytes + publicBytes
-}
-
-// Spawned without a shell; stdout is gzipped straight to disk.
-async function runDump(args, env, target) {
-  const child = spawn('pg_dump', args, { env, stdio: ['ignore', 'pipe', 'inherit'] })
-
-  // Settles either way — a promise that only rejects would never resolve on
-  // success, and awaiting it after a clean run would hang the job forever.
-  const exited = new Promise((resolve, reject) => {
-    child.on('error', reject)
-    child.on('close', (code) =>
-      code === 0 ? resolve() : reject(new Error(`pg_dump exited ${code}`))
-    )
+  let bytes = 0
+  const source = file.createReadStream({ decompress: false })
+  source.on('data', (chunk) => {
+    hash.update(chunk)
+    bytes += chunk.length
   })
-  // Claimed now so that a pipeline failure racing ahead of the exit event does
-  // not surface as an unhandled rejection.
-  exited.catch(() => {})
-
-  await pipeline(child.stdout, createGzip({ level: 9 }), createWriteStream(target))
-  // The pipeline finishing only means the stream closed. pg_dump can emit a
-  // partial dump and then exit non-zero, so the exit code is what decides
-  // whether this file is trustworthy.
-  await exited
-
-  const { size } = await stat(target)
-  return size
+  await pipeline(source, createWriteStream(target))
+  return { sha256: hash.digest('hex'), bytes }
 }
 
+async function downloadWithRetry(file, target) {
+  try {
+    return await download(file, target)
+  } catch (err) {
+    console.warn(`  retrying ${file.name}: ${err.message}`)
+    return download(file, target)
+  }
+}
+
+/** Returns the exit code. */
 async function main() {
+  if (!(await preflight())) return 1
   await mkdir(dest, { recursive: true })
   await openRun()
 
+  // sha256 -> path, for SHA256SUMS. Everything the snapshot holds goes in.
   const manifest = []
-  let bytes = 0
-  let failures = 0
 
-  // The checksums recorded by the browser at upload time. Comparing against
-  // these proves the bytes on disk are the bytes the uploader actually chose —
-  // a manifest generated purely from the downloaded copy would only ever be
-  // self-consistent, and would happily certify corrupted data.
-  const expected = new Map()
-  let checksumsAvailable = true
-  {
-    // Paged. Supabase caps a PostgREST response at 1000 rows by default, so a
-    // single select silently stopped at the 1000th file: everything past it was
-    // copied with nothing to compare against, counted as unverified, and the run
-    // went `partial` every night from then on with no hint why.
-    const PAGE = 1000
-    let data = []
-    let error = null
-    for (let from = 0; ; from += PAGE) {
-      const page = await supabase
-        .from('files')
-        .select('bucket, path, sha256')
-        .order('id')
-        .range(from, from + PAGE - 1)
-      if (page.error) {
-        error = page.error
-        break
+  // --- Firestore -------------------------------------------------------------
+  // The checksums recorded by the browser at upload time come out of this pass.
+  // Comparing against these proves the bytes on disk are the bytes the uploader
+  // actually chose — a manifest generated purely from the downloaded copy would
+  // only ever be self-consistent, and would happily certify corrupted data.
+  const expected = new Map() // object name -> { id, sha256 }
+  let store
+  try {
+    store = await dumpFirestore(db, dest, (docPath, data) => {
+      const m = /^files\/([^/]+)$/.exec(docPath)
+      if (m && typeof data.bucket === 'string' && typeof data.path === 'string') {
+        expected.set(`${data.bucket}/${data.path}`, { id: m[1], sha256: data.sha256 ?? null })
       }
-      data = data.concat(page.data ?? [])
-      if ((page.data ?? []).length < PAGE) break
-    }
-    if (error) {
-      // Previously this only warned. That was the worst bug in this script: with
-      // `expected` empty, every `expected.get()` returns undefined, the mismatch
-      // branch never fires, `failures` stays 0, and the run records 'ok'. A
-      // transient error silently downgraded the backup from "verified against
-      // upload-time checksums" to "a manifest of whatever happened to arrive" —
-      // exactly the self-consistent artifact this design exists to avoid.
-      console.error(`! could not read expected checksums: ${error.message}`)
-      checksumsAvailable = false
-    }
-    for (const f of data ?? []) if (f.sha256) expected.set(`${f.bucket}/${f.path}`, f.sha256)
+    })
+  } catch (err) {
+    console.error(`! Firestore export failed: ${err.message}`)
+    await closeRun({ status: 'failed', error: `firestore: ${err.message}` })
+    return 1
   }
-  let unverified = 0
+  for (const [pattern, n] of Object.entries(store.collections)) console.log(`${pattern}: ${n} documents`)
 
-  for (const bucket of BUCKETS) {
-    let objects = []
-    try {
-      objects = await listAll(bucket)
-    } catch (err) {
-      console.error(`! ${bucket}: ${err.message}`)
-      failures += 1
-      continue
-    }
-    console.log(`${bucket}: ${objects.length} objects`)
+  if (!store.collections.profiles) {
+    console.error('! the export contains no profiles — refusing to call this a backup')
+    await closeRun({ status: 'failed', error: 'export contains no profiles' })
+    return 1
+  }
 
-    for (const objectPath of objects) {
-      const key = `${bucket}/${objectPath}`
-      try {
-        const { sha256, bytes: n } = await download(bucket, objectPath)
-        const want = expected.get(key)
-        if (want && want !== sha256) {
-          console.error(`! CHECKSUM MISMATCH ${key}\n    expected ${want}\n    got      ${sha256}`)
-          failures += 1
+  // --- Auth ------------------------------------------------------------------
+  // Without the accounts the roster is a list of ids: the email that says who
+  // each profile actually is lives in Auth, not in Firestore.
+  let users
+  let authBytes = 0
+  try {
+    users = await listAllUsers(auth)
+    const writer = new JsonlWriter(path.join(dest, 'auth_users.jsonl.gz'))
+    for (const user of users) await writer.write(JSON.stringify(user))
+    authBytes = await writer.close()
+  } catch (err) {
+    console.error(`! Auth export failed: ${err.message}`)
+    await closeRun({ status: 'failed', error: `auth: ${err.message}` })
+    return 1
+  }
+  const passwordUsers = users.filter(hasPasswordProvider).length
+  const passwordHashes = users.filter((u) => u.passwordHash).length
+  console.log(`auth: ${users.length} accounts, ${passwordHashes} of ${passwordUsers} password hashes exported`)
+
+  // --- Storage ---------------------------------------------------------------
+  const objects = new JsonlWriter(path.join(dest, 'objects.jsonl.gz'))
+  const seen = new Set()
+  const failed = [] // { name, error }
+  const mismatched = []
+  const unrecorded = [] // has a files document, but it records no checksum
+  const orphans = [] // no files document at all
+  const perFolder = new Map()
+  let objectBytes = 0
+  let copied = 0
+  let placeholders = 0
+
+  try {
+    let pageToken
+    do {
+      // Paged by hand. Left to itself the client collects every page into one
+      // array before returning.
+      const [page, next] = await bucket.getFiles({ autoPaginate: false, maxResults: 1000, pageToken })
+      for (const file of page) {
+        const name = file.name
+        const meta = file.metadata ?? {}
+        const record = {
+          name,
+          size: Number(meta.size ?? 0),
+          contentType: meta.contentType ?? null,
+          contentEncoding: meta.contentEncoding ?? null,
+          contentDisposition: meta.contentDisposition ?? null,
+          contentLanguage: meta.contentLanguage ?? null,
+          cacheControl: meta.cacheControl ?? null,
+          metadata: meta.metadata ?? null,
+          timeCreated: meta.timeCreated ?? null,
+          updated: meta.updated ?? null,
+        }
+
+        // The console's "create folder" makes a zero-byte object named `x/`.
+        // Not a file; recorded so a restore can put it back, and not downloaded.
+        if (name.endsWith('/')) {
+          placeholders += 1
+          await objects.write(JSON.stringify({ ...record, placeholder: true }))
           continue
         }
-        // Copied, but nothing to compare it against. Counted so the run can
-        // report how much of it is actually verified rather than implying all.
-        if (!want) unverified += 1
-        manifest.push(`${sha256}  objects/${bucket}/${objectPath}`)
-        bytes += n
-      } catch (err) {
-        console.error(`! ${key}: ${err.message}`)
-        failures += 1
+
+        const target = localPath(name)
+        if (!target) {
+          console.error(`! ${JSON.stringify(name)}: not a name that can be a file path`)
+          failed.push({ name, error: 'name cannot be a file path' })
+          continue
+        }
+
+        let got
+        try {
+          got = await downloadWithRetry(file, target)
+          if (got.bytes !== record.size) throw new Error(`got ${got.bytes} bytes, Storage says ${record.size}`)
+        } catch (err) {
+          console.error(`! ${name}: ${err.message}`)
+          failed.push({ name, error: String(err.message ?? err) })
+          continue
+        }
+
+        seen.add(name)
+        const index = expected.get(name)
+        let check = 'ok'
+        if (!index) {
+          check = 'orphan'
+          orphans.push(name)
+        } else if (!index.sha256) {
+          // Copied, but nothing to compare it against. Counted so the run can
+          // report how much of it is actually verified rather than implying all.
+          check = 'unrecorded'
+          unrecorded.push(name)
+        } else if (index.sha256 !== got.sha256) {
+          console.error(`! CHECKSUM MISMATCH ${name}\n    expected ${index.sha256}\n    got      ${got.sha256}`)
+          check = 'mismatch'
+          mismatched.push(name)
+        }
+
+        await objects.write(JSON.stringify({ ...record, sha256: got.sha256, index: index?.id ?? null, check }))
+        manifest.push([got.sha256, `objects/${name}`])
+        objectBytes += got.bytes
+        copied += 1
+        const folder = name.split('/')[0]
+        perFolder.set(folder, (perFolder.get(folder) ?? 0) + 1)
       }
-    }
+      pageToken = next?.pageToken
+    } while (pageToken)
+  } catch (err) {
+    // Listing failed part-way. What was copied is kept and the run goes partial.
+    console.error(`! could not list the bucket: ${err.message}`)
+    failed.push({ name: '(bucket listing)', error: String(err.message ?? err) })
+  }
+  await objects.close()
+
+  for (const folder of new Set([...FOLDERS, ...perFolder.keys()])) {
+    console.log(`${folder}: ${perFolder.get(folder) ?? 0} objects`)
   }
 
-  let dbBytes = 0
-  try {
-    dbBytes = await dumpDatabase()
-    if (dbBytes) {
-      // Both dump files go in the manifest. Omitting auth_users.sql.gz would
-      // leave the half of the backup that makes the other half restorable
-      // unverified — and silently absent from `sha256sum -c`.
-      for (const name of ['auth_users.sql.gz', 'db.sql.gz']) {
-        const digest = createHash('sha256').update(await readFile(path.join(dest, name)))
-        manifest.push(`${digest.digest('hex')}  ${name}`)
-      }
+  // The other direction: a files document whose object is not in Storage. The
+  // portal lists that file and cannot open it. Not judged when the listing
+  // itself failed, since then nearly everything would look missing.
+  const listingFailed = failed.some((f) => f.name === '(bucket listing)')
+  const failedNames = new Set(failed.map((f) => f.name))
+  const missing = []
+  if (!listingFailed) {
+    for (const [name, index] of expected) {
+      if (!seen.has(name) && !failedNames.has(name)) missing.push({ id: index.id, name })
     }
-  } catch (err) {
-    console.error(`! database dump failed: ${err.message}`)
-    await closeRun({ status: 'failed', error: `pg_dump: ${err.message}` })
-    process.exit(1)
+  }
+  for (const name of orphans) console.error(`! no files document for ${name}`)
+  for (const m of missing) console.error(`! files/${m.id} points at ${m.name}, which is not in Storage`)
+
+  // 'ok' is a claim that this snapshot is complete AND verified. Every
+  // condition that would make a restore fail, or make the verification
+  // meaningless, has to be able to withhold it.
+  const problems = []
+  if (failed.length) problems.push(`${failed.length} object(s) failed`)
+  if (mismatched.length) problems.push(`${mismatched.length} object(s) do not match their recorded checksum`)
+  if (copied === 0) problems.push('zero objects copied')
+  if (unrecorded.length) problems.push(`${unrecorded.length} object(s) had no recorded checksum`)
+  if (orphans.length) problems.push(`${orphans.length} object(s) have no files document`)
+  if (missing.length) problems.push(`${missing.length} files document(s) have no object in Storage`)
+
+  // The export exists by this point (its failure exits above), so what is on
+  // disk is usable even when it is not complete: a degraded backup, not a
+  // crashed job.
+  const status = problems.length === 0 ? 'ok' : 'partial'
+
+  await writeFile(
+    path.join(dest, 'snapshot.json'),
+    JSON.stringify(
+      {
+        format: 1,
+        encoding: ENCODING_VERSION,
+        stamp,
+        project: ctx.projectId,
+        bucket: ctx.bucketName,
+        status,
+        problems,
+        firestore: { documents: store.documents, collections: store.collections, files: store.files },
+        auth: { users: users.length, password_users: passwordUsers, password_hashes: passwordHashes },
+        storage: {
+          objects: copied,
+          bytes: objectBytes,
+          placeholders,
+          verified: copied - mismatched.length - unrecorded.length - orphans.length,
+          mismatched,
+          unrecorded,
+          orphans,
+          missing,
+          failed,
+        },
+      },
+      null,
+      2
+    ) + '\n',
+    'utf8'
+  )
+
+  for (const name of [...store.files, 'auth_users.jsonl.gz', 'objects.jsonl.gz', 'snapshot.json']) {
+    manifest.push([await sha256File(path.join(dest, name)), name])
   }
 
   // LF endings, always: this file is verified with `sha256sum -c`, and CRLF
   // makes every single line fail to resolve.
-  manifest.sort()
-  const manifestText = manifest.join('\n') + '\n'
+  manifest.sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0))
+  const manifestText = manifest.map(([sha, name]) => `${sha}  ${name}`).join('\n') + '\n'
   await writeFile(path.join(dest, 'SHA256SUMS'), manifestText, 'utf8')
 
   const manifestSha = createHash('sha256').update(manifestText).digest('hex')
@@ -348,43 +357,45 @@ async function main() {
   // A stable path the second leg and the restore test can rely on.
   await writeFile(path.join(ROOT, 'LATEST'), stamp + '\n', 'utf8')
 
-  // 'ok' is a claim that this snapshot is complete AND verified. Deriving it
-  // from `failures` alone let three different empty-but-successful outcomes
-  // report green. Every condition that would make a restore fail, or make the
-  // verification meaningless, has to be able to withhold it.
-  const problems = []
-  if (failures) problems.push(`${failures} object(s) failed`)
-  if (!checksumsAvailable) problems.push('checksum table unreadable — objects copied but unverified')
-  if (!dbBytes) problems.push('NO DATABASE DUMP — objects only, not restorable')
-  if (manifest.length === 0) problems.push('zero objects copied')
-  if (unverified) problems.push(`${unverified} object(s) had no recorded checksum`)
-
-  // A missing dump or unverifiable objects is a degraded backup, not a crashed
-  // job: the bytes that did arrive are still worth keeping and propagating.
-  // 'failed' is reserved for producing nothing usable.
-  const usable = manifest.length > 0 || dbBytes > 0
-  const status = problems.length === 0 ? 'ok' : usable ? 'partial' : 'failed'
-
+  const dumpBytes = store.bytes + authBytes
   await closeRun({
     status,
-    object_count: manifest.length,
-    byte_total: bytes,
-    db_dump_bytes: dbBytes,
+    object_count: copied,
+    byte_total: objectBytes,
+    db_dump_bytes: dumpBytes,
     manifest_sha: manifestSha,
     error: problems.length ? problems.join('; ') : null,
   })
 
   console.log(
-    `\n${status.toUpperCase()} — ${manifest.length} objects, ${(bytes / 1e6).toFixed(1)} MB` +
-      `, db ${(dbBytes / 1e6).toFixed(1)} MB\n${dest}\nmanifest ${manifestSha.slice(0, 16)}…`
+    `\n${status.toUpperCase()} — ${copied} objects, ${(objectBytes / 1e6).toFixed(1)} MB` +
+      `, ${store.documents} documents, ${users.length} accounts, export ${(dumpBytes / 1e6).toFixed(1)} MB` +
+      `\n${dest}\nmanifest ${manifestSha.slice(0, 16)}…`
   )
   for (const p of problems) console.log(`  ! ${p}`)
+  if (passwordUsers && !passwordHashes) {
+    console.log(
+      '  note: no password hashes were exported. A restore brings every account back,\n' +
+        '        but each member has to set a new password. See docs/BACKUP.md.'
+    )
+  }
 
-  process.exit(status === 'ok' ? 0 : status === 'partial' ? 2 : 1)
+  return status === 'ok' ? 0 : 2
 }
 
-main().catch(async (err) => {
-  console.error(err)
-  await closeRun({ status: 'failed', error: String(err.message ?? err) })
-  process.exit(1)
-})
+// systemd stops a job with SIGTERM. Without this the row would say `running`
+// for ever — a status nothing can resolve.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, async () => {
+    await closeRun({ status: 'failed', error: `interrupted (${signal})` })
+    process.exit(1)
+  })
+}
+
+main()
+  .catch(async (err) => {
+    console.error(err)
+    await closeRun({ status: 'failed', error: String(err.message ?? err) })
+    return 1
+  })
+  .then((code) => finish(ctx, code))

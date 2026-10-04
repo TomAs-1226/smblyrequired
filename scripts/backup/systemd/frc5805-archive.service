@@ -1,5 +1,5 @@
 [Unit]
-Description=FRC 5805 repo archiver (GitHub -> Supabase code bucket)
+Description=FRC 5805 repo archiver (GitHub -> the portal's code folder)
 Documentation=https://github.com/TomAs-1226/smblyrequired/blob/main/docs/BACKUP.md
 After=network-online.target
 Wants=network-online.target
@@ -9,8 +9,10 @@ Type=oneshot
 User=backup
 Group=backup
 
-# Same secrets file as the backup job — it already holds SUPABASE_URL and the
-# service-role key, and a second copy is a second thing to rotate.
+# Same config file as the backup job. It already names the project
+# (FIREBASE_PROJECT_ID, FIREBASE_STORAGE_BUCKET) and where the service-account
+# key file is (GOOGLE_APPLICATION_CREDENTIALS); a second copy of either is a
+# second thing to rotate. GITHUB_TOKEN, if the repos are private, goes there too.
 EnvironmentFile=/etc/frc5805-backup.env
 ExecStart=/usr/bin/node /opt/frc5805/scripts/backup/repo-archive.mjs
 

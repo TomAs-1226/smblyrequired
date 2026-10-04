@@ -2,7 +2,7 @@
 # =============================================================================
 # Nightly backup, both legs.
 #
-#   leg 1  Supabase        -> the backup server   (mirror.mjs)
+#   leg 1  Firebase        -> the backup server   (mirror.mjs)
 #   leg 2  the backup server    -> OptiPlex       (rsync over the tailnet)
 #
 # The two legs are reported to `backup_runs` separately and on purpose. A single
@@ -49,7 +49,7 @@ esac
 # ---------------------------------------------------------------------------
 # Leg 1
 # ---------------------------------------------------------------------------
-log "leg 1: Supabase -> $(hostname)"
+log "leg 1: Firebase -> $(hostname)"
 leg1_status=0
 node "$SCRIPT_DIR/mirror.mjs" || leg1_status=$?
 
@@ -85,7 +85,7 @@ fi
 log "leg 2: -> $OPTIPLEX_HOST"
 leg2_start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 leg2_status=ok
-leg2_error=null
+leg2_error=""
 
 # --link-dest hard-links unchanged files against the previous snapshot, so thirty
 # dated copies cost roughly one copy plus the deltas.
@@ -103,7 +103,7 @@ fi
 if ! rsync -a --delete --partial "${link_dest[@]}" \
       "$SNAPSHOT/" "$OPTIPLEX_HOST:$OPTIPLEX_PATH/$STAMP/"; then
   leg2_status=failed
-  leg2_error='"rsync failed"'
+  leg2_error="rsync failed"
   log "leg 2 FAILED"
 fi
 
@@ -114,7 +114,7 @@ if [[ "$leg2_status" == "ok" ]]; then
     log "leg 2 verified"
   else
     leg2_status=failed
-    leg2_error='"manifest verification failed on target"'
+    leg2_error="manifest verification failed on target"
     log "leg 2 verification FAILED"
   fi
 fi
@@ -122,29 +122,22 @@ fi
 # ---------------------------------------------------------------------------
 # Report leg 2
 # ---------------------------------------------------------------------------
+# The stored objects only — the lines under objects/ — so this is the same count
+# leg 1 reports and the two legs can be compared at a glance in the portal.
+#
 # `grep -c` exits 1 on a zero count having ALREADY printed "0", so the obvious
-# `|| echo 0` appends a second one and yields "0\n0" — which then interpolates
-# into the JSON below as malformed garbage, in exactly the zero-object case
-# where the record matters most. Count with wc instead.
-OBJECTS="$(wc -l < "$SNAPSHOT/SHA256SUMS" | tr -d ' ')"
+# `|| echo 0` appends a second one and yields "0\n0", in exactly the zero-object
+# case where the record matters most. `|| true` keeps the one it printed.
+OBJECTS="$(grep -c '^[a-f0-9]\{64\}  objects/' "$SNAPSHOT/SHA256SUMS" || true)"
 BYTES="$(du -sb "$SNAPSHOT" | cut -f1)"
 MANIFEST_SHA="$(tr -d '\n' < "$SNAPSHOT/MANIFEST.sha256")"
 
-# Headers via a mode-600 temp file: as command-line arguments they are visible
-# in `ps` to every local user on the box.
-HDR="$(mktemp)"; chmod 600 "$HDR"; trap 'rm -f "$HDR"' EXIT
-printf 'apikey: %s\nAuthorization: Bearer %s\n' \
-  "$SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY" > "$HDR"
-
-curl -fsS -X POST "$SUPABASE_URL/rest/v1/backup_runs" \
-  -H @"$HDR" \
-  -H "Content-Type: application/json" \
-  -H "Prefer: return=minimal" \
-  -d "{\"leg\":\"server->optiplex\",\"status\":\"$leg2_status\",
-       \"started_at\":\"$leg2_start\",\"finished_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
-       \"object_count\":$OBJECTS,\"byte_total\":$BYTES,
-       \"manifest_sha\":\"$MANIFEST_SHA\",\"error\":$leg2_error}" \
-  >/dev/null || log "warning: could not record leg 2 status"
+# Through the Admin SDK, like leg 1. There is no key for the shell to handle:
+# report.mjs reads the key file itself, and nothing secret is on a command line.
+report=(leg2 "--status=$leg2_status" "--started=$leg2_start"
+        "--objects=$OBJECTS" "--bytes=$BYTES" "--manifest=$MANIFEST_SHA")
+[[ -z "$leg2_error" ]] || report+=("--error=$leg2_error")
+node "$SCRIPT_DIR/report.mjs" "${report[@]}" || log "warning: could not record leg 2 status"
 
 # ---------------------------------------------------------------------------
 # Retention — local only. The OptiPlex keeps its own copies; pruning the remote
