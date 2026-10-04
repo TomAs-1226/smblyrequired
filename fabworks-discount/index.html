@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#070E1A" />
+    <meta name="theme-color" content="#050505" />
 
     <title>Fabworks Discount Code FRC5805 — 5% Off Sheet Metal | FRC Team 5805</title>
     <meta
@@ -35,10 +35,13 @@
     />
     <meta name="twitter:image" content="https://frc5805.com/photos/hero.jpg" />
 
+    <!-- The site's own two faces: Clash Display for headings, Plus Jakarta Sans for reading. -->
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
@@ -100,20 +103,23 @@
     </script>
 
     <style>
+      /* A standalone page (no bundle), so it carries its own copy of the site's
+         tokens from src/index.css. Keep the two in step when the palette moves. */
       :root {
-        --void: #061325;
-        --base: #0b1f3a;
-        --surface: #0e2a4d;
-        --surface-2: #143a66;
-        --sunken: #081a30;
-        --line: rgba(199, 210, 221, 0.14);
-        --line-cyan: rgba(56, 189, 248, 0.4);
-        --text: #f2f6fb;
-        --body: #c7d2dd;
-        --muted: #8499ae;
-        --cyan: #38bdf8;
-        --gold: #f5b82e;
-        --gold-hi: #ffd45e;
+        --void: #050505;
+        --surface: #0f1012;
+        --surface-2: #16181b;
+        --sunken: #0a0a0b;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --text: #f4f5f7;
+        --body: #c4c7cd;
+        --muted: #8d8f96;
+        --blue: #5b9bea;
+        --gold: #d9c68a;
+        --gold-hi: #ecdfb4;
+        --display: 'Clash Display', 'Segoe UI', system-ui, sans-serif;
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       }
       * {
         box-sizing: border-box;
@@ -121,157 +127,177 @@
         padding: 0;
       }
       body {
-        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
         color: var(--body);
-        background:
-          radial-gradient(120% 80% at 80% -10%, rgba(22, 73, 136, 0.35), transparent 55%),
-          radial-gradient(90% 60% at 0% 100%, rgba(14, 42, 77, 0.5), transparent 60%), var(--void);
+        background: radial-gradient(110% 70% at 85% -10%, rgba(20, 71, 129, 0.22), transparent 60%), var(--void);
+        background-attachment: fixed;
         line-height: 1.6;
         min-height: 100vh;
+        min-height: 100dvh;
         -webkit-font-smoothing: antialiased;
       }
       .wrap {
         max-width: 760px;
         margin: 0 auto;
-        padding: clamp(32px, 7vw, 88px) clamp(20px, 5vw, 40px);
+        padding: clamp(24px, 5vw, 56px) clamp(16px, 5vw, 40px) clamp(40px, 7vw, 88px);
+      }
+      .home {
+        display: inline-block;
+        margin-bottom: clamp(32px, 7vw, 72px);
+        font-family: var(--display);
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text);
+        text-decoration: none;
+        transition: color 0.16s var(--ease-out), transform 0.12s var(--ease-out);
+      }
+      .home:active {
+        transform: scale(0.97);
       }
       h1,
-      h2,
-      h3 {
-        font-family: 'Oswald', 'Segoe UI', system-ui, sans-serif;
+      h2 {
+        font-family: var(--display);
         color: var(--text);
         line-height: 1.05;
         font-weight: 600;
         letter-spacing: -0.01em;
       }
       a {
-        color: var(--cyan);
+        color: var(--blue);
+      }
+      :focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 3px;
       }
       .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-family: 'Oswald', sans-serif;
-        font-size: 0.8rem;
+        font-family: var(--display);
+        font-size: 0.86rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: var(--cyan);
+        color: var(--blue);
         margin-bottom: 16px;
       }
-      .eyebrow::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--cyan);
-        box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
-      }
       h1 {
-        font-size: clamp(2.2rem, 6vw, 3.6rem);
-        margin-bottom: 14px;
+        font-size: clamp(2rem, 6vw, 3.4rem);
+        margin-bottom: 16px;
+        text-wrap: balance;
       }
       .lead {
-        font-size: clamp(1.05rem, 2.4vw, 1.25rem);
-        color: var(--body);
+        font-size: clamp(1.05rem, 2.4vw, 1.2rem);
         max-width: 60ch;
       }
       .lead strong {
         color: var(--text);
+        font-weight: 600;
       }
       /* --- The code card: the obvious thing --- */
       .codeCard {
         margin: 36px 0;
         padding: clamp(24px, 4vw, 40px);
-        background: linear-gradient(180deg, var(--surface-2), var(--sunken));
-        border: 1px solid var(--line-cyan);
-        border-radius: 18px;
-        box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(214, 232, 255, 0.08);
+        background: linear-gradient(180deg, var(--surface), var(--sunken));
+        border: 1px solid var(--line-strong);
+        border-radius: 20px;
+        box-shadow: 0 2px 10px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(214, 232, 255, 0.06);
         text-align: center;
       }
       .codeCard .off {
-        font-family: 'Oswald', sans-serif;
-        font-size: clamp(2.6rem, 8vw, 4.5rem);
+        font-family: var(--display);
+        font-size: clamp(2.6rem, 9vw, 4.5rem);
         font-weight: 700;
         color: var(--gold);
         line-height: 1;
-        text-shadow: 0 0 24px rgba(245, 184, 46, 0.35);
       }
       .codeCard .offSub {
-        font-family: 'Oswald', sans-serif;
+        font-family: var(--display);
         font-size: 0.9rem;
+        font-weight: 500;
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--muted);
-        margin: 6px 0 22px;
+        margin: 8px 0 24px;
       }
       .codeRow {
         display: inline-flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 12px;
       }
       .code {
-        font-family: 'Oswald', sans-serif;
-        font-size: clamp(1.8rem, 5vw, 2.6rem);
+        font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', 'Cascadia Code', Menlo, monospace;
+        font-size: clamp(1.6rem, 6vw, 2.3rem);
         font-weight: 700;
-        letter-spacing: 0.14em;
-        color: var(--cyan);
+        letter-spacing: 0.12em;
+        color: var(--text);
         background: var(--void);
-        border: 2px dashed var(--line-cyan);
+        border: 1px dashed var(--line-strong);
         border-radius: 12px;
-        padding: 10px 26px;
+        padding: 10px 24px;
         user-select: all;
       }
       .copyBtn {
-        font-family: 'Oswald', sans-serif;
+        font-family: var(--display);
         font-size: 0.9rem;
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #061325;
-        background: var(--cyan);
-        border: none;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--line-strong);
         border-radius: 999px;
-        padding: 12px 20px;
+        min-height: 48px;
+        padding: 0 22px;
         cursor: pointer;
-        transition: filter 0.16s ease, transform 0.12s ease;
-      }
-      .copyBtn:hover {
-        filter: brightness(1.08);
+        transition: border-color 0.16s var(--ease-out), transform 0.12s var(--ease-out);
       }
       .copyBtn:active {
         transform: scale(0.97);
+      }
+      .copyBtn:focus-visible {
+        border-color: var(--blue);
       }
       .cta {
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        margin-top: 22px;
-        font-family: 'Oswald', sans-serif;
-        font-size: 1rem;
+        margin-top: 24px;
+        font-family: var(--display);
+        font-size: clamp(0.88rem, 3.6vw, 1rem);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #061325;
+        color: #0a0a0b;
         background: var(--gold);
         border-radius: 999px;
-        padding: 15px 30px;
+        min-height: 52px;
+        padding: 0 clamp(20px, 6vw, 30px);
+        white-space: nowrap;
         text-decoration: none;
-        box-shadow: 0 12px 32px -10px rgba(245, 184, 46, 0.5);
-        transition: filter 0.16s ease, transform 0.12s ease;
-      }
-      .cta:hover {
-        filter: brightness(1.06);
+        transition: background-color 0.16s var(--ease-out), transform 0.12s var(--ease-out);
       }
       .cta:active {
-        transform: scale(0.98);
+        transform: scale(0.97);
+      }
+      .cta:focus-visible {
+        background: var(--gold-hi);
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .home:hover {
+          color: var(--blue);
+        }
+        .copyBtn:hover {
+          border-color: var(--blue);
+        }
+        .cta:hover {
+          background: var(--gold-hi);
+        }
       }
       .steps {
         display: grid;
-        gap: 14px;
-        margin: 32px 0;
+        gap: 12px;
+        margin: 20px 0 32px;
         padding: 0;
         list-style: none;
         counter-reset: step;
@@ -281,9 +307,16 @@
         gap: 14px;
         align-items: flex-start;
         padding: 16px 18px;
-        background: linear-gradient(180deg, var(--surface), var(--sunken));
+        background: var(--surface);
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 14px;
+      }
+      .steps li span {
+        min-width: 0;
+        padding-top: 2px;
+      }
+      .steps li strong {
+        color: var(--text);
       }
       .steps li::before {
         counter-increment: step;
@@ -294,15 +327,15 @@
         width: 30px;
         height: 30px;
         border-radius: 8px;
-        font-family: 'Oswald', sans-serif;
-        font-weight: 700;
-        color: var(--cyan);
+        font-family: var(--display);
+        font-weight: 600;
+        color: var(--text);
         background: var(--void);
-        border: 1px solid var(--line-cyan);
+        border: 1px solid var(--line-strong);
       }
       h2 {
-        font-size: clamp(1.5rem, 3.5vw, 2rem);
-        margin: 40px 0 12px;
+        font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+        margin: 44px 0 12px;
       }
       p + p {
         margin-top: 14px;
@@ -315,7 +348,7 @@
         margin-top: 48px;
         padding-top: 24px;
         border-top: 1px solid var(--line);
-        font-size: 0.9rem;
+        font-size: 0.92rem;
         color: var(--muted);
       }
       .foot a {
@@ -324,26 +357,32 @@
       .toast {
         position: fixed;
         left: 50%;
-        bottom: 28px;
-        transform: translateX(-50%) translateY(20px);
-        background: var(--gold);
-        color: #061325;
-        font-family: 'Oswald', sans-serif;
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%) translateY(12px);
+        background: var(--text);
+        color: #0a0a0b;
+        font-family: var(--display);
         font-weight: 600;
         padding: 12px 22px;
         border-radius: 999px;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.2s ease, transform 0.2s ease;
+        transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
       }
       .toast.show {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
       }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 0.01ms !important;
+        }
+      }
     </style>
   </head>
   <body>
     <main class="wrap">
+      <a class="home" href="/">← FRC Team 5805</a>
       <p class="eyebrow">Sponsored by Fabworks</p>
       <h1>Fabworks Discount Code: FRC5805</h1>
       <p class="lead">
@@ -369,9 +408,9 @@
 
       <h2>How to use the Fabworks discount code</h2>
       <ol class="steps">
-        <li>Head to <a href="https://www.fabworks.com/" target="_blank" rel="noopener">fabworks.com</a> and upload your part files for an instant quote.</li>
-        <li>Add your laser-cut or bent sheet-metal parts to your cart.</li>
-        <li>Enter promo code <strong>FRC5805</strong> at checkout to take 5% off your order.</li>
+        <li><span>Head to <a href="https://www.fabworks.com/" target="_blank" rel="noopener">fabworks.com</a> and upload your part files for an instant quote.</span></li>
+        <li><span>Add your laser-cut or bent sheet-metal parts to your cart.</span></li>
+        <li><span>Enter promo code <strong>FRC5805</strong> at checkout to take 5% off your order.</span></li>
       </ol>
 
       <h2>Why Fabworks?</h2>
@@ -394,9 +433,9 @@
       </p>
 
       <div class="foot">
-        A project of <a href="https://frc5805.com/">FRC Team 5805 — SMbly Required</a>, the
+        A project of <a href="/">FRC Team 5805 — SMbly Required</a>, the
         student-run FIRST Robotics Competition team at Santa Margarita Catholic High School.
-        <a href="https://frc5805.com/#/sponsor">See all our sponsors →</a>
+        <a href="/#/sponsor">See all our sponsors →</a>
       </div>
     </main>
 
