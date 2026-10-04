@@ -1,10 +1,37 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, normalize } from 'node:path'
+
+// A static page under public/ with its own index.html (public/fabworks-discount/)
+// is served at its folder URL by GitHub Pages, but Vite's dev and preview servers
+// only serve public files by exact name: a folder URL falls through to the app's
+// own index.html, so the link opened the home page locally. This serves the
+// folder's index.html the way the host does.
+function publicDirIndex() {
+  const serve = (publicDir) => (req, res, next) => {
+    const path = decodeURIComponent((req.url ?? '').split('?')[0])
+    if (req.method !== 'GET' || path === '/' || !path.endsWith('/') || path.includes('..')) return next()
+    const file = normalize(join(publicDir, path, 'index.html'))
+    if (!file.startsWith(normalize(publicDir)) || !existsSync(file)) return next()
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.end(readFileSync(file))
+  }
+  return {
+    name: 'public-dir-index',
+    configureServer(server) {
+      server.middlewares.use(serve(server.config.publicDir))
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(serve(server.config.build.outDir))
+    },
+  }
+}
 
 // base: './' keeps asset paths relative so the production build works from any
 // host or sub-folder (GitHub Pages project sites, Netlify, opened from disk).
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), publicDirIndex()],
   base: './',
   build: {
     rollupOptions: {

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { doc, getDocFromServer } from 'firebase/firestore'
 import { db } from './firebase'
 import { call, isConfigured, notConnected, row, wrap } from './db'
@@ -30,6 +31,47 @@ export async function publicEventData(eventKey, { force = false } = {}) {
     return { data: null, error: live.error || wrap(e) }
   }
   return live
+}
+
+// One answer per event is shared by every panel that asks within the function's
+// own cache window, so opening Team detail after Field data costs nothing.
+const SHARED_MS = 10 * 60 * 1000
+const shared = new Map()
+
+function sharedEventData(eventKey) {
+  const hit = shared.get(eventKey)
+  if (hit && Date.now() - hit.at < SHARED_MS) return hit.promise
+  const promise = publicEventData(eventKey).then((res) => {
+    // A failure is not worth remembering: the next panel should try again.
+    if (res.error || !res.data) shared.delete(eventKey)
+    return res
+  })
+  shared.set(eventKey, { at: Date.now(), promise })
+  return promise
+}
+
+/** Forget the shared copy, after a forced refresh has fetched a newer one. */
+export const forgetPublicEvent = (eventKey) => shared.delete(eventKey)
+
+/**
+ * The public record for an event as a map, team number → row. Fail-soft: a
+ * panel that shows these numbers as a supplement gets an empty map when the
+ * source is down, never an error to render.
+ */
+export function usePublicEvent(eventKey) {
+  const [teams, setTeams] = useState(() => new Map())
+  useEffect(() => {
+    let alive = true
+    setTeams(new Map())
+    if (!eventKey) return undefined
+    sharedEventData(eventKey).then((res) => {
+      if (alive) setTeams(byTeam(res.data))
+    })
+    return () => {
+      alive = false
+    }
+  }, [eventKey])
+  return teams
 }
 
 /** team number → its public row, for panels that want one team's numbers. */

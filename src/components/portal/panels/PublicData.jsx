@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { navigate } from '../../../lib/router'
 import { listEvents, teamStats } from '../../../lib/scoutingApi'
-import { publicEventData } from '../../../lib/publicData'
+import { forgetPublicEvent, publicEventData } from '../../../lib/publicData'
 import { ErrorState, Loading, Empty } from '../ui'
 import { rememberDetailTeam } from './TeamDetail'
 import styles from '../Portal.module.css'
@@ -71,6 +71,7 @@ export default function PublicData() {
 
   const load = useCallback(async (force = false) => {
     if (!eventKey) return
+    if (force) forgetPublicEvent(eventKey)
     force ? setRefreshing(true) : setState((s) => ({ ...s, loading: true, error: null }))
     // Our own statistics are optional here: the public table stands without them.
     const [pub, ours] = await Promise.all([publicEventData(eventKey, { force }), teamStats(eventKey)])
