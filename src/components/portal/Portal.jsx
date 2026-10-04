@@ -1,4 +1,4 @@
-import { Component, useEffect, useState } from 'react'
+import { Component, useEffect, useRef, useState } from 'react'
 import Icon from '../Icon'
 import { AuthProvider, useAuth } from '../../lib/auth'
 import { navigate } from '../../lib/router'
@@ -115,6 +115,27 @@ function PortalInner({ sub }) {
     setMenuOpen(false)
   }, [sub])
 
+  // On a short window the rail is taller than the space it sticks in and scrolls
+  // inside itself. Lenis owns the wheel, so without `data-lenis-prevent` a wheel
+  // over the rail moves the page and the tabs below the fold cannot be reached
+  // with a mouse at all. It is set only while the rail really overflows: a rail
+  // that fits should hand the wheel to the page like any other part of it.
+  const railRef = useRef(null)
+  const [railScrolls, setRailScrolls] = useState(false)
+  useEffect(() => {
+    const rail = railRef.current
+    if (!rail) return
+    const measure = () => setRailScrolls(rail.scrollHeight > rail.clientHeight + 1)
+    measure()
+    const watch = new ResizeObserver(measure)
+    watch.observe(rail)
+    window.addEventListener('resize', measure)
+    return () => {
+      watch.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [loading, signedIn, awaitingApproval, profileError, role])
+
   if (!configured) return <NotConfigured />
   // Only the very first session resolution shows a spinner. Later navigations
   // reuse the resolved session, so panels never flash a loading state on tab
@@ -166,8 +187,10 @@ function PortalInner({ sub }) {
 
       <div className={styles.body}>
         <nav
+          ref={railRef}
           className={`${styles.rail} ${menuOpen ? styles.railOpen : ''}`}
           aria-label="Portal sections"
+          {...(railScrolls ? { 'data-lenis-prevent': '' } : null)}
         >
           {GROUPS.map((g) => {
             const items = visible.filter((p) => p.group === g.id)
