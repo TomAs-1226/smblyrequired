@@ -59,7 +59,7 @@
 }
 .epaTag {
   font-family: var(--font-display);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -98,17 +98,30 @@
 }
 
 /* --- Insight strip ----------------------------------------------------------- */
+/* Four across with room, two by two without — never three and one. */
 .insights {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-3);
 }
+@media (max-width: 1180px) {
+  .insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 440px) {
+  .insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* What it is, who it is, and the number that earned it — each on its own line,
+   so the team's name has the card's full width before it has to be cut. */
 .insight {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas: 'icon label' 'team value';
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'icon label' 'team team' 'value value';
   align-items: center;
-  gap: 3px var(--sp-2);
+  gap: 5px var(--sp-2);
   padding: var(--sp-3) var(--sp-4);
   background: var(--surface-raised);
   border: 1px solid var(--border-hairline);
@@ -123,7 +136,7 @@
 .insightLabel {
   grid-area: label;
   font-family: var(--font-display);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -152,8 +165,7 @@
 }
 .insightValue {
   grid-area: value;
-  justify-self: end;
-  align-self: end;
+  justify-self: start;
   font-family: var(--font-mono);
   font-size: 0.88rem;
   font-weight: 600;
@@ -189,7 +201,7 @@
 }
 .boardHead {
   font-family: var(--font-display);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -273,7 +285,7 @@
 }
 .conf {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-pill);
@@ -529,7 +541,7 @@
 }
 .slotMeta {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
   overflow: hidden;
@@ -587,7 +599,6 @@
   align-items: center;
   width: var(--w, 50%);
   color: var(--text-primary);
-  transition: width var(--dur-panel) var(--ease-out);
 }
 .winRed {
   justify-content: flex-start;
@@ -637,5 +648,15 @@
   }
   .colTrend {
     display: none;
+  }
+}
+
+@media (max-width: 860px), (pointer: coarse) {
+  .refresh,
+  .slotInput {
+    min-height: 44px;
+  }
+  .slotInput {
+    font-size: 16px;
   }
 }

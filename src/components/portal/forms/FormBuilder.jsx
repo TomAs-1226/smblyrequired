@@ -1013,10 +1013,15 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
             <span className={styles.countBadge}>{blocks.length}</span>
           </h2>
 
+          {/* One span: .note is a flex row (icon + text), and loose text mixed
+              with <strong> becomes a row of separate columns that cannot wrap —
+              on a phone that pushed the whole page 50px wider than the screen. */}
           <p className={b.note}>
-            A scout answers one <strong>section</strong> per screen, and a screen starts wherever the
-            section value changes. A <strong>Heading</strong> block is a sub-title <em>inside</em> a
-            screen — it does not start a new one.
+            <span>
+              A scout answers one <strong>section</strong> per screen, and a screen starts wherever
+              the section value changes. A <strong>Heading</strong> block is a sub-title{' '}
+              <em>inside</em> a screen — it does not start a new one.
+            </span>
           </p>
 
           {hasEntries && (
@@ -1120,7 +1125,8 @@ export default function FormBuilder({ form, onDone, onSaved, canWrite = true }) 
           <p className={b.note}>
             The real renderer, on the real definition — not a mock-up of it.
           </p>
-          <div className={b.device}>
+          {/* Scrolls inside itself; Lenis would otherwise send the wheel to the page. */}
+          <div className={b.device} data-lenis-prevent>
             {previewFields.length === 0 ? (
               <p className={b.deviceEmpty}>Blocks appear here as you add them.</p>
             ) : (
@@ -1466,6 +1472,7 @@ export function Confirm({ title, body, danger, typed, confirmLabel, onCancel, on
       <div
         ref={dialogRef}
         className={b.dialog}
+        data-lenis-prevent
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="fb-confirm-title"

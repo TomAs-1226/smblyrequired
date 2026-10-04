@@ -204,7 +204,7 @@
 }
 .teamNumTag {
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -393,7 +393,7 @@
   justify-content: space-between;
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -528,7 +528,7 @@
 }
 .kindTag {
   font-family: var(--font-display);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -559,7 +559,7 @@
 }
 .alliance {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 2px 8px;
@@ -586,7 +586,9 @@
 
 .dataGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* 132px lets a six-question match form sit on one line in the desktop panel;
+     at 160 the sixth dropped to a row of its own on every entry. */
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   gap: var(--sp-2) var(--sp-3);
 }
 .dataRow {
@@ -995,7 +997,7 @@
 .aiFoot {
   margin-top: var(--sp-3);
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 /* Muted, never red. The numbers above are complete without any of this. */
@@ -1009,7 +1011,7 @@
 }
 .aiWhy {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);
@@ -1034,7 +1036,15 @@
     width: 100%;
   }
   .pickList {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Sixteen entries of six answers each were six screens of single-column
+     cards. Tighter cards, answers two across. */
+  .entry {
+    padding: var(--sp-3);
+  }
+  .dataGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1110,7 +1120,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1191,7 +1201,7 @@
 .tbaHint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: none;
@@ -1231,7 +1241,7 @@
 }
 .tbaAlliance {
   font-family: var(--font-display);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;

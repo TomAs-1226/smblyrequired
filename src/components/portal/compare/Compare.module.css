@@ -322,6 +322,10 @@
    the team numbers and recover, but a column of bare numbers with no visible
    metric labels is unreadable. */
 .scroller {
+  /* Positioned, so the screen-reader-only labels inside the table (which are
+     position: absolute) are clipped by this box too. Unpositioned, they escaped
+     it and made the whole page 100px wider than a phone. */
+  position: relative;
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
@@ -445,7 +449,7 @@
 
 .dir {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-sm);
@@ -462,7 +466,7 @@
   min-height: 44px;
   padding: 4px 9px;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--accent-gold);
   background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
@@ -488,7 +492,7 @@
 
 .orphan {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   border: 1px dashed var(--border-strong);
   border-radius: var(--r-sm);
@@ -593,7 +597,7 @@
   gap: 4px;
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 .colFlag {
@@ -653,7 +657,7 @@
 .valueDetail {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 3px;
 }
@@ -714,7 +718,7 @@
 
 .aheadTag {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   border: 1px solid var(--border-hairline);
   border-radius: var(--r-sm);
@@ -724,7 +728,7 @@
    takes the accent, not the muted grey of a coin-flip lead. */
 .leansTag {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--accent-data);
   border: 1px solid var(--border-accent);
   border-radius: var(--r-sm);
@@ -796,7 +800,7 @@
   gap: 1px;
   margin-top: 7px;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   border-radius: var(--r-sm);
   padding: 4px 7px;
@@ -927,7 +931,7 @@
 .aiFoot {
   margin-top: var(--sp-3);
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -942,7 +946,7 @@
 }
 .aiWhy {
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   background: var(--surface-sunken);
   border: 1px solid var(--border-hairline);

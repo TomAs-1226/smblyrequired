@@ -340,7 +340,7 @@ export default function GraphViewer({ graph, onSelectNode }) {
       </div>
 
       {selected && (
-        <aside className={styles.inspector}>
+        <aside className={styles.inspector} data-lenis-prevent>
           <div className={styles.inspectorHead}>
             <h4 className={styles.inspectorTitle}>
               {selected.god && <Icon name="star" size={14} className={styles.godIcon} />}

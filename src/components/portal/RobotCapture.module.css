@@ -78,7 +78,7 @@
   font-size: 1.3rem;
 }
 .countSub {
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -154,7 +154,7 @@
   border-radius: 50%;
   border: 1px solid currentColor;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -430,7 +430,7 @@
 
 .metricLabel {
   font-family: var(--font-display);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;

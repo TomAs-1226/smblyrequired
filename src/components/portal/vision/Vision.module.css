@@ -59,8 +59,10 @@
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-.tab:hover {
-  color: var(--text-body);
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    color: var(--text-body);
+  }
 }
 .tabOn {
   background: var(--surface-2);
@@ -286,8 +288,10 @@
   cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-.focusBtn:hover {
-  border-color: var(--border-accent);
+@media (hover: hover) and (pointer: fine) {
+  .focusBtn:hover {
+    border-color: var(--border-accent);
+  }
 }
 .focusBtnOn {
   border-color: var(--accent-data);
@@ -326,8 +330,10 @@
   background: var(--accent-data);
   color: var(--text-on-cyan);
 }
-.startBtn:hover:not(:disabled) {
-  filter: brightness(1.08);
+@media (hover: hover) and (pointer: fine) {
+  .startBtn:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
 }
 .startBtn:active:not(:disabled) {
   transform: scale(0.99);
@@ -342,8 +348,10 @@
   color: var(--danger);
   border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
 }
-.stopBtn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger) 26%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .stopBtn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 26%, transparent);
+  }
 }
 .stopBtn:disabled {
   opacity: 0.7;
@@ -410,9 +418,11 @@
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 }
-.focusPill:hover {
-  color: var(--text-body);
-  border-color: var(--border-accent);
+@media (hover: hover) and (pointer: fine) {
+  .focusPill:hover {
+    color: var(--text-body);
+    border-color: var(--border-accent);
+  }
 }
 .focusPillOn {
   background: var(--accent-data-wash);
@@ -495,8 +505,10 @@
   text-align: left;
   color: var(--text-body);
 }
-.sessionHead:hover {
-  background: var(--accent-data-wash);
+@media (hover: hover) and (pointer: fine) {
+  .sessionHead:hover {
+    background: var(--accent-data-wash);
+  }
 }
 .sessionMain {
   display: flex;
@@ -677,8 +689,10 @@
   text-align: left;
   color: var(--text-body);
 }
-.modelHead:hover {
-  background: var(--accent-data-wash);
+@media (hover: hover) and (pointer: fine) {
+  .modelHead:hover {
+    background: var(--accent-data-wash);
+  }
 }
 .modelHeadMain {
   display: flex;
@@ -762,9 +776,11 @@
   white-space: nowrap;
   transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.modelReset:hover:not(:disabled) {
-  color: var(--text-body);
-  border-color: var(--border-accent);
+@media (hover: hover) and (pointer: fine) {
+  .modelReset:hover:not(:disabled) {
+    color: var(--text-body);
+    border-color: var(--border-accent);
+  }
 }
 .modelReset:disabled {
   opacity: 0.5;
@@ -796,5 +812,59 @@
   .sessionNum:nth-child(2),
   .sessionNum:nth-child(3) {
     display: none;
+  }
+}
+
+/* --- Keyboard and press states -------------------------------------------- */
+/* Every control above answers a mouse; these give a keyboard the same change
+   and a finger something to feel. Press is instant on purpose. */
+.tab:focus-visible {
+  color: var(--text-body);
+}
+.focusBtn:focus-visible,
+.focusPill:focus-visible,
+.modelReset:focus-visible {
+  border-color: var(--border-accent);
+}
+.focusPill:focus-visible,
+.modelReset:focus-visible {
+  color: var(--text-body);
+}
+.sessionHead:focus-visible,
+.modelHead:focus-visible {
+  background: var(--accent-data-wash);
+}
+.stopBtn:focus-visible {
+  background: color-mix(in srgb, var(--danger) 26%, transparent);
+}
+.tab:active,
+.focusBtn:active,
+.focusPill:active,
+.stopBtn:active:not(:disabled),
+.modelReset:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.sessionHead:active,
+.modelHead:active {
+  transform: scale(0.99);
+}
+
+@media (max-width: 860px), (pointer: coarse) {
+  .tab,
+  .focusPill,
+  .modelReset {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab:active,
+  .focusBtn:active,
+  .focusPill:active,
+  .stopBtn:active,
+  .modelReset:active,
+  .sessionHead:active,
+  .modelHead:active {
+    transform: none;
   }
 }
