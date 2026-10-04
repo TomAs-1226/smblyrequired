@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../Icon'
 import { useAuth } from '../../lib/auth'
-import { supabase } from '../../lib/supabase'
+import { isConfigured } from '../../lib/db'
 import { uploadFile, sha256Hex, formatBytes } from '../../lib/portalApi'
-import { enqueue, isOnline } from '../../lib/offlineQueue'
+import { enqueue, isOnline, pushNow } from '../../lib/offlineQueue'
 import portal from './Portal.module.css'
 import styles from './RobotCapture.module.css'
 
@@ -23,9 +23,9 @@ import styles from './RobotCapture.module.css'
 // =============================================================================
 
 // --- The sequence ------------------------------------------------------------
-// The ids are exactly the values allowed by the `robot_photos.angle` check
-// constraint in supabase/migrations/0005_scouting.sql. Adding one here without
-// adding it there produces a row the database rejects at insert time.
+// The ids are exactly the angles the `robot_photos` rule in
+// firebase/firestore.rules allows. Adding one here without adding it there
+// produces a photo the server refuses when it is saved.
 const ANGLES = [
   { id: 'front', label: 'Front', hint: 'Square on to the front bumper. Whole robot in frame.' },
   { id: 'side', label: 'Side', hint: 'One full side profile. Get the bumper number if you can.' },
@@ -123,21 +123,21 @@ const MODEL_LOAD_TIMEOUT_MS = 15000
 // --- Offline: how a photo survives no signal ---------------------------------
 //
 // Saving a photo is THREE writes: the bytes (a Storage object), a `files` index
-// row, and the `robot_photos` link to the team. Online, this component does the
-// first two itself (portalApi.uploadFile) so the scout sees the upload finish.
-// Whatever cannot be done now goes to the offline queue's `robot_photo` kind
-// (src/lib/queuePush.js), which accepts either shape:
+// document, and the `robot_photos` document that links it to the team. Online,
+// this component does the first two itself (portalApi.uploadFile) so the scout
+// sees the upload finish. Whatever cannot be done now goes to the offline queue's
+// `robot_photo` kind (src/lib/queuePush.js), which accepts either shape:
 //
 //   upload failed, no signal   -> { ...link, _upload: { file, bucket, path, … } }
 //                                 the queue uploads, indexes and links later
-//   upload landed, link failed -> { ...link, file_id }
-//                                 the queue only inserts the link
+//   upload landed, link failed -> { ...link, file: { id, bucket, path } }
+//                                 the queue only writes the link
 //
-// Every step is idempotent (fixed path + upsert, unique (bucket, path), unique
-// client_uuid), so a retry after a half-finished drain completes rather than
-// duplicating. Both shapes once failed: the queue rejected a link-only row as
-// "no file attached" and retried it forever, and a photo taken with no signal
-// could not be banked at all.
+// Every step is safe to re-run (a fixed path, a files document whose id is that
+// path, a photo document whose id is the client_uuid), so a retry after a
+// half-finished drain completes rather than duplicating. Both shapes once failed:
+// the queue rejected a link-only row as "no file attached" and retried it
+// forever, and a photo taken with no signal could not be banked at all.
 
 // A failed upload should not read as "you did something wrong". These are the
 // shapes a dead or captive-portal network produces.
@@ -604,12 +604,12 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
     setStage('live')
   }, [clearPreview])
 
-  // NOTE: retaking an angle that already SAVED adds a second robot_photos row
-  // rather than replacing the first — there is no unique index on
-  // (event_key, team_number, angle), and the RLS policies give a `member`
-  // insert and select but not delete, so this component cannot clean up after
-  // itself without a lead's privileges. Anything reading these photos should
-  // take the newest row per angle by created_at. The alternative — refusing to
+  // NOTE: retaking an angle that already SAVED adds a second robot_photos
+  // document rather than replacing the first — a photo's id is its own
+  // client_uuid, and the security rules let a `member` add and read photos but
+  // not delete them, so this component cannot clean up after itself without a
+  // lead's privileges. Anything reading these photos should take the newest
+  // document per angle by created_at. The alternative — refusing to
   // retake a saved angle — trades a duplicate row for an unusable photo, which
   // is the worse end of the deal.
   const jumpTo = useCallback(
@@ -629,7 +629,7 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
 
   const accept = useCallback(async () => {
     if (!pending || stage === 'saving') return
-    if (!supabase) {
+    if (!isConfigured) {
       setSaveError('The portal is not connected to a backend, so photos cannot be saved.')
       return
     }
@@ -698,8 +698,8 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
 
     if (upErr || !fileRow) {
       // No signal: bank the whole photo — bytes included — in the offline queue.
-      // Its `robot_photo` handler uploads the file, writes the `files` row and
-      // links it on the next drain, each step safe to re-run. The path is fixed
+      // Its `robot_photo` handler uploads the file, writes the `files` document
+      // and links it on the next drain, each step safe to re-run. The path is fixed
       // now, so a retry lands on the same object instead of a duplicate.
       if (!isOnline() || looksLikeNetworkFailure(upErr)) {
         try {
@@ -736,18 +736,20 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
     }
 
     // --- 2. the link ---------------------------------------------------------
+    // The photo document carries where its bytes live ({ id, bucket, path }),
+    // because there are no joins to follow an id through.
     const row = {
       client_uuid: clientUuid,
-      event_key: eventKey,
+      event_key: eventKey ?? null,
       team_number: Number(teamNumber),
       angle: angle.id,
-      file_id: fileRow.id,
+      file: { id: fileRow.id, bucket: fileRow.bucket, path: fileRow.path },
       quality: pending.quality,
       taken_by: user.id,
     }
 
-    // The bytes are already safe in the bucket, so from here the row is the only
-    // thing at risk — and the row is exactly what offlineQueue can carry.
+    // The bytes are already safe in Storage, so from here the link is the only
+    // thing at risk — and the link is exactly what offlineQueue can carry.
     const queueRow = async () => {
       try {
         await enqueue('robot_photo', row)
@@ -767,26 +769,28 @@ export default function RobotCapture({ eventKey = null, teamNumber, onDone, onSa
       return
     }
 
-    const { error: rowErr } = await supabase.from('robot_photos').insert(row)
-    if (!rowErr) {
+    // Written now, by the same code the queue uses, so "uploaded" on screen
+    // means the server has the link and not merely that it is on its way.
+    const linked = await pushNow('robot_photo', row)
+    if (linked.ok) {
       finish('uploaded')
       return
     }
 
-    // A transport failure between the upload and the insert is exactly what the
-    // queue exists for. A rejection by the database (RLS, a bad angle value) is
-    // not, and retrying it forever would only hide it.
-    if (looksLikeNetworkFailure(rowErr.message) && (await queueRow())) {
+    // A failure to reach the server between the upload and the link is exactly
+    // what the queue exists for. A refusal by the server (the security rules, a
+    // bad angle value) is not, and retrying it forever would only hide it.
+    if (!linked.terminal && (await queueRow())) {
       finish('queued')
       return
     }
 
-    // The object and its `files` row exist; only the robot_photos link failed.
-    // Stated plainly, because "uploaded but not attached to this team" is a
-    // genuinely different situation from "did not upload", and the recovery is
+    // The object and its `files` document exist; only the robot_photos link
+    // failed. Stated plainly, because "uploaded but not attached to this team" is
+    // a genuinely different situation from "did not upload", and the recovery is
     // different too.
     fail(
-      `The photo uploaded but was not linked to team ${teamNumber}: ${rowErr.message} A lead can re-link it from Files.`
+      `The photo uploaded but was not linked to team ${teamNumber}: ${linked.error} A lead can re-link it from Files.`
     )
   }, [pending, stage, user, eventKey, teamNumber, angle, shots, index, advance, clearPreview, onSaved])
 
@@ -1134,8 +1138,8 @@ function Metric({ label, value, bad = false }) {
 
 // NOTE for whoever wires this in: skips are reported here and handed to
 // onDone({ shots }) rather than written to the database. `robot_photos` has no
-// column for "deliberately absent", and inserting a row with a null file_id
-// would put a photo-less photo in front of every gallery that joins on it.
+// field for "deliberately absent", and a photo document with no file would put
+// a photo-less photo in front of every gallery that reads the collection.
 // Persist skips wherever the pit form for this team lives.
 function Summary({ teamNumber, shots, onReview, onDone }) {
   const captured = ANGLES.filter((a) => shots[a.id]?.status === 'captured')

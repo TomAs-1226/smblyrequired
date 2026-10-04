@@ -234,7 +234,7 @@ export default function Compare() {
   /**
    * The written comparison, one call per column.
    *
-   * `scouting_summary` takes ONE team (read supabase/functions/ai/index.ts) —
+   * `scouting_summary` takes ONE team (read the `ai` function in functions/) —
    * there is no compare task, so this fans out and stacks the answers rather
    * than inventing a combined prompt the function does not implement.
    *
@@ -247,14 +247,10 @@ export default function Compare() {
     setAi({ running: true, results: null })
     const out = await Promise.all(
       selected.map(async (team) => {
+        // askAi answers { data, error } with the function's payload as `data`:
+        // { summary, matches_scouted, model, … }.
         const res = await askAi('scouting_summary', { eventKey, teamNumber: team })
-        // Two envelopes. The edge function's ok() wraps its payload as
-        // { data, error }, and askAi() returns invoke()'s parsed body without
-        // unwrapping it — so the summary sits at res.data.data. syncFromTba()
-        // in the same module does the `data?.data ?? data` dance for exactly
-        // this reason; askAi() does not, so it is done here.
-        const payload = res.data?.data ?? res.data
-        return { team, error: res.error, payload: payload ?? null }
+        return { team, error: res.error, payload: res.data ?? null }
       })
     )
     setAi({ running: false, results: out })
@@ -809,12 +805,10 @@ function AiNarrative({ ai, columns, onRun, disabled }) {
             // convenience on top of them, and a missing OpenAI key must read as
             // "one optional extra is off" rather than "the panel is broken".
             //
-            // The message is deliberately vague about WHY, because it has to
-            // be: supabase-js turns any non-2xx from an edge function into a
-            // generic "non-2xx status code", so the function's own clear
-            // "OPENAI_API_KEY is not configured on the server." never reaches
-            // the browser. Whatever did arrive is shown underneath rather than
-            // dressed up as a diagnosis.
+            // The headline stays general and the reason goes underneath in the
+            // function's own words ("OPENAI_API_KEY is not configured on the
+            // server.", a rate limit), shown as it arrived rather than dressed
+            // up as a diagnosis.
             <p className={css.aiOff}>
               <Icon name="alert" size={14} />
               AI summary unavailable for this team.
@@ -822,7 +816,7 @@ function AiNarrative({ ai, columns, onRun, disabled }) {
             </p>
           ) : (
             <>
-              {/* Verbatim. The prompt in supabase/functions/ai/index.ts is built
+              {/* Verbatim. The prompt in the `ai` function (functions/) is built
                   around making the model state its sample size and refuse to
                   extrapolate; re-phrasing it here would throw that away. */}
               <p className={css.aiText}>{r.payload.summary}</p>

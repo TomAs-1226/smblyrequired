@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../Icon'
 import { useAuth } from '../../../lib/auth'
-import { supabase } from '../../../lib/supabase'
 import {
   listEvents,
+  listEventTeams,
   teamStats,
+  eventCoverage,
   askAi,
+  listPicklists,
+  createPicklist,
+  picklistEntries,
+  addPicklistTeams,
   movePicklistEntry,
   respacePicklistTier,
   setPicklistLock,
+  DEFAULT_PICKLIST_TIERS,
 } from '../../../lib/scoutingApi'
 import { sortEntries, planMove, locate } from './position'
 import { parseProposal } from './aiProposal'
@@ -30,14 +36,6 @@ import styles from './PickList.module.css'
 //   * Nothing here silently reorders. Every move is announced, and the AI can
 //     only ever propose — never apply.
 // -----------------------------------------------------------------------------
-
-const DEFAULT_TIERS = [
-  { key: 's', label: 'S' },
-  { key: 'a', label: 'A' },
-  { key: 'b', label: 'B' },
-  { key: 'c', label: 'C' },
-  { key: 'unranked', label: 'Unranked' },
-]
 
 export default function PickList() {
   const { atLeast, user } = useAuth()
@@ -61,7 +59,7 @@ export default function PickList() {
   const [aiError, setAiError] = useState(null)
   const boardRef = useRef(null)
 
-  const tiers = list?.tiers?.length ? list.tiers : DEFAULT_TIERS
+  const tiers = list?.tiers?.length ? list.tiers : DEFAULT_PICKLIST_TIERS
 
   useEffect(() => {
     listEvents(new Date().getFullYear()).then(({ data }) => setEvents(data))
@@ -78,28 +76,33 @@ export default function PickList() {
     }
     setState({ loading: true, error: null })
 
-    const [{ data: lists }, { data: st }, cov] = await Promise.all([
-      supabase.from('picklists').select('*').eq('event_key', eventKey).order('updated_at', { ascending: false }).limit(1),
+    const [found, { data: st }, cov] = await Promise.all([
+      listPicklists(eventKey),
       teamStats(eventKey),
-      supabase.from('event_scout_coverage').select('*').eq('event_key', eventKey).maybeSingle(),
+      eventCoverage(eventKey),
     ])
 
     setStats(Object.fromEntries((st ?? []).map((s) => [s.team_number, s])))
     setCoverage(cov?.data ?? null)
 
-    let current = lists?.[0] ?? null
+    // A read that failed is not "no list yet". Treating it as one would create a
+    // second list for the event, and — worse, below — re-seed a board that
+    // already holds an afternoon of ranking.
+    if (found.error) {
+      setState({ loading: false, error: found.error })
+      return
+    }
+
+    // The most recently touched list for the event.
+    let current = found.data[0] ?? null
 
     // Create on first visit rather than showing an empty-state button. The list
     // is the point of the screen, and one fewer click at 4pm on a Saturday is
     // worth more than the tidiness of an explicit "create" step.
     if (!current && canEdit) {
-      const { data: made, error } = await supabase
-        .from('picklists')
-        .insert({ event_key: eventKey, name: 'Pick list' })
-        .select()
-        .single()
+      const { data: made, error } = await createPicklist({ eventKey, name: 'Pick list', userId: user?.id })
       if (error) {
-        setState({ loading: false, error: error.message })
+        setState({ loading: false, error })
         return
       }
       current = made
@@ -110,36 +113,33 @@ export default function PickList() {
       return
     }
 
-    const { data: rows } = await supabase
-      .from('picklist_entries')
-      .select('*')
-      .eq('picklist_id', current.id)
+    const existing = await picklistEntries(current.id)
+    if (existing.error) {
+      setState({ loading: false, error: existing.error })
+      return
+    }
 
     // Seed from the roster on first open so the board starts populated rather
-    // than making someone add sixty teams by hand.
-    let seeded = rows ?? []
-    if (!seeded.length && canEdit) {
-      const { data: teamRows } = await supabase
-        .from('event_teams')
-        .select('team_number')
-        .eq('event_key', eventKey)
-        .order('team_number')
+    // than making someone add sixty teams by hand. Only ever into a list that was
+    // read and found empty, and not a locked one: an entry's id is its team
+    // number, so seeding over a populated board would reset every card on it.
+    let seeded = existing.data
+    if (!seeded.length && canEdit && !current.is_locked) {
+      const { data: teamRows } = await listEventTeams(eventKey)
       if (teamRows?.length) {
-        const payload = teamRows.map((t, i) => ({
-          picklist_id: current.id,
-          team_number: t.team_number,
-          tier: 'unranked',
-          position: (i + 1) * 10,
-        }))
-        const { data: inserted } = await supabase.from('picklist_entries').insert(payload).select()
-        seeded = inserted ?? []
+        const { data: added } = await addPicklistTeams(
+          current.id,
+          teamRows.map((t, i) => ({ team_number: t.team_number, tier: 'unranked', position: (i + 1) * 10 })),
+          user?.id
+        )
+        seeded = added ?? []
       }
     }
 
     setList(current)
     setEntries(seeded)
     setState({ loading: false, error: null })
-  }, [eventKey, canEdit])
+  }, [eventKey, canEdit, user?.id])
 
   useEffect(() => {
     load()
@@ -188,15 +188,16 @@ export default function PickList() {
         })
       : await movePicklistEntry({
           id: entry.id,
+          picklistId: list.id,
           tier: toTier,
           position: plan.position,
           userId: user?.id,
         })
 
     if (error) {
-      // Already readable: lockAware() forwards the trigger's own message and
-      // hint for a locked list (migration 0006). Reload to drop the optimistic
-      // move and pick up whatever state made the write fail.
+      // Already readable: for a locked list scoutingApi says so, in the words
+      // written for whoever hits it. Reload to drop the optimistic move and pick
+      // up whatever state made the write fail.
       setActionError(error)
       load()
     }
@@ -305,7 +306,9 @@ export default function PickList() {
       setActionError(error)
       return
     }
-    setList(data)
+    // Laid over the list on screen, so a lock that landed but could not be read
+    // back in full still shows as locked, with its name and tiers intact.
+    setList((current) => ({ ...current, ...data }))
   }
 
   // --- render ------------------------------------------------------------------
@@ -488,7 +491,7 @@ function Proposal({ proposal, tiers, onAccept, onDismiss }) {
         </button>
       </header>
 
-      {/* Verbatim, unparsed. The edge function is prompted to lead with sample
+      {/* Verbatim, unparsed. The `ai` function is prompted to lead with sample
           size and to refuse to rank teams it cannot — summarising that here
           would delete the most valuable sentence on the screen. */}
       <div className={styles.proposalBody}>

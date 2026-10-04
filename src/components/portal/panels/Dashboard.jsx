@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Icon from '../../Icon'
+import {
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocsFromServer,
+  getCountFromServer,
+} from 'firebase/firestore'
 import { useAuth } from '../../../lib/auth'
-import { supabase } from '../../../lib/supabase'
+import { db } from '../../../lib/firebase'
+import { rows } from '../../../lib/db'
 import { backupHealth, listFiles, formatBytes } from '../../../lib/portalApi'
-import { listEntries, teamStats, listVisionSessions } from '../../../lib/scoutingApi'
+import { listEntries, teamStats, eventCoverage } from '../../../lib/scoutingApi'
 import { useOfflineQueue } from '../../../hooks/useOfflineQueue'
 import { navigate } from '../../../lib/router'
 import { Loading, ErrorState, StatTile, Empty } from '../ui'
@@ -36,11 +46,10 @@ function errText(e) {
   return typeof e === 'string' ? e : e.message || null
 }
 
-// Run one read to a { ok, value } record. Supabase resolves a network or policy
-// failure as { error } rather than throwing, and RLS row-filtering hands back
-// empty data with NO error — so a viewer's legitimately-empty read still counts
-// as ok, and only a real failure (a thrown error, or an `error` field) flips ok
-// to false. `value` is preserved on failure so the caller can read its message.
+// Run one read to a { ok, value } record. The API functions resolve a failure as
+// { error }; a bare Firestore read throws. Either flips ok to false, and only a
+// read that actually answered counts as ok. `value` is preserved on failure so
+// the caller can read its message.
 async function settle(promise, fallback) {
   try {
     const value = await promise
@@ -51,30 +60,43 @@ async function settle(promise, fallback) {
   }
 }
 
-// Bucket recent entries into one count per day for the last `days` days, oldest
-// first, with empty days included so the line has a real baseline instead of
-// skipping the gaps. Done in the browser over ~500 recent rows, which keeps the
-// query a single `select recorded_at`.
-function bucketByDay(rows, days = 14) {
+// The last `days` local calendar days, oldest first, each with the instant it
+// starts — empty days included, so the line has a real baseline instead of
+// skipping the gaps.
+function dayBuckets(days = 14) {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   start.setDate(start.getDate() - (days - 1))
-  const buckets = Array.from({ length: days }, (_, i) => {
+  return Array.from({ length: days + 1 }, (_, i) => {
     const date = new Date(start)
     date.setDate(start.getDate() + i)
-    return { date, count: 0 }
+    return date
   })
-  const DAY_MS = 86400000
-  for (const r of rows) {
-    if (!r?.recorded_at) continue
-    const t = new Date(r.recorded_at)
-    if (Number.isNaN(t.getTime())) continue
-    t.setHours(0, 0, 0, 0)
-    const idx = Math.round((t.getTime() - start.getTime()) / DAY_MS)
-    if (idx >= 0 && idx < days) buckets[idx].count += 1
-  }
-  return buckets
+    .map((date, i, edges) => ({ date, until: edges[i + 1], count: 0 }))
+    .slice(0, days)
 }
+
+// How many entries were recorded on each of those days. Fourteen count queries
+// rather than the entries themselves: Firestore bills a read per document handed
+// back, this screen refreshes every 45 seconds, and a count costs one read
+// however many entries it counted. It is also exact — the old read took the
+// newest 500 rows, so a busy event under-drew its own first days.
+async function entriesPerDay(days = 14) {
+  const entries = collection(db, 'scout_entries')
+  const counted = await Promise.all(
+    dayBuckets(days).map(async (b) => {
+      const snap = await getCountFromServer(
+        query(entries, where('recorded_at', '>=', b.date), where('recorded_at', '<', b.until))
+      )
+      return { ...b, count: snap.data().count }
+    })
+  )
+  return { data: counted }
+}
+
+// A collection (or a filtered slice of one) as a number, without its documents.
+const countOf = async (name, ...filters) =>
+  (await getCountFromServer(query(collection(db, name), ...filters))).data().count
 
 // A 14-day pulse of scouting activity, drawn as an inline SVG — no charting
 // library, just a path. Purely presentational and deliberately static: this
@@ -182,7 +204,7 @@ const SCOUT_BASE_COLUMNS = [
   { key: 'kind', header: 'kind' },
   { key: 'match_number', header: 'match_number' },
   { key: 'alliance', header: 'alliance' },
-  // The scout's name, from the profile join listEntries now flattens onto the
+  // The scout's name, which listEntries looks up in the roster and puts on the
   // row. Falls back to the id if the profile is gone, so the column is never
   // silently blank.
   { header: 'scout', value: (row) => row?.scout_name ?? row?.scout_id ?? '' },
@@ -228,11 +250,15 @@ const INITIAL = {
 
 export default function Dashboard() {
   const { atLeast, profile, role } = useAuth()
-  // backup_runs is member+ in RLS, so a viewer legitimately reads zero rows.
-  // Without this gate an empty result would render as "No backup has ever run",
-  // which is alarming, wrong, and unactionable for the person seeing it. Not
-  // being allowed to see something is not the same as it not existing.
-  const canSeeBackups = atLeast('member')
+  // Everything but the roster and team media is member+ in the security rules,
+  // and the rules refuse a read outright rather than answering it empty. So a
+  // viewer's overview does not ask for what it may not have: those widgets keep
+  // their empty state instead of erroring, and the backup card is not drawn at
+  // all — "No backup has ever run" would be alarming, wrong, and unactionable
+  // for the person seeing it. Not being allowed to see something is not the same
+  // as it not existing.
+  const isMember = atLeast('member')
+  const canSeeBackups = isMember
   const [s, setS] = useState(INITIAL)
   const [manualBusy, setManualBusy] = useState(false)
 
@@ -273,21 +299,19 @@ export default function Dashboard() {
     // re-runs once it arrives (profile?.id is in the dependency array).
     const scoutId = profile?.id ?? null
 
-    // The six headline/archive counts. head:true returns the count without the
-    // rows. Each is caught to null independently, so one failing count degrades
-    // only its own tile instead of taking the other five down with it.
+    // The six headline/archive counts, as count queries: the number comes back
+    // without the documents. Each is caught to null independently, so one failing
+    // count degrades only its own tile instead of taking the other five down with
+    // it. A viewer may count the roster and nothing else.
+    const memberCount = (name) => (isMember ? countOf(name) : Promise.resolve(0))
     const countReads = [
-      supabase.from('scout_entries').select('id', { count: 'exact', head: true }),
-      supabase.from('graphs').select('id', { count: 'exact', head: true }),
-      supabase.from('code_archives').select('id', { count: 'exact', head: true }),
-      supabase.from('knowledge_docs').select('id', { count: 'exact', head: true }),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'pending'),
-    ].map((q) =>
-      Promise.resolve(q)
-        .then((r) => (r?.error ? null : (r?.count ?? 0)))
-        .catch(() => null)
-    )
+      memberCount('scout_entries'),
+      memberCount('graphs'),
+      memberCount('code_archives'),
+      memberCount('knowledge_docs'),
+      countOf('profiles'),
+      countOf('profiles', where('role', '==', 'pending')),
+    ].map((q) => q.then((n) => n ?? 0).catch(() => null))
 
     // Every read fires concurrently and is settled independently — the old
     // single Promise.all rejected the whole screen if any one read threw.
@@ -296,41 +320,42 @@ export default function Dashboard() {
         settle(canSeeBackups ? backupHealth() : Promise.resolve({ data: [], error: null }), { data: [] }),
         settle(listFiles({ limit: 5 }), { data: [] }),
         settle(
-          eventKey
-            ? supabase.from('event_scout_coverage').select('*').eq('event_key', eventKey).maybeSingle()
-            : Promise.resolve({ data: null }),
+          eventKey && isMember ? eventCoverage(eventKey) : Promise.resolve({ data: null }),
           { data: null }
         ),
+        // The six most recent entries, for the activity list. Asked of the server
+        // rather than the SDK's cache: offline, the cache would answer with an
+        // empty list and blank a widget that should keep its last good rows.
         settle(
-          supabase
-            .from('scout_entries')
-            .select('team_number, kind, recorded_at')
-            .order('recorded_at', { ascending: false })
-            .limit(6),
+          isMember
+            ? getDocsFromServer(
+                query(collection(db, 'scout_entries'), orderBy('recorded_at', 'desc'), limit(6))
+              ).then((snap) => ({ data: rows(snap) }))
+            : Promise.resolve({ data: [] }),
           { data: [] }
         ),
-        // Only recorded_at crosses the wire for the 14-day sparkline, capped at
-        // 500 rows and bucketed by day in the browser.
+        // One count per day for the 14-day sparkline.
+        settle(isMember ? entriesPerDay(14) : Promise.resolve({ data: [] }), { data: [] }),
+        // Top-team leaderboard for the active event. An event with no match
+        // entries yet legitimately reads nothing, which renders an empty state
+        // rather than a crash.
+        settle(eventKey && isMember ? teamStats(eventKey) : Promise.resolve({ data: [] }), { data: [] }),
+        // Vision capture sessions — the active event's, or every event's when
+        // none is selected. Only the count is surfaced, so only the count is read.
         settle(
-          supabase
-            .from('scout_entries')
-            .select('recorded_at')
-            .order('recorded_at', { ascending: false })
-            .limit(500),
-          { data: [] }
+          isMember
+            ? (eventKey
+                ? countOf('vision_sessions', where('event_key', '==', eventKey))
+                : countOf('vision_sessions')
+              ).then((count) => ({ count }))
+            : Promise.resolve({ count: 0 }),
+          { count: 0 }
         ),
-        // Top-team leaderboard for the active event. team_event_stats is member+
-        // in RLS, so a viewer — or an event with no match rows yet — legitimately
-        // reads nothing, which renders an empty state rather than a crash.
-        settle(eventKey ? teamStats(eventKey) : Promise.resolve({ data: [] }), { data: [] }),
-        // Vision capture sessions — the active event's, or the most recent across
-        // every event when none is selected. Only the count is surfaced.
-        settle(listVisionSessions(eventKey || null, 100), { data: [] }),
         // This scout's own lifetime entry count — a small, motivating figure.
-        // head-only, and only asked once we know who they are.
+        // A count query, and only asked once we know who they are.
         settle(
-          scoutId
-            ? supabase.from('scout_entries').select('id', { count: 'exact', head: true }).eq('scout_id', scoutId)
+          scoutId && isMember
+            ? countOf('scout_entries', where('scout_id', '==', scoutId)).then((count) => ({ count }))
             : Promise.resolve({ count: 0 }),
           { count: 0 }
         ),
@@ -397,11 +422,11 @@ export default function Dashboard() {
       activity: activity.ok ? (activity.value.data ?? []) : prev.activity,
       spark: spark.ok ? (spark.value.data ?? []) : prev.spark,
       leaders: leaders.ok ? (leaders.value?.data ?? []) : prev.leaders,
-      visionCount: vision.ok ? (vision.value?.data ?? []).length : prev.visionCount,
+      visionCount: vision.ok ? (vision.value?.count ?? 0) : prev.visionCount,
       myEntries: mine.ok ? (mine.value?.count ?? 0) : prev.myEntries,
     }))
     return true
-  }, [canSeeBackups, profile?.id])
+  }, [isMember, canSeeBackups, profile?.id])
 
   // First load, with a short retry ladder. Only a load that has never succeeded
   // walks the ladder; a venue blip on cold start self-heals instead of showing
@@ -509,7 +534,7 @@ export default function Dashboard() {
   const objects = Math.max(0, ...s.health.map((r) => r.object_count ?? 0))
   const first = profile?.full_name?.split(' ')[0]
   const today = new Date()
-  const buckets = bucketByDay(s.spark ?? [])
+  const buckets = s.spark?.length ? s.spark : dayBuckets(14)
   const sparkTotal = buckets.reduce((sum, b) => sum + b.count, 0)
   const sparkPeak = Math.max(0, ...buckets.map((b) => b.count))
   const myEntries = s.myEntries ?? 0

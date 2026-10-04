@@ -9,19 +9,32 @@
 // The shape:
 //   enqueue()  writes to IndexedDB FIRST and returns. It never waits on the
 //              network, so saving a match is instant and cannot fail.
-//   drain()    pushes pending rows to Supabase when there is real connectivity,
+//   drain()    pushes pending rows to Firestore when there is real connectivity,
 //              and only removes a row once the server has confirmed it.
 //
 // The contract that makes retries safe is `client_uuid`: generated here, on the
-// device, before the row exists anywhere else, and UNIQUE in the database
-// (migration 0005). If a row was accepted but the response was lost, the retry
-// collides — and a collision on client_uuid is SUCCESS, not an error. Getting
-// that backwards is what turns "sync failed, tap retry" into a silently doubled
-// dataset. A collision on any OTHER unique constraint is not proof of delivery;
-// queuePush.js tells them apart, and owns every other server answer too.
+// device, before the row exists anywhere else, and carried on the document the
+// server keeps. If a write was accepted but the answer was lost, the retry finds
+// a document holding its own client_uuid — and that is SUCCESS, not an error.
+// Getting that backwards is what turns "sync failed, tap retry" into a silently
+// doubled dataset. A document holding somebody ELSE's client_uuid is not proof of
+// delivery; queuePush.js tells them apart, and owns every other answer too.
+//
+// Firestore's own offline persistence is deliberately not what carries this. It
+// would hold a write and replay it later, but a replayed write that the security
+// rules refuse is dropped without anyone being told, and "your entry was outside
+// the scouting window" is exactly what a scout has to be told.
 // =============================================================================
 
-import { supabase, isConfigured } from './supabase'
+import {
+  doc,
+  getDocFromServer,
+  runTransaction,
+  serverTimestamp,
+} from 'firebase/firestore'
+import { ref as storageRef, uploadBytesResumable } from 'firebase/storage'
+import { db, storage } from './firebase'
+import { isConfigured, currentUid, row as asRow } from './db'
 import { pushRow } from './queuePush'
 
 const DB_NAME = 'frc5805-offline'
@@ -32,21 +45,69 @@ const STORE = 'pending'
 //
 // Two shapes, because two things genuinely differ:
 //
-//   table   — one insert. A scouting entry is a row and nothing else.
-//   storage — bytes THEN rows. A pit photo is a file in a bucket, a `files`
-//             index row, and a domain row, in that order, and a phone in a pit
-//             with no signal has to be able to bank all three.
+//   entry — one document. A scouting entry is a document and nothing else.
+//   photo — bytes THEN documents. A pit photo is an object in Storage, a `files`
+//           index document, and a `robot_photos` document, in that order, and a
+//           phone in a pit with no signal has to be able to bank all three.
 //
-// The storage shape exists because the original single-insert design could not
+// The photo shape exists because the original single-write design could not
 // express it: handing this queue a {bucket, path, file} envelope would have
-// inserted that envelope straight into a table, Postgres would have rejected it
-// as a column error, and the queue classifies column errors as terminal — so
-// the photo would have been silently discarded rather than retried. Worth
-// spelling out, because that failure looks like nothing at all until someone
-// goes looking for a photo that was never there.
+// written that envelope straight into a collection, the server would have
+// refused it as malformed, and the queue classifies that as terminal — so the
+// photo would have been silently discarded rather than retried. Worth spelling
+// out, because that failure looks like nothing at all until someone goes looking
+// for a photo that was never there.
 const HANDLERS = {
-  scout_entry: { kind: 'table', table: 'scout_entries' },
-  robot_photo: { kind: 'storage', table: 'robot_photos' },
+  scout_entry: { kind: 'entry' },
+  robot_photo: { kind: 'photo' },
+}
+
+// How long one photo upload may take before it is abandoned until the next drain.
+// The Storage SDK keeps retrying a dead connection for ten minutes on its own,
+// which would hold every entry queued behind the photo for that long.
+const UPLOAD_TIMEOUT_MS = 90_000
+
+// The part of Firestore and Storage a push needs (see queuePush.js). Reads ask
+// the server and never the SDK's cache: a decision to drop a row from the phone
+// has to rest on what the server holds now.
+//
+// Every write is a transaction, including the single-document `create`. A plain
+// setDoc with no connection does not fail: the SDK holds it in memory and its
+// promise stays pending until the network returns, which would leave the drain
+// stuck on one row with everything else queued behind it. A transaction is sent
+// now or fails now, and this queue — not the SDK's — is the one that retries.
+const store = {
+  uid: currentUid,
+  serverTime: serverTimestamp,
+  get: async (collection, id) => asRow(await getDocFromServer(doc(db, collection, id))),
+  create: (collection, id, data) =>
+    runTransaction(db, async (t) => {
+      t.set(doc(db, collection, id), data)
+    }),
+  transaction: (fn) =>
+    runTransaction(db, (t) =>
+      fn({
+        get: async (collection, id) => asRow(await t.get(doc(db, collection, id))),
+        create: (collection, id, data) => t.set(doc(db, collection, id), data),
+        update: (collection, id, patch) => t.update(doc(db, collection, id), patch),
+      })
+    ),
+  upload(bucket, path, file, { contentType, owner }) {
+    // The five "buckets" are top-level folders of the one Storage bucket, and the
+    // Storage rules require every object to name its owner.
+    const task = uploadBytesResumable(storageRef(storage, `${bucket}/${path}`), file, {
+      contentType,
+      customMetadata: { owner },
+    })
+    const timer = setTimeout(() => task.cancel(), UPLOAD_TIMEOUT_MS)
+    return task.then(
+      () => clearTimeout(timer),
+      (error) => {
+        clearTimeout(timer)
+        throw error
+      }
+    )
+  },
 }
 
 let dbPromise = null
@@ -184,6 +245,23 @@ function describe(row) {
   }
 }
 
+/**
+ * Try one write right now, without queueing it. Answers as queuePush does:
+ * { ok } when the server has it, { ok: false, error, terminal } when it does not —
+ * `terminal` meaning a retry would be refused the same way. For a caller that is
+ * online and wants to tell the scout "uploaded" rather than "queued": on a
+ * non-terminal failure it hands the same payload to enqueue().
+ */
+export async function pushNow(kind, payload) {
+  if (!isConfigured) return { ok: false, error: 'The portal is not connected to a backend yet.', terminal: true }
+  const client_uuid = payload.client_uuid ?? crypto.randomUUID()
+  try {
+    return await pushRow(store, { client_uuid, kind, payload: { ...payload, client_uuid } }, HANDLERS[kind])
+  } catch (err) {
+    return { ok: false, error: String(err?.message ?? err) }
+  }
+}
+
 /** Discard a row that will never succeed. Requires an explicit user decision. */
 export async function discard(clientUuid) {
   await tx('readwrite', (s) => s.delete(clientUuid))
@@ -225,6 +303,9 @@ let drainAgain = false
  */
 export async function drain({ force = false } = {}) {
   if (!isConfigured || !isOnline()) return { pushed: 0, failed: 0, skipped: true }
+  // Signed out, nothing can be delivered and nothing has been refused: the rows
+  // wait for the next sign-in without spending their retries.
+  if (!currentUid()) return { pushed: 0, failed: 0, skipped: true }
   if (syncing) {
     drainAgain = true
     return { pushed: 0, failed: 0, busy: true }
@@ -245,10 +326,11 @@ export async function drain({ force = false } = {}) {
 
       let result
       try {
-        result = await pushRow(supabase, row, HANDLERS[row.kind])
+        result = await pushRow(store, row, HANDLERS[row.kind])
       } catch (err) {
-        // A thrown fetch (DNS, captive portal, aborted request) is a transport
-        // failure, never a verdict on the data — always retryable.
+        // queuePush turns every server answer into a result. Anything that still
+        // throws (a blob the browser could not read back, a bug) is not a verdict
+        // on the data — always retryable.
         result = { ok: false, error: String(err?.message ?? err) }
       }
       if (result.ok) {

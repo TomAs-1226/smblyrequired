@@ -1,4 +1,4 @@
-import { supabase, isConfigured } from './supabase'
+import { isConfigured, call } from './db'
 
 // -----------------------------------------------------------------------------
 // Statbotics EPA — an OPTIONAL external check on the Catalyst engine.
@@ -10,8 +10,8 @@ import { supabase, isConfigured } from './supabase'
 //
 // EPA field paths are read defensively because Statbotics' v3 payload nests the
 // headline number differently across shapes; we try the likely spots and give up
-// quietly. The proxy (member+, cached) does the actual fetch — see
-// supabase/functions/statbotics-proxy.
+// quietly. The `statboticsProxy` Cloud Function (member+, cached) does the actual
+// fetch — see functions/.
 // -----------------------------------------------------------------------------
 
 // Pull the single comparable EPA number (expected points) out of a TeamEvent /
@@ -41,12 +41,9 @@ const teamOf = (row) => row?.team ?? row?.team_number ?? null
 export async function statboticsEvent(eventKey) {
   if (!isConfigured || !eventKey) return { data: null, error: null }
   try {
-    const { data, error } = await supabase.functions.invoke('statbotics-proxy', {
-      body: { action: 'event_teams', event: eventKey },
-    })
-    if (error) return { data: null, error: null } // Statbotics down / non-2xx — swallow
-    const payload = data?.data ?? data
-    const list = payload?.team_events
+    const { data, error } = await call('statboticsProxy', { action: 'event_teams', event: eventKey })
+    if (error) return { data: null, error: null } // Statbotics down or refused — swallow
+    const list = data?.team_events
     if (!Array.isArray(list)) return { data: null, error: null }
     const map = {}
     for (const row of list) {
@@ -67,12 +64,13 @@ export async function statboticsEvent(eventKey) {
 export async function statboticsTeamEvent(team, eventKey) {
   if (!isConfigured || !team || !eventKey) return { data: null, error: null }
   try {
-    const { data, error } = await supabase.functions.invoke('statbotics-proxy', {
-      body: { action: 'team_event', team: Number(team), event: eventKey },
+    const { data, error } = await call('statboticsProxy', {
+      action: 'team_event',
+      team: Number(team),
+      event: eventKey,
     })
     if (error) return { data: null, error: null }
-    const payload = data?.data ?? data
-    const row = payload?.team_event
+    const row = data?.team_event
     const epa = extractEpa(row)
     return { data: epa == null ? null : { epa, raw: row }, error: null }
   } catch {
