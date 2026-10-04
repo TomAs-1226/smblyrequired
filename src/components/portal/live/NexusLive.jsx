@@ -247,38 +247,36 @@ export default function NexusLive({ eventKey }) {
 
   // Nothing on screen yet — the only time the big spinner is allowed.
   if (!data) {
+    // These three sit above the scouting form on a phone. None of them is the
+    // reason the scout opened the page, so each is one line, not a card that
+    // pushes the form a screen further down.
     if (isSetupError(error)) {
       return (
-        <div className={css.state}>
-          <span className={css.stateIcon} aria-hidden="true">
-            <Icon name="compass" size={24} />
+        <p className={css.notice}>
+          <Icon name="compass" size={16} />
+          <span>
+            Field queue status is not connected. A lead needs to add the Nexus API key; scouting
+            works without it.
           </span>
-          <h3 className={css.stateTitle}>Live data isn’t connected yet</h3>
-          <p className={css.stateText}>
-            Live event data isn’t connected yet — a team lead needs to add the Nexus API key.
-          </p>
-        </div>
+        </p>
       )
     }
     if (error) {
       return (
-        <div className={css.state} role="alert">
-          <span className={`${css.stateIcon} ${css.stateIconBad}`} aria-hidden="true">
-            <Icon name="alert" size={24} />
-          </span>
-          <h3 className={css.stateTitle}>Couldn’t reach the field</h3>
-          <p className={css.stateText}>{error}</p>
-          <button type="button" className="btn btn--ghost" onClick={refresh}>
+        <div className={`${css.notice} ${css.noticeBad}`} role="alert">
+          <Icon name="alert" size={16} />
+          <span>Couldn’t reach the field queue. {error}</span>
+          <button type="button" className={css.refresh} onClick={refresh}>
             Try again
           </button>
         </div>
       )
     }
     return (
-      <div className={css.center} role="status" aria-live="polite">
-        <span className={css.spinner} aria-hidden="true" />
-        <p className={css.centerText}>Connecting to the field…</p>
-      </div>
+      <p className={css.notice} role="status" aria-live="polite">
+        <span className={css.spinnerSm} aria-hidden="true" />
+        <span>Connecting to the field queue…</span>
+      </p>
     )
   }
 
@@ -288,10 +286,7 @@ export default function NexusLive({ eventKey }) {
     <div className={css.card}>
       <header className={css.head}>
         <div className={css.headMain}>
-          <span className={css.live}>
-            <span className={css.liveDot} aria-hidden="true" />
-            LIVE
-          </span>
+          <h3 className={css.title}>Field queue</h3>
           {view.eventKeyShown && <span className={css.eventKey}>{view.eventKeyShown}</span>}
           {view.cached && <span className={css.cachedTag}>cached</span>}
         </div>
@@ -300,7 +295,7 @@ export default function NexusLive({ eventKey }) {
               screen reader isn't spammed with a new "updated Ns ago" each tick. */}
           {updatedAgo && (
             <span className={css.updated} aria-hidden="true">
-              updated {updatedAgo}
+              Updated {updatedAgo}
             </span>
           )}
           <button type="button" className={css.refresh} onClick={refresh} disabled={refreshing}>
@@ -367,16 +362,10 @@ export default function NexusLive({ eventKey }) {
 
       {/* Fetch was fine, the field just has nothing to report yet. */}
       {!view.hasAny && (
-        <div className={css.state}>
-          <span className={css.stateIcon} aria-hidden="true">
-            <Icon name="compass" size={24} />
-          </span>
-          <h3 className={css.stateTitle}>No live field data yet</h3>
-          <p className={css.stateText}>
-            No live field data for {view.eventKeyShown || eventKey} yet — this event may not be
-            running Nexus.
-          </p>
-        </div>
+        <p className={css.empty}>
+          Nothing from the field for {view.eventKeyShown || eventKey} yet — this event may not be
+          running Nexus.
+        </p>
       )}
     </div>
   )

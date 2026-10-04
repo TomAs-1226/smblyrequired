@@ -366,7 +366,7 @@ export default function Scouting() {
       </section>
 
       {/* --- Entry --- */}
-      <section>
+      <section className={scout.entry}>
         <h2 className={styles.sectionTitle}>
           {mode === 'match' ? 'Match entry' : mode === 'pit' ? 'Pit entry' : 'Notes'}
         </h2>
@@ -495,40 +495,43 @@ export default function Scouting() {
               : 'Ask a mentor or lead to publish one — nothing can be recorded until they do.'}
           </Empty>
         ) : (
-          <>
-            {formOffline && (
-              <p className={styles.uploadNote}>
-                No connection — showing the form saved on this phone. Entries still save here and
-                sync when signal returns.
-              </p>
-            )}
-            <FormRenderer fields={form.fields} value={data} onChange={setData} />
-
-            <label className={styles.field}>
-              <span className={styles.label}>Notes</span>
-              <textarea
-                className={scout.textarea}
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Anything the form does not cover"
-              />
-            </label>
-
-            <div className={styles.errorSlot} role="alert" aria-live="polite">
-              {saveError && (
-                <span className={styles.error}>
-                  <Icon name="alert" size={15} />
-                  {saveError}
-                </span>
+          <div className={scout.entryForm}>
+            <div className={scout.entryFields}>
+              {formOffline && (
+                <p className={styles.uploadNote}>
+                  No connection — showing the form saved on this phone. Entries still save here and
+                  sync when signal returns.
+                </p>
               )}
+              <FormRenderer fields={form.fields} value={data} onChange={setData} />
+
+              <label className={styles.field}>
+                <span className={styles.label}>Notes</span>
+                <textarea
+                  className={scout.textarea}
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Anything the form does not cover"
+                />
+              </label>
+
+              <div className={styles.errorSlot} role="alert" aria-live="polite">
+                {saveError && (
+                  <span className={styles.error}>
+                    <Icon name="alert" size={15} />
+                    {saveError}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Full-width and unmissable, and STICKY: the pit form is 30 fields,
-                so a static button at the bottom means scrolling a screen and a
-                half to save between every team. Sticking it to the bottom of the
-                viewport keeps the one action a scout repeats all day always under
-                the thumb. */}
+            {/* Full-width and unmissable. On a phone it is also STICKY: the pit
+                form is 30 fields, so a button at the very end means scrolling a
+                screen and a half to save between every team. It docks only over
+                the questions (never the team/match row or the timer above
+                them), and it lets go while a field is being typed in — see
+                .saveDock. */}
             <div className={scout.saveDock}>
               <button
                 type="button"
@@ -544,7 +547,7 @@ export default function Scouting() {
                     : `Save ${mode === 'match' && matchNumber ? `match ${matchNumber}` : 'entry'}`}
               </button>
             </div>
-          </>
+          </div>
         )}
       </section>
     </div>

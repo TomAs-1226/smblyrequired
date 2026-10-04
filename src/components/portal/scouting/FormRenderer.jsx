@@ -295,7 +295,11 @@ function Counter({ field, value, onChange, disabled }) {
         disabled={disabled || n <= min}
         aria-label={`Decrease ${field.label} (hold to repeat)`}
       >
-        <Icon name="close" size={20} />
+        {/* A minus sign. This used to be the "close" cross, which reads as
+            "clear this count" on a control whose job is to take one off. */}
+        <span className={styles.counterGlyph} aria-hidden="true">
+          −
+        </span>
       </button>
 
       {/* The value is a real input: tap it to type a number directly, which a
@@ -306,6 +310,7 @@ function Counter({ field, value, onChange, disabled }) {
         inputMode="numeric"
         className={styles.counterInput}
         value={Number.isFinite(value) ? value : ''}
+        placeholder="0"
         min={min}
         max={max}
         disabled={disabled}

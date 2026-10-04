@@ -84,6 +84,14 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+  /* The plus button takes the rest of the row, which is right on a phone and
+     absurd across a 1000px panel. */
+  max-width: 520px;
+}
+.counterGlyph {
+  font-size: 1.7rem;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .counterBtn {
@@ -127,12 +135,12 @@
 
 .counterPlus {
   flex: 1;
-  background: rgba(56, 189, 248, 0.12);
+  background: color-mix(in srgb, var(--accent-data) 12%, transparent);
   border-color: var(--border-accent);
   color: var(--accent-data);
 }
 .counterPlus:active:not(:disabled) {
-  background: rgba(56, 189, 248, 0.22);
+  background: color-mix(in srgb, var(--accent-data) 22%, transparent);
 }
 
 .counterValue {
@@ -174,6 +182,10 @@
   -webkit-appearance: none;
   margin: 0;
 }
+.counterInput::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
 .counterInput:focus {
   outline: none;
   border-color: var(--accent-data);
@@ -181,7 +193,7 @@
 
 .timerOn {
   color: var(--accent-gold);
-  border-color: rgba(245, 184, 46, 0.5);
+  border-color: color-mix(in srgb, var(--accent-gold) 50%, transparent);
 }
 
 /* --- Toggle / chips / rating --------------------------------------------- */
@@ -243,8 +255,15 @@
   border-color: var(--accent-data);
 }
 
+/* Five across in whatever column the form gives them. At a fixed 52px the
+   fifth dropped to a row of its own in a four-column summary. */
+.rating {
+  flex-wrap: nowrap;
+}
 .ratingBtn {
-  min-width: 52px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0;
   justify-content: center;
 }
 .ratingOn {
@@ -301,7 +320,6 @@
   border: 1px solid color-mix(in srgb, var(--success) 38%, transparent);
   border-radius: var(--r-pill);
   padding: 7px 13px;
-  box-shadow: 0 0 16px -8px color-mix(in srgb, var(--success) 70%, transparent);
   animation: savedIn var(--dur-panel) var(--ease-out) both;
 }
 @keyframes savedIn {
@@ -315,9 +333,11 @@
   }
 }
 
+/* Always three across: it is one choice between three things, and an auto-fit
+   grid left the third tile alone on a second row on every phone. */
 .modeRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--sp-2);
 }
 
@@ -364,14 +384,13 @@
     color: var(--accent-data);
   }
 }
-/* The lit tile: a cyan wash, an accent border and a faint data-glow read as a
-   channel switched on. The icon takes the accent so the eye lands on the mode. */
+/* The chosen tile: an accent border and a flat wash. The icon takes the accent
+   so the eye lands on the mode. */
 .modeOn {
   color: var(--text-primary);
   border-color: var(--accent-data);
-  background: linear-gradient(180deg, var(--accent-data-wash), transparent 92%),
-    var(--surface-raised);
-  box-shadow: var(--card-depth), 0 0 20px -8px var(--accent-data-glow);
+  background: var(--accent-data-wash);
+  box-shadow: none;
 }
 .modeOn > svg {
   color: var(--accent-data);
@@ -387,6 +406,20 @@
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.35;
+}
+/* Too narrow for a sentence under each label: the tiles become a plain
+   three-way switch. */
+@media (max-width: 560px) {
+  .modeBtn {
+    min-height: 64px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--sp-2);
+  }
+  .modeBlurb {
+    display: none;
+  }
 }
 
 .identityRow {
@@ -477,19 +510,18 @@
   }
 }
 /* Selected: filled with the field's own red/blue (the one place raw alliance
-   colour is correct — a scout matches it by eye), plus a top-lit sheen and a
-   matching glow so the committed side is unmistakable. */
+   colour is correct — a scout matches it by eye). The fill is the signal. */
 .allianceOn.alliance_red {
   color: #fff;
   background-color: #c0392b;
   border-color: #e05548;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 20px -6px rgba(192, 57, 43, 0.7);
+  box-shadow: none;
 }
 .allianceOn.alliance_blue {
   color: #fff;
   background-color: #1f5fb8;
   border-color: #3a82e0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 20px -6px rgba(31, 95, 184, 0.7);
+  box-shadow: none;
 }
 
 .textarea {
@@ -509,33 +541,57 @@
   border-color: var(--accent-data);
 }
 
-/* Sticks the save action to the bottom of the viewport. A blurred, hairline-
-   topped bed lifts it off whatever form fields scroll under it so it always
-   reads as "the button" floating above content, not part of it. */
-.saveDock {
-  position: sticky;
-  bottom: 0;
-  z-index: 5;
-  margin: var(--sp-4) calc(var(--sp-3) * -1) 0;
-  padding: var(--sp-3);
-  /* Clears the iOS home indicator when docked at the very bottom. */
-  padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg-base) 58%, transparent);
-  -webkit-backdrop-filter: blur(7px);
-  backdrop-filter: blur(7px);
+/* --- The questions and the save action ------------------------------------ */
+
+.entryFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
-/* A faint luminous shelf-edge along the top of the dock — the hairline that
-   sells "floating". Sits in the gradient's transparent zone so it reads as a
-   line of light, not a hard border. */
-.saveDock::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: var(--sp-3);
-  right: var(--sp-3);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-strong) 25%,
-    var(--border-strong) 75%, transparent);
+
+/* With a mouse the save button is simply the end of the form. */
+.saveDock {
+  margin-top: var(--sp-3);
+}
+
+/* On a phone or tablet it docks to the bottom of the screen, so the action a
+   scout repeats all day stays under the thumb however long the form is.
+
+   Three things keep a docked bar from being in the way:
+
+   * It is opaque, with a hard top edge. It used to fade to transparent with a
+     blur behind it, so the row of fields passing underneath showed through the
+     button and read as two things drawn on top of each other.
+   * It docks only over the questions. A sticky element may not leave its
+     container, margin included, so a tall top margin (taken back out of the
+     flow by the negative margin on .entryFields; the two collapse into one
+     ordinary gap) holds the bar off until that much of the form is on screen.
+     Without it the bar appeared the moment the top of the form scrolled into
+     view, sitting on the first row.
+   * It lets go while a field has focus. Whatever is being typed in is never
+     under the bar; it goes back to the end of the form until the field is
+     left. */
+@media (max-width: 860px), (pointer: coarse) {
+  .entryForm {
+    --dock-run-in: 168px;
+  }
+  .entryFields {
+    margin-bottom: calc(var(--dock-run-in) * -1);
+  }
+  .saveDock {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: calc(var(--dock-run-in) + var(--sp-3)) calc(var(--sp-3) * -1) 0;
+    padding: var(--sp-3);
+    /* Clears the iOS home indicator when docked at the very bottom. */
+    padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom));
+    background: var(--bg-base);
+    border-top: 1px solid var(--border-strong);
+  }
+  .entry:has(input:focus, textarea:focus, select:focus) .saveDock {
+    position: static;
+  }
 }
 
 .saveBtn {
@@ -554,26 +610,22 @@
   background-color: var(--accent-gold);
   border: none;
   border-radius: var(--r-md);
-  /* Gold, lifted: a directional cast in the accent's own hue plus a top sheen
-     mark this as the single prestige action on the page. */
-  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent-gold) 65%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  /* Gold is the page's one primary action; the colour does that on its own. */
   touch-action: manipulation;
   transition: background-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+    transform var(--dur-press) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .saveBtn:hover:not(:disabled) {
     background-color: var(--accent-gold-hi);
-    box-shadow: 0 10px 26px -10px color-mix(in srgb, var(--accent-gold) 78%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.32);
   }
 }
-.saveBtn:active {
+.saveBtn:active:not(:disabled) {
   transform: scale(0.97);
   background-color: var(--accent-gold-hi);
 }
 .saveBtn:focus-visible {
+  background-color: var(--accent-gold-hi);
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
@@ -603,7 +655,7 @@
    colour, earns its place here. */
 .timer_endgame {
   border-color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.06);
+  background: color-mix(in srgb, var(--accent-gold) 6%, transparent);
 }
 .timer_done {
   border-color: var(--border-hairline);

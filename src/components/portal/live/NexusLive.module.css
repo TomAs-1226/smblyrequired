@@ -28,35 +28,15 @@
   gap: var(--sp-2);
   min-width: 0;
 }
-.live {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+/* A plain heading. What is live about this card is said in words beside it:
+   when it was last updated, and whether that copy came from the cache. */
+.title {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.16em;
-  color: var(--danger);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
   flex: none;
-}
-.liveDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--danger);
-  box-shadow: 0 0 0 0 rgba(240, 99, 99, 0.5);
-  animation: nexusPulse 1.8s var(--ease-out) infinite;
-}
-@keyframes nexusPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(240, 99, 99, 0.5);
-  }
-  70% {
-    box-shadow: 0 0 0 7px rgba(240, 99, 99, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(240, 99, 99, 0);
-  }
 }
 .eventKey {
   font-family: var(--font-mono);
@@ -105,13 +85,20 @@
   border-radius: var(--r-pill);
   padding: 8px 14px;
   transition: background var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
   .refresh:hover:not(:disabled) {
-    background: rgba(56, 189, 248, 0.18);
+    background: color-mix(in srgb, var(--accent-data) 18%, transparent);
     border-color: var(--accent-data);
   }
+}
+.refresh:focus-visible {
+  background: color-mix(in srgb, var(--accent-data) 18%, transparent);
+  border-color: var(--accent-data);
+}
+.refresh:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .refresh:disabled {
   opacity: 0.6;
@@ -139,8 +126,8 @@
   gap: 7px;
   font-size: var(--fs-label);
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.08);
-  border: 1px solid rgba(245, 184, 46, 0.28);
+  background: color-mix(in srgb, var(--accent-gold) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 28%, transparent);
   border-radius: var(--r-sm);
   padding: 8px 11px;
 }
@@ -207,13 +194,13 @@
 }
 .pill_queuing {
   color: var(--accent-gold);
-  background: rgba(245, 184, 46, 0.12);
-  border-color: rgba(245, 184, 46, 0.35);
+  background: color-mix(in srgb, var(--accent-gold) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-gold) 35%, transparent);
 }
 .pill_active {
   color: var(--success);
-  background: rgba(63, 207, 142, 0.12);
-  border-color: rgba(63, 207, 142, 0.38);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 38%, transparent);
 }
 .pill_done {
   color: var(--text-muted);
@@ -243,11 +230,11 @@
   border-left: 3px solid transparent;
 }
 .allianceRed {
-  background: rgba(240, 99, 99, 0.07);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
   border-left-color: var(--danger);
 }
 .allianceBlue {
-  background: rgba(46, 125, 246, 0.08);
+  background: color-mix(in srgb, var(--accent-action) 8%, transparent);
   border-left-color: var(--accent-action);
 }
 .team {
@@ -265,8 +252,8 @@
 .teamHome {
   color: var(--accent-gold);
   font-weight: 700;
-  background: rgba(245, 184, 46, 0.14);
-  border-color: rgba(245, 184, 46, 0.55);
+  background: color-mix(in srgb, var(--accent-gold) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-gold) 55%, transparent);
 }
 
 /* --- Match time ----------------------------------------------------------- */
@@ -330,67 +317,46 @@
   padding: var(--sp-4);
 }
 
-/* --- State cards: setup / error / empty ----------------------------------- */
-/* Mirrors Portal's shared empty state so this card's failure modes read the
-   same as every other panel's. */
+/* --- Not connected / unreachable / connecting ------------------------------ */
+/* One line each. This card sits above the scouting form, and a status about an
+   optional feed must not push the form a screen further down a phone. */
 
-.state {
+.notice {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
-  text-align: center;
-  padding: var(--sp-6) var(--sp-4);
+  gap: var(--sp-2) var(--sp-3);
+  flex-wrap: wrap;
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-muted);
+  padding: var(--sp-3);
   background: var(--surface-sunken);
-  border: 1px dashed var(--border-hairline);
+  border: 1px dashed var(--border-strong);
   border-radius: var(--r-md);
 }
-.stateIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  color: var(--accent-data);
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid var(--border-accent);
+.notice > svg {
+  flex: none;
 }
-.stateIconBad {
+.notice > span:not([class]) {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.noticeBad {
+  color: var(--text-body);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--danger) 32%, transparent);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+}
+.noticeBad > svg {
   color: var(--danger);
-  background: rgba(240, 99, 99, 0.08);
-  border-color: rgba(240, 99, 99, 0.3);
-}
-.stateTitle {
-  font-size: var(--fs-h3);
-}
-.stateText {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-  max-width: 42ch;
 }
 
-/* --- First-load spinner (only when there is no data at all) ---------------- */
-
-.center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-6) var(--sp-4);
-}
-.centerText {
+/* The feed answered and has nothing to say. */
+.empty {
   font-size: var(--fs-small);
   color: var(--text-muted);
 }
-.spinner {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid var(--border-strong);
-  border-top-color: var(--accent-data);
-  animation: nexusSpin 620ms linear infinite;
-}
+
 .spinnerSm {
   display: inline-block;
   width: 13px;
@@ -418,14 +384,20 @@
   }
 }
 
-/* A pit is loud and the LIVE dot is only decoration — honour a reduced-motion
-   request by holding everything still. Text and colour still carry the state. */
-@media (prefers-reduced-motion: reduce) {
-  .liveDot,
-  .spinner,
-  .spinnerSm,
+@media (max-width: 860px), (pointer: coarse) {
   .refresh {
-    animation: none;
-    transition: none;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinnerSm {
+    animation-duration: 1.6s;
+  }
+  .refresh {
+    transition-property: background-color, border-color;
+  }
+  .refresh:active {
+    transform: none;
   }
 }
