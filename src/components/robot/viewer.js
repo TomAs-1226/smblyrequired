@@ -1,6 +1,5 @@
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { createStudio, blob, REFLECT } from './robotRig'
+import { createStudio, blob, REFLECT, modelLoader } from './robotRig'
 import { buildDrivebase, X1 } from './drivebase'
 
 /* A robot on a turntable, for the Robots pages. Framework-free like the spine: React hands it a canvas
@@ -25,7 +24,7 @@ const DRAG = 0.0085 // rad per px
 const glbCache = new Map()
 function loadGlb(url, onProgress) {
   if (!glbCache.has(url)) {
-    glbCache.set(url, new GLTFLoader().loadAsync(url, (e) => e.total && onProgress?.(e.loaded / e.total)))
+    glbCache.set(url, modelLoader().loadAsync(url, (e) => e.total && onProgress?.(e.loaded / e.total)))
   }
   return glbCache.get(url).then((g) => g.scene.clone(true))
 }

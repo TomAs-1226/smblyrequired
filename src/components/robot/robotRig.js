@@ -8,9 +8,14 @@
 
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 
 /* Per material class, how much of the studio it reflects. Polycarbonate is about a third of metal:
    clear plastic is mostly what is behind it plus a thin sheen. */
+/* Every model on the site is meshopt-compressed (tools/compress-models.mjs), so every loader needs
+   the decoder. One place makes them, so none is made without it. */
+export const modelLoader = () => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+
 export const REFLECT = { aluminium: 1.0, steel: 0.95, motor: 0.8, poly: 0.35, print: 0.35, belt: 0.3, tread: 0.3, electronics: 0.55, black: 0.4, other: 0.5 }
 /* Steering: a stiff loop with almost no overshoot. Detent duration 0.3 / bounce 0.1 → k 438.6,
    c 37.7 — our tuning for a tight azimuth PID, not a platform value. */
@@ -128,7 +133,7 @@ const cache = new Map()
 export function loadRobot(models) {
   if (!cache.has(models)) {
     cache.set(models, Promise.all([
-      new GLTFLoader().loadAsync(`${models}robot.glb`),
+      modelLoader().loadAsync(`${models}robot.glb`),
       fetch(`${models}robot.json`).then((r) => r.json()),
     ]))
   }
@@ -139,7 +144,7 @@ const hubCache = new Map()
    field's palette texture, so each part is painted here: the funnel — the only piece above 1.3 m — in
    the blue alliance's colour, the body in dark painted steel. */
 export function loadHub(models) {
-  if (!hubCache.has(models)) hubCache.set(models, new GLTFLoader().loadAsync(`${models}hub.glb`))
+  if (!hubCache.has(models)) hubCache.set(models, modelLoader().loadAsync(`${models}hub.glb`))
   return hubCache.get(models).then((g) => {
     const hub = g.scene.clone(true)
     const box = new THREE.Box3()

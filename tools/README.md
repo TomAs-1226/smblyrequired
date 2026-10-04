@@ -74,3 +74,15 @@ path (`"Manipulator <1> / Coral"`), or by glTF index (`node:1359`) when two twin
 orientation need explaining keeps them in `tools/display-cad/<name>.json`, read with `--config`.
 
 Check the result by eye before committing it: wrong-way-up and a floating cage both pass every number.
+
+## `compress-models.mjs` — after any bake
+
+```bash
+node tools/compress-models.mjs
+```
+
+Packs every `.glb` in `public/models` with `EXT_meshopt_compression`, about half the size (the
+landing robot goes from 9.8 MB to 5.0 MB) with no change to nodes, names or accessors, so the
+manifests stay valid. Idempotent. The site's loaders read it through `modelLoader()` in
+`src/components/robot/robotRig.js`; a new loader that skips it will fail on these files.
+
