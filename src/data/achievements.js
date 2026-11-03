@@ -1,7 +1,14 @@
-// Official competition record — sourced from The Blue Alliance (frc5805), checked 2026-10-02.
+// Official competition record — sourced from The Blue Alliance (frc5805), checked 2026-11-03.
 // kind drives styling: 'winner' & 'rookie' => gold; 'finalist' & 'award' => cyan.
 // flagship marks the headline results.
 export const achievements = [
+  {
+    year: 2026,
+    event: 'Beach Blitz (Gene Haas Foundation)',
+    award: 'Most Improved Award',
+    kind: 'award',
+    robot: 'Numbers', // TBA has not listed the event's awards yet; the trophy is in the gallery
+  },
   {
     year: 2026,
     event: 'Orange County District',

@@ -3,6 +3,11 @@
 export const galleryNote = 'A look at our season — pit, field, and everything in between. More to come.'
 
 export const gallery = [
+  { src: 'photos/beach-blitz-2026-award.jpg', caption: 'Beach Blitz 2026 — Most Improved', tag: 'BEACH BLITZ // 2026', size: 'wide' },
+  { src: 'photos/beach-blitz-2026-trophy.jpg', caption: 'The Most Improved award, Beach Blitz 2026', tag: 'BEACH BLITZ // 2026' },
+  { src: 'photos/beach-blitz-2026-numbers.jpg', caption: 'Numbers and the team at Beach Blitz', tag: 'BEACH BLITZ // 2026', size: 'tall' },
+  { src: 'photos/beach-blitz-2026-alliance.jpg', caption: 'Alliance 8 at Beach Blitz: 4419, 2710, 3128 and 5805', tag: 'BEACH BLITZ // 2026', size: 'wide' },
+  { src: 'photos/beach-blitz-2026-team.jpg', caption: 'With our alliance partners after the playoffs', tag: 'BEACH BLITZ // 2026' },
   { src: 'photos/ventura-2025.jpg', caption: '2025 Ventura County Regional — Winners', tag: 'REEFSCAPE // 2025', size: 'wide' },
   { src: 'photos/action.jpg', caption: 'On the field — REBUILT', tag: 'REBUILT // 2026', size: 'tall' },
   { src: 'photos/team-pit.jpg', caption: 'The team and the robot, in the pit', tag: 'OFFSEASON' },

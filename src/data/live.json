@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-26T15:00:50.089Z",
+  "updated": "2026-11-03T18:30:00.000Z",
   "season": 2026,
   "events": [
     {
@@ -28,63 +28,81 @@
       "total": 60,
       "record": "5-7-0",
       "result": "Team 5805 was Rank 45/60 with a record of 5-7-0 in quals."
+    },
+    {
+      "key": "2026cass",
+      "name": "SoCal Showdown",
+      "dates": "2026-10-09",
+      "rank": 16,
+      "total": 42,
+      "record": "5-5-0",
+      "result": "Team 5805 was Rank 16/42 with a record of 5-5-0 in quals, competed in the playoffs as the 2nd Pick of Alliance 7, and was eliminated in the Double Elimination Bracket (Round 2) with a playoff record of 0-2-0."
+    },
+    {
+      "key": "2026cabl",
+      "name": "Beach Blitz presented by the Gene Haas Foundation",
+      "dates": "2026-10-30",
+      "rank": 21,
+      "total": 42,
+      "record": "4-6-0",
+      "result": "Team 5805 was Rank 21/42 with a record of 4-6-0 in quals, competed in the playoffs as the 2nd Pick of Alliance 8, and was eliminated in the Double Elimination Bracket (Round 4) with a playoff record of 1-2-0."
     }
   ],
   "lastEvent": {
-    "key": "2026cascmp",
-    "name": "FIRST California Southern State Championship presented by Qualcomm",
-    "dates": "2026-04-09",
-    "rank": 45,
-    "total": 60,
-    "result": "Team 5805 was Rank 45/60 with a record of 5-7-0 in quals."
+    "key": "2026cabl",
+    "name": "Beach Blitz presented by the Gene Haas Foundation",
+    "dates": "2026-10-30",
+    "rank": 21,
+    "total": 42,
+    "result": "Team 5805 was Rank 21/42 with a record of 4-6-0 in quals, competed in the playoffs as the 2nd Pick of Alliance 8, and was eliminated in the Double Elimination Bracket (Round 4) with a playoff record of 1-2-0."
   },
   "recentMatches": [
     {
-      "label": "Qual 46",
-      "usScore": 340,
-      "themScore": 471,
+      "label": "Qual 41",
+      "usScore": 465,
+      "themScore": 617,
       "outcome": "L"
     },
     {
-      "label": "Qual 53",
-      "usScore": 327,
-      "themScore": 316,
+      "label": "Qual 47",
+      "usScore": 409,
+      "themScore": 353,
       "outcome": "W"
     },
     {
-      "label": "Qual 61",
-      "usScore": 247,
-      "themScore": 373,
+      "label": "Qual 54",
+      "usScore": 539,
+      "themScore": 99,
+      "outcome": "W"
+    },
+    {
+      "label": "Qual 63",
+      "usScore": 242,
+      "themScore": 247,
       "outcome": "L"
     },
     {
-      "label": "Qual 78",
-      "usScore": 427,
-      "themScore": 349,
+      "label": "Qual 68",
+      "usScore": 720,
+      "themScore": 223,
       "outcome": "W"
     },
     {
-      "label": "Qual 90",
-      "usScore": 176,
-      "themScore": 53,
-      "outcome": "W"
-    },
-    {
-      "label": "Qual 100",
-      "usScore": 273,
-      "themScore": 328,
+      "label": "Playoff 1",
+      "usScore": 254,
+      "themScore": 625,
       "outcome": "L"
     },
     {
-      "label": "Qual 107",
-      "usScore": 357,
-      "themScore": 323,
+      "label": "Playoff 10",
+      "usScore": 597,
+      "themScore": 516,
       "outcome": "W"
     },
     {
-      "label": "Qual 120",
-      "usScore": 93,
-      "themScore": 396,
+      "label": "Playoff 12",
+      "usScore": 477,
+      "themScore": 641,
       "outcome": "L"
     }
   ],

@@ -24,6 +24,7 @@ const TAG_ICON = {
   Competition: 'trophy',
   Engineering: 'code',
   Build: 'wrench',
+  Team: 'user',
 }
 
 export default function News() {

@@ -45,8 +45,7 @@ export const contact = {
 // Mentors & coaches for Team 5805.
 export const mentors = [
   { name: 'Alexander Klatt', role: 'Head Coach & Program Manager' },
-  { name: 'Teddy Bullockus', role: 'Lead Mentor' },
-  { name: 'John Evans', role: 'Mentor' },
+  { name: 'John Evans', role: 'Lead Mentor' },
 ]
 
 // Headline stats. `to` numeric values count up; strings render as-is.

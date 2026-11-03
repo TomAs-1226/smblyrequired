@@ -27,6 +27,7 @@ const TAG_ICON = {
   Outreach: 'megaphone',
   Robots: 'wrench',
   Software: 'code',
+  Team: 'user',
 }
 
 export default function BlogIndex() {

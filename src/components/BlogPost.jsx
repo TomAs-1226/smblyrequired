@@ -27,6 +27,7 @@ const TAG_ICON = {
   Outreach: 'megaphone',
   Robots: 'wrench',
   Software: 'code',
+  Team: 'user',
 }
 
 export default function BlogPost({ slug }) {
@@ -117,6 +118,26 @@ export default function BlogPost({ slug }) {
               </a>
             )}
           </figcaption>
+        </figure>
+      )}
+
+      {/* A post can carry one photo from the event it is about. */}
+      {!robot && post.photo && (
+        <figure className={styles.robot}>
+          <div className={styles.robotTray}>
+            <img
+              className={styles.photoImg}
+              src={post.photo.src}
+              alt={post.photo.alt}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          {post.photo.caption && (
+            <figcaption className={styles.robotCaption}>
+              <span>{post.photo.caption}</span>
+            </figcaption>
+          )}
         </figure>
       )}
 

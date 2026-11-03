@@ -3,7 +3,7 @@
 // roots. (Earlier robots had other names: TBA lists Joan of Arc for 2016–17 and
 // Phocas for 2018 and 2020.)
 // status: 'season' (in-season) | 'champion' (won/podium) | 'build' (in progress)
-// record: every event the robot played, in order (The Blue Alliance / Statbotics, checked 2026-10-02).
+// record: every event the robot played, in order (The Blue Alliance / Statbotics, checked 2026-11-03).
 // retired: when a robot was retired, what became of it, and the slug of its farewell post (blog.js).
 // model: the robot's CAD on a turntable (public/models, baked by tools/display-cad.mjs). A robot
 //   with a model and a photo shows the model first and offers the photo; with neither, a plate.
@@ -93,8 +93,8 @@ export const robots = [
     season: '2026 Offseason',
     year: 2026,
     game: 'REBUILT',
-    status: 'build',
-    result: 'Debuts at SoCal Showdown · Oct 9–11, 2026',
+    status: 'season',
+    result: 'Beach Blitz Most Improved · SoCal Showdown playoffs',
     subtitle: 'Our build of Team 581’s 2026 design',
     // From the robot's CAD (public/models/robot.json) and its code.
     specs: [
@@ -102,12 +102,16 @@ export const robots = [
       { label: 'Hopper', value: 'Extends 300 mm with the intake on its front; holds about 60 FUEL' },
       { label: 'Code', value: 'Catalyst 2.0 on Systemcore' },
     ],
-    blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, brought up by all three subteams and built on Catalyst 2.0 for FIRST’s new Systemcore controller. It debuts at SoCal Showdown.',
-    image: null,
+    blurb: 'Our 2026 offseason robot: a build of Team 581’s REBUILT design, brought up by all three subteams and built on Catalyst 2.0 for FIRST’s new Systemcore controller. It made the playoffs at both of its fall events and won the Most Improved award at Beach Blitz.',
+    image: 'photos/beach-blitz-2026-numbers.jpg',
     // Catalyst Console's bake of the same CAD: about a third of the landing page's model, plenty
     // for a turntable.
     model: { file: 'robot-preview.glb' },
     current: true,
+    record: [
+      { date: '2026-10', event: 'SoCal Showdown', result: 'Ranked 16th of 42 · playoffs, Alliance 7' },
+      { date: '2026-10', event: 'Beach Blitz', result: 'Most Improved Award · playoffs, Alliance 8, round 4' },
+    ],
   },
 ]
 

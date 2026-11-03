@@ -2,6 +2,58 @@
 // (#/blog/<slug>). `body` is an array of paragraphs. Keep it real.
 export const posts = [
   {
+    slug: 'beach-blitz-2026-most-improved',
+    date: '2026-11',
+    title: 'Most Improved at Beach Blitz',
+    tag: 'Competition',
+    author: 'Team 5805',
+    photo: {
+      src: 'photos/beach-blitz-2026-award.jpg',
+      alt: 'Team 5805 students and mentors holding the Most Improved award at Beach Blitz 2026',
+      caption: 'Beach Blitz 2026 · Capistrano Valley High School',
+    },
+    excerpt:
+      'Three weeks after its first event, Numbers scored 720 points in a qualification match, made the playoffs with Alliance 8, and the team came home with the Most Improved award.',
+    body: [
+      'Beach Blitz, presented by the Gene Haas Foundation, ran October 30 to November 1 at Capistrano Valley High School in Mission Viejo, with 42 teams. It was Numbers’ second event, and a year after Exodus won it, we came back with a robot that had three more weeks of practice in it.',
+      'Qualifications were up and down: we went 4–6 and finished 21st. But the high points were the highest we have ever posted. In our last qualification match Numbers and our partners 9408 and 5199 put up 720 points, and earlier we won 539 to 99 alongside 2122 and 3255.',
+      'Teams 2710, 3128 and 4419 brought us into the playoffs as the second pick of Alliance 8. We lost our opening match to the first-seeded alliance and dropped into the lower bracket, then beat Alliance 6 597 to 516 to stay alive. Alliance 5 ended our run in round 4, 641 to 477.',
+      'At the awards, the team was given the Most Improved award. It is an award for how far a team has come, and three weeks after Numbers played its first match, that is exactly the story we wanted to tell.',
+      'Thank you to 2710, 3128 and 4419 for picking us, to the Beach Blitz volunteers and the Gene Haas Foundation, and to every family who came out to watch.',
+    ],
+  },
+  {
+    slug: 'thank-you-teddy',
+    date: '2026-11',
+    title: 'Thank you, Teddy',
+    tag: 'Team',
+    author: 'Team 5805',
+    excerpt:
+      'Teddy Bullockus, our Lead Mentor, is leaving the team. John Evans steps up as Lead Mentor.',
+    body: [
+      'After serving as our Lead Mentor, Teddy Bullockus is leaving Team 5805.',
+      'A lead mentor’s work rarely shows up in a match score. It is the late nights in the shop, the questions that make a student find the answer themselves, the calm voice when a robot will not turn on an hour before queuing. Teddy gave this team all of that, and every robot and every student who came through the shop is better for it.',
+      'Thank you, Teddy, for your time, your patience and your belief in what students can build. You will always be part of SMbly Required, and the door to the shop is always open.',
+      'John Evans, already one of our mentors, becomes the team’s Lead Mentor, working alongside our Head Coach and Program Manager, Alexander Klatt.',
+    ],
+  },
+  {
+    slug: 'socal-showdown-2026',
+    date: '2026-10',
+    title: 'Numbers’ first event: SoCal Showdown',
+    tag: 'Competition',
+    author: 'Team 5805',
+    robot: 'numbers',
+    excerpt:
+      'Numbers played its first matches at SoCal Showdown, ranked 16th of 42, and was picked by Alliance 7 for the playoffs.',
+    body: [
+      'SoCal Showdown, October 9–11 in El Segundo, was the first time Numbers played a real match. It is our build of Team 581’s REBUILT design, and the first competition robot we have run on Systemcore and Catalyst 2.0, so a lot was being tested at once.',
+      'It held up. Numbers went 5–5 in qualifications and finished 16th of 42. Its best match was qualification 56, where with 687 and 5199 we won 503 to 153.',
+      'Team 4141 captained Alliance 7 and picked 1197, then us, with 5285 as their fourth. In the double-elimination bracket we lost our first match to Alliance 2, then lost the next one to Alliance 6 by just seven points, 283 to 276. That was the end of our run, and it was close.',
+      'We left with a list of what to fix, and a robot that had finally played. Thank you to 4141, 1197 and 5285, and to everyone who ran the event.',
+    ],
+  },
+  {
     slug: 'numbers-socal-showdown-2026',
     date: '2026-10',
     title: 'Numbers is coming to SoCal Showdown',

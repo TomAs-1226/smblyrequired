@@ -3,6 +3,27 @@ export const newsNote = 'The latest from the shop, the field, and the community.
 
 export const news = [
   {
+    date: '2026-11',
+    title: 'Most Improved at Beach Blitz',
+    blurb:
+      'Numbers made the playoffs as the second pick of Alliance 8 and fought to round 4 of the bracket, and the team took home the Most Improved award.',
+    tag: 'Competition',
+  },
+  {
+    date: '2026-11',
+    title: 'Thank you, Teddy',
+    blurb:
+      'Teddy Bullockus is stepping away from the team after serving as our Lead Mentor. John Evans becomes Lead Mentor.',
+    tag: 'Team',
+  },
+  {
+    date: '2026-10',
+    title: 'Numbers makes the playoffs at SoCal Showdown',
+    blurb:
+      'In its first event, Numbers ranked 16th of 42 and was picked by Alliance 7 for the playoffs.',
+    tag: 'Competition',
+  },
+  {
     date: '2026-09',
     title: 'Numbers is coming to SoCal Showdown',
     blurb:

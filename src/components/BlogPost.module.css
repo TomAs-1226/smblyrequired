@@ -124,6 +124,13 @@
   height: 100%;
   object-fit: contain;
 }
+/* An event photo keeps its own shape: nobody in it gets cropped out. */
+.photoImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 21px;
+}
 .robotCaption {
   display: flex;
   flex-wrap: wrap;
