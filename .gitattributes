@@ -14,3 +14,6 @@ MANIFEST.sha256 text eol=lf
 *.timer text eol=lf
 
 *.sql text eol=lf
+
+# Caddy reads the template on the Linux VM.
+server/arcade/deploy/Caddyfile.template text eol=lf

@@ -1,0 +1,15 @@
+# Written by setup.sh. Caddy gets and renews the TLS certificate by itself.
+__DOMAIN__ {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8787
+	}
+	handle {
+		respond "FRC 5805 arcade API" 200
+	}
+}

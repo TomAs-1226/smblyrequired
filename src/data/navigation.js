@@ -16,6 +16,7 @@ export const navLinks = [
   { path: '/catalyst', label: 'Catalyst', primary: true },
   { path: '/gallery', label: 'Gallery' },
   { path: '/contact', label: 'Contact' },
+  { path: '/arcade', label: 'Arcade' },
 ]
 
 // Teaser cards for the landing page (richer blurbs + icons).

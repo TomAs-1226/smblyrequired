@@ -29,6 +29,7 @@ const loaders = {
   '/contact': () => import('./pages/ContactPage'),
   '/blog': () => import('./components/BlogIndex'),
   '/donate': () => import('./components/Donate'),
+  '/arcade': () => import('./pages/ArcadePage'),
 }
 const RobotDetail = lazy(() => import('./components/RobotDetail'))
 const BlogPost = lazy(() => import('./components/BlogPost'))

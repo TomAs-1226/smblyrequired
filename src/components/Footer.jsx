@@ -17,6 +17,7 @@ const NAV = [
   { href: '#/catalyst', label: 'Catalyst' },
   { href: '#/gallery', label: 'Gallery' },
   { href: '#/contact', label: 'Contact' },
+  { href: '#/arcade', label: 'Arcade' },
 ]
 
 // The team's socials, as listed on its The Blue Alliance profile. (TBA's

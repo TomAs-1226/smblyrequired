@@ -25,3 +25,6 @@ dist-probe
 *-debug.log
 .firebase/
 functions/node_modules/
+
+# arcade API local database
+server/arcade/data/

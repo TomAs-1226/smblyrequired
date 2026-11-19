@@ -1,0 +1,12 @@
+{
+  "name": "frc5805-arcade-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Cycle Rush leaderboard API. No dependencies: node:http + node:sqlite.",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node main.mjs",
+    "test": "node --test test/server.test.mjs"
+  }
+}

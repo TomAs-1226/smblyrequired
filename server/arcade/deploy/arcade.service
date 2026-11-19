@@ -1,0 +1,35 @@
+[Unit]
+Description=Cycle Rush leaderboard API (FRC 5805 arcade)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arcade
+Group=arcade
+WorkingDirectory=/opt/arcade
+Environment=ARCADE_HOST=127.0.0.1
+Environment=ARCADE_PORT=8787
+Environment=ARCADE_DB=/var/lib/arcade/arcade.db
+Environment=ARCADE_TRUST_PROXY=1
+EnvironmentFile=-/etc/arcade.env
+ExecStart=/usr/bin/node /opt/arcade/main.mjs
+Restart=on-failure
+RestartSec=3
+
+# Hardening: it needs to read its code, write its database, and nothing else.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=/var/lib/arcade
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
