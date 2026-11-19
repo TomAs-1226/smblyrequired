@@ -38,7 +38,7 @@ model. The data model and the rules/functions/client contract are in
 | `functions/` | Cloud Functions (region `us-west1`) and their tests in `functions/test/`. |
 | `scripts/backup/` | The nightly mirror, restore test, systemd units. |
 | `scripts/firebase/` | `seed-emulators.mjs`, the local test accounts. |
-| `src/lib/arcade/` | The Cycle Rush game (`#/arcade`): `engine.js` is rules and physics with no DOM, `draw.js` the canvas. `npm run test:arcade` plays headless matches. |
+| `src/lib/arcade3d/` | Cycle Rush (`#/arcade`), a 3D take on the 2026 game: `config.js` (field and fuel layout from maple-sim's 2026 arena and the team's `RebuiltField`), `rules.js` (hub shifts, from the team's `FmsUtil`), `ballistics.js`, `sim.js` (Rapier physics, passed in), `ai.js`, `scene.js` (three.js). `npm run test:arcade` plays headless matches. `src/lib/arcade/leaderboard.js` is the leaderboard client. |
 | `server/arcade/` | The arcade leaderboard API, on its own Oracle Cloud VM (not Firebase). No dependencies; `npm test` in that folder. Runbook: `docs/ARCADE.md`. |
 | `docs/` | `PORTAL.md` (setup), `FIREBASE.md` (data model and contract), `BACKUP.md` (the backup runbook), `ARCADE.md` (the arcade leaderboard host). |
 

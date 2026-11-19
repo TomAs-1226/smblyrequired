@@ -45,6 +45,7 @@
   --accent-data-wash: rgba(91, 155, 234, 0.1);
   --accent-gold: #d9c68a;
   --accent-gold-hi: #ecdfb4;
+  --arcade-fuel: #f0c43c; /* the arcade's foam balls: a game colour, not a brand one */
 
   /* --- Tier ramp --- */
   --tier-bronze: #c98a4b;

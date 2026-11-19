@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Official website of FRC Team 5805 \u2014 SMbly Required, Santa Margarita Catholic High School.",
+  "description": "Official website of FRC Team 5805 — SMbly Required, Santa Margarita Catholic High School.",
   "scripts": {
     "dev": "vite",
     "dev:emulators": "vite --mode emulators --port 5174 --strictPort",
@@ -23,6 +23,7 @@
     "seed:demo": "node scripts/firebase/seed-demo.mjs"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "0.17.3",
     "@gsap/react": "^2.1.2",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow/tfjs": "^4.22.0",

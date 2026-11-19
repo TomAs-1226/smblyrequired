@@ -29,8 +29,8 @@ data, and a flood of fake scores cannot cost the team's Firebase quota.
 | `GET /api/scores?difficulty=regional` | top 10 |
 
 The game is client-side, so **scores can be faked** by someone determined. What the
-server does about it: a score needs a `run` id issued at least 118 s earlier (a
-match is 123 s), each run posts once, numbers are bounded, names are filtered, and
+server does about it: a score needs a `run` id issued at least 158 s earlier (a
+match is 163 s), each run posts once, numbers are bounded, names are filtered, and
 each address gets 12 posts per 10 minutes. Remove a bad row by hand (below).
 
 Environment (set in `/etc/arcade.env` on the VM to override the unit's defaults):
@@ -39,7 +39,7 @@ Environment (set in `/etc/arcade.env` on the VM to override the unit's defaults)
 |---|---|
 | `ARCADE_ORIGINS` | `https://frc5805.com,https://www.frc5805.com,http://localhost:5173` |
 | `ARCADE_DB` | `/var/lib/arcade/arcade.db` |
-| `ARCADE_MIN_MATCH_SECONDS` | `118` |
+| `ARCADE_MIN_MATCH_SECONDS` | `158` |
 
 ## Setting it up
 

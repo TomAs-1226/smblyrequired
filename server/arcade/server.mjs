@@ -26,13 +26,13 @@ const ORIGINS = new Set(
   env('ARCADE_ORIGINS', 'https://frc5805.com,https://www.frc5805.com,http://localhost:5173')
     .split(',').map((s) => s.trim()).filter(Boolean),
 )
-// A match is 3 s of countdown + 120 s. Allow a little clock slack either side.
-const MIN_MATCH_S = Number(env('ARCADE_MIN_MATCH_SECONDS', 118))
+// A match is 3 s of countdown + 160 s; this is well under that, for clock slack.
+const MIN_MATCH_S = Number(env('ARCADE_MIN_MATCH_SECONDS', 158))
 const MAX_RUN_S = 2 * 60 * 60
 const TRUST_PROXY = env('ARCADE_TRUST_PROXY', '1') === '1'
 
 const DIFFICULTIES = new Set(['rookie', 'regional', 'einstein'])
-const MAX_SCORE = 600 // far above anything the engine produces in 120 s
+const MAX_SCORE = 2000 // far above anything a 160 s match produces
 const NAME_RE = /^[\p{L}\p{N} ._'-]{1,16}$/u
 // Short and blunt. Anything it misses, an admin deletes by hand (docs/ARCADE.md).
 const BLOCKED = /(fuck|shit|bitch|cunt|nigg|fag|rape|porn|penis|vagina|dick|cock|pussy|whore|slut|retard|nazi|hitler)/i

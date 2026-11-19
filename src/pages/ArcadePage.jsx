@@ -1,10 +1,10 @@
 import Section from '../components/Section'
 import Eyebrow from '../components/Eyebrow'
-import ArcadeGame from '../components/ArcadeGame'
+import Arcade3D from '../components/Arcade3D'
 import { arcade } from '../data/arcade'
 import styles from './ArcadePage.module.css'
 
-// Cycle Rush: a two-minute robot match in the browser, no download.
+// Cycle Rush: a 3D robot match with real physics, in the browser, no download.
 export default function ArcadePage() {
   return (
     <Section>
@@ -14,7 +14,7 @@ export default function ArcadePage() {
         <p className="lead">{arcade.lead}</p>
       </header>
 
-      <ArcadeGame />
+      <Arcade3D />
 
       <div className={styles.info}>
         <div>
@@ -27,6 +27,7 @@ export default function ArcadePage() {
               </div>
             ))}
           </dl>
+          <p className={styles.note}>{arcade.aiming}</p>
         </div>
         <div>
           <h2 className={styles.h2}>Controls</h2>
