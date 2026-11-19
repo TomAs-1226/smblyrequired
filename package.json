@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "fetch:tba": "node scripts/fetch-tba.mjs",
-    "deploy": "node scripts/fetch-tba.mjs && vite build && npx gh-pages -d dist -m \"Deploy site\"",
+    "deploy": "node scripts/fetch-tba.mjs && vite build && npx gh-pages@6.3.0 -d dist --add -m \"Deploy site\"",
     "test:markdown": "node scripts/test/markdown-safety.mjs",
     "test:portal": "node scripts/test/portal.mjs",
     "test:arcade": "node scripts/test/arcade.mjs",

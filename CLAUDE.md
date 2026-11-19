@@ -190,6 +190,14 @@ These are real, were found the hard way, and are easy to reintroduce.
    `index.css`, so there the global rule wins. Check which bundle a component is in
    before assuming an order.
 
+18. **A deploy that deletes the old build blacks out cached visitors.** Asset names
+   are content-hashed and the host lets browsers keep `index.html` for 10 minutes,
+   so a cached page asks for the previous build's `index-<hash>.js`; when the
+   deploy has deleted it, the page is a black background and nothing else. So
+   `npm run deploy` publishes with `gh-pages --add` (old hashed files stay on
+   `gh-pages`), and `index.html` plus `vite:preloadError` in `src/main.jsx` reload
+   the page once if one of our `/assets/` files fails to load. Do not drop `--add`.
+
 ## Security posture
 
 - The repo is **public**. The Firebase **web config** (`VITE_FIREBASE_*`) ships in

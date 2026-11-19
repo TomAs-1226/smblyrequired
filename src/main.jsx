@@ -34,6 +34,26 @@ window.addEventListener('pagehide', () => {
   if (isHome()) window.scrollTo(0, 0)
 })
 
+// A tab left open across a deploy asks for page chunks that no longer exist.
+// Reload once (not in a loop) to pick up the current build. index.html covers the
+// same case for the entry script itself, which runs before this file can.
+window.addEventListener('vite:preloadError', (e) => {
+  try {
+    if (sessionStorage.getItem('stale-reload')) return
+    sessionStorage.setItem('stale-reload', '1')
+  } catch {
+    return
+  }
+  e.preventDefault()
+  window.location.reload()
+})
+// Loaded fine: allow a future stale deploy to reload again.
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    try { sessionStorage.removeItem('stale-reload') } catch { /* nothing to clear */ }
+  }, 10000)
+})
+
 // Note: intentionally not using <StrictMode>. Its double-invoke in development
 // would mount Lenis and GSAP timelines twice, causing janky duplicate motion.
 createRoot(document.getElementById('root')).render(<App />)

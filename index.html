@@ -2,6 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- A page cached from before a deploy names script files that may be gone.
+         If one of ours fails to load, reload once to get the current page instead
+         of sitting on a black screen. Runs before Vite's module script. -->
+    <script>
+      addEventListener('error', function (e) {
+        var t = e.target, u = t && (t.src || t.href)
+        if (!u || u.indexOf('/assets/') < 0) return
+        try { if (sessionStorage.getItem('stale-reload')) return; sessionStorage.setItem('stale-reload', '1') } catch (_) { return }
+        location.reload()
+      }, true)
+    </script>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050505" />
