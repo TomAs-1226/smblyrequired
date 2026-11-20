@@ -1,34 +1,31 @@
+/* Cycle Rush. The field fills the screen under the site's nav; every menu sits
+   over it. Tokens only (src/index.css). */
+
 .game {
-  display: grid;
-  gap: var(--sp-4);
+  display: block;
 }
 
-/* ---- the field */
+/* ---- the field: edge to edge, the height of the screen below the nav */
 .frame {
   position: relative;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--border-hairline);
+  height: calc(100svh - var(--nav-h));
+  min-height: 520px;
   background: var(--bg-void);
   overflow: hidden;
   outline: none;
+  border-block: 1px solid var(--border-hairline);
 }
 .frame:fullscreen {
-  border-radius: 0;
+  height: 100vh;
   border: 0;
 }
 .canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 82vh;
+  height: 100%;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-}
-.frame:fullscreen .canvas {
-  height: 100vh;
-  max-height: none;
-  aspect-ratio: auto;
 }
 
 /* ---- in-match HUD */
@@ -41,7 +38,7 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: start;
   gap: var(--sp-4);
-  min-width: min(560px, calc(100% - 2 * var(--sp-3)));
+  min-width: min(600px, calc(100% - 2 * var(--sp-3)));
   pointer-events: none;
   font-family: var(--font-display);
 }
@@ -54,16 +51,19 @@
   justify-items: start;
 }
 .score {
-  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+  font-size: clamp(1.75rem, 3.4vw, 3rem);
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
-.blue {
+.blue,
+.blue.score {
   color: var(--accent-data);
 }
-.red {
+.red,
+.red.score {
   color: var(--danger);
 }
 .hub {
@@ -93,7 +93,7 @@
   background: var(--surface-nav);
 }
 .clockNum {
-  font-size: clamp(1.4rem, 2.8vw, 2rem);
+  font-size: clamp(1.4rem, 2.6vw, 2.2rem);
   font-weight: 600;
   line-height: 1.1;
   color: var(--text-primary);
@@ -111,14 +111,14 @@
   left: var(--sp-3);
   bottom: var(--sp-3);
   display: grid;
-  gap: var(--sp-1);
+  gap: 6px;
   justify-items: start;
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
   background: var(--surface-nav);
   font-size: var(--fs-small);
   color: var(--text-body);
-  max-width: min(320px, 60%);
+  max-width: min(380px, 62%);
 }
 .robotName {
   font-family: var(--font-display);
@@ -128,7 +128,7 @@
 }
 .meter {
   display: block;
-  width: 180px;
+  width: 200px;
   max-width: 100%;
   height: 6px;
   border-radius: var(--r-pill);
@@ -148,30 +148,175 @@
 .tip {
   color: var(--accent-gold);
 }
-.climb {
-  min-height: 40px;
-  padding: 0 var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 0;
-  background: var(--accent-gold);
-  color: var(--text-on-gold);
+/* what the shooter is doing while Space or X is held */
+.aim {
   font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.aim[data-state='ready'] {
+  color: var(--success);
+}
+.aim[data-state='near'],
+.aim[data-state='far'],
+.aim[data-state='fast'] {
+  color: var(--danger);
+}
+
+/* the three action keys, under the robot's readout */
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--sp-3);
+  margin: 2px 0 0;
+  padding: 6px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--border-hairline);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.keys kbd {
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* the same three as buttons, for touch screens only */
+.pads {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: 64px;
+  display: none;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+.pad {
+  min-width: 76px;
+  min-height: 76px;
+  padding: 0 var(--sp-2);
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-nav);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
   transition: transform var(--dur-press) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
-.climb:active {
-  transform: scale(0.97);
+.pad:active {
+  transform: scale(0.92);
+  background: rgba(217, 198, 138, 0.25);
 }
-@media (hover: hover) and (pointer: fine) {
-  .climb:hover {
-    background: var(--accent-gold-hi);
+.padMain {
+  min-width: 96px;
+  min-height: 96px;
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+.padOn {
+  border-color: var(--accent-gold);
+  background: rgba(217, 198, 138, 0.25);
+}
+@media (pointer: coarse) {
+  .pads {
+    display: flex;
+  }
+  .keys {
+    display: none;
   }
 }
-.climb:focus-visible {
-  background: var(--accent-gold-hi);
+
+/* battery and breakdowns (Realism on) */
+.battery {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.volts {
+  min-width: 3.4rem;
+  color: var(--success);
+}
+.batteryBar {
+  display: block;
+  width: 100px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+  overflow: hidden;
+}
+.batteryFill {
+  display: block;
+  height: 100%;
+  background: var(--success);
+  transform-origin: left;
+}
+.battery[data-level='mid'] .volts {
+  color: var(--accent-gold);
+}
+.battery[data-level='mid'] .batteryFill {
+  background: var(--accent-gold);
+}
+.battery[data-level='low'] .volts {
+  color: var(--danger);
+}
+.battery[data-level='low'] .batteryFill {
+  background: var(--danger);
+}
+.alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.alert {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(217, 198, 138, 0.16);
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.alertBad {
+  background: rgba(240, 99, 99, 0.18);
+  color: var(--danger);
+}
+.feed {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  display: grid;
+  gap: 4px;
+  max-width: min(320px, 30%);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.feedItem {
+  padding: 4px var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-nav);
+  font-size: 0.78rem;
+  color: var(--text-body);
+}
+.feedMine {
+  box-shadow: inset 2px 0 0 var(--danger);
+  color: var(--text-primary);
 }
 
 .toolbar {
@@ -182,6 +327,7 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--sp-2);
+  max-width: 60%;
 }
 .tool {
   min-height: 36px;
@@ -212,15 +358,16 @@
   border-color: var(--text-muted);
 }
 
-/* ---- menus over the field */
+/* ---- anything over the field */
 .overlay {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   padding: var(--sp-4);
-  background: rgba(5, 5, 5, 0.45);
+  background: rgba(5, 5, 5, 0.5);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .loading {
   margin: 0;
@@ -232,15 +379,12 @@
   display: grid;
   justify-items: center;
   gap: var(--sp-3);
-  width: min(100%, 560px);
+  width: min(100%, 580px);
   padding: var(--sp-5);
   border-radius: var(--r-lg);
   background: var(--surface-raised);
   box-shadow: var(--elev-2);
   text-align: center;
-}
-.menu {
-  width: min(100%, 860px);
 }
 .panelTitle {
   font-family: var(--font-display);
@@ -267,130 +411,678 @@
   font-size: var(--fs-small);
   color: var(--text-muted);
 }
-
-.archs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-2);
-  width: 100%;
-}
-.arch {
-  display: grid;
-  gap: var(--sp-2);
-  align-content: start;
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
-  border: 1px solid var(--border-strong);
-  background: transparent;
-  color: var(--text-body);
-  text-align: left;
-  cursor: pointer;
-  transition: transform var(--dur-press) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-}
-.arch:active {
-  transform: scale(0.98);
-}
-@media (hover: hover) and (pointer: fine) {
-  .arch:hover {
-    border-color: var(--text-muted);
-  }
-}
-.arch:focus-visible {
-  border-color: var(--text-muted);
-}
-.archOn,
-.archOn:focus-visible {
-  border-color: var(--accent-gold);
-  background: rgba(217, 198, 138, 0.08);
-}
-.archLabel {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-primary);
-}
-.archBlurb {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-.stats {
-  display: grid;
-  gap: 4px;
-}
-.stat {
-  display: grid;
-  grid-template-columns: 3.6rem 1fr;
-  align-items: center;
-  gap: var(--sp-2);
-}
-.statName {
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-.statBar {
-  display: block;
-  height: 4px;
-  border-radius: var(--r-pill);
-  background: var(--border-strong);
-  overflow: hidden;
-}
-.statFill {
-  display: block;
-  height: 100%;
-  background: var(--accent-data);
-  transform-origin: left;
-}
-
-.diffs {
-  display: inline-flex;
-  gap: var(--sp-1);
-  padding: var(--sp-1);
-  border-radius: var(--r-pill);
-  border: 1px solid var(--border-strong);
-}
-.diff {
-  min-height: 36px;
-  padding: 0 var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-display);
-  font-size: var(--fs-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform var(--dur-press) var(--ease-out), color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-}
-.diff:active {
-  transform: scale(0.97);
-}
-@media (hover: hover) and (pointer: fine) {
-  .diff:hover {
-    color: var(--text-primary);
-  }
-}
-.diff:focus-visible {
-  color: var(--text-primary);
-}
-.diffOn,
-.diffOn:focus-visible {
-  background: var(--accent-gold);
-  color: var(--text-on-gold);
-}
-
 .row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--sp-2);
 }
+
+/* ---- loading */
+.loadingWrap {
+  background: var(--bg-void);
+}
+.loadingCard {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+}
+.loadingBar {
+  position: relative;
+  display: block;
+  width: 220px;
+  height: 2px;
+  margin: var(--sp-3) 0 var(--sp-1);
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+  overflow: hidden;
+}
+.loadingBar span {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--accent-gold);
+  border-radius: inherit;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .loadingBar span {
+    animation: loadingSlide 1.3s var(--ease-in-out) infinite;
+  }
+}
+@keyframes loadingSlide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ---- the picker: the robot centre stage, its sheet on the left, the match on
+   the right, every robot along the bottom. Over a dimmed demo match. */
+.picker {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: clamp(240px, 24vw, 360px) minmax(0, 1fr) clamp(240px, 22vw, 330px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'top top top'
+    'info stage side'
+    'strip strip strip';
+  gap: var(--sp-3) var(--sp-5);
+  padding: var(--sp-4) var(--gutter) var(--sp-3);
+  background:
+    radial-gradient(50% 60% at 50% 46%, rgba(47, 116, 200, 0.18), transparent 72%),
+    linear-gradient(180deg, rgba(5, 5, 5, 0.88), rgba(5, 5, 5, 0.92) 60%, rgba(5, 5, 5, 0.97));
+  overflow: hidden;
+}
+
+/* top: the brand and the mode */
+.pickTop {
+  grid-area: top;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.brand {
+  display: grid;
+  gap: 4px;
+}
+.brandEyebrow {
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.brandTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 2.4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.modeBox {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  min-width: 0;
+}
+.tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  background: rgba(255, 255, 255, 0.04);
+}
+.tab {
+  min-height: 38px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.tab:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    color: var(--text-primary);
+  }
+}
+.tab:focus-visible {
+  color: var(--text-primary);
+}
+.tabOn,
+.tabOn:focus-visible {
+  background: var(--accent-gold);
+  color: var(--text-on-gold);
+}
+.tabNote {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* left: who it is and what it can do */
+.pickInfo {
+  grid-area: info;
+  align-self: center;
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+}
+.home {
+  margin-bottom: var(--sp-3);
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pickTeam {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.pickNum {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 6.2vw, 6.6rem);
+  font-weight: 600;
+  line-height: 0.86;
+  letter-spacing: -0.03em;
+  color: var(--team);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 48px color-mix(in srgb, var(--team) 30%, transparent);
+}
+.pickName {
+  margin: var(--sp-2) 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--text-primary);
+}
+.traits {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.specs {
+  display: grid;
+  gap: var(--sp-3);
+  width: 100%;
+  margin: var(--sp-5) 0 0;
+}
+.spec {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  row-gap: 6px;
+}
+.specLabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.specValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.specUnit {
+  margin-left: 5px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.specBar {
+  grid-column: 1 / -1;
+  height: 2px;
+  margin: 0;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+  overflow: hidden;
+}
+/* On a short screen (a school laptop is 768 tall) the robot's card gives up air, not the title above it. */
+@media (max-height: 860px) {
+  .pickNum {
+    font-size: clamp(2.8rem, 5vw, 4.4rem);
+  }
+  .specs {
+    gap: var(--sp-2);
+    margin-top: var(--sp-3);
+  }
+  .spec {
+    row-gap: 4px;
+  }
+  .specValue {
+    font-size: 1.02rem;
+  }
+}
+.specFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-action), var(--accent-data));
+  transform-origin: left;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+
+/* centre: the robot */
+.pickStage {
+  grid-area: stage;
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+.cycle {
+  position: absolute;
+  top: calc(50% - 24px);
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-nav);
+  color: var(--text-primary);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.cyclePrev {
+  left: 0;
+}
+.cycleNext {
+  right: 0;
+}
+.cycle:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cycle:hover {
+    border-color: var(--accent-gold);
+    background: rgba(217, 198, 138, 0.12);
+  }
+}
+.cycle:focus-visible {
+  border-color: var(--accent-gold);
+  background: rgba(217, 198, 138, 0.12);
+}
+
+/* the robot preview (RobotPreview.jsx) */
+.preview {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  height: 100%;
+}
+.previewHost {
+  position: relative;
+  min-height: 0;
+}
+.previewCanvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.previewNote {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.previewControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 40px;
+}
+.select {
+  min-height: 34px;
+  max-width: 220px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+  font: inherit;
+  font-size: var(--fs-small);
+}
+.select:focus-visible {
+  border-color: var(--accent-data);
+}
+.previewBtn {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.previewBtn:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .previewBtn:hover {
+    color: var(--text-primary);
+  }
+}
+.previewBtn:focus-visible {
+  color: var(--text-primary);
+}
+
+/* right: the match */
+.pickSide {
+  grid-area: side;
+  align-self: center;
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.option {
+  display: grid;
+  gap: 8px;
+}
+.optionLabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.optionNote {
+  margin: 0;
+  min-height: 2.9em; /* two lines, so switching realism does not move the button */
+  font-size: var(--fs-small);
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-hairline);
+  background: rgba(255, 255, 255, 0.04);
+}
+.segBtn {
+  min-height: 34px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.segBtn:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .segBtn:hover {
+    color: var(--text-primary);
+  }
+}
+.segBtn:focus-visible {
+  color: var(--text-primary);
+}
+.segOn,
+.segOn:focus-visible {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+}
+.startBtn {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1rem;
+}
+.hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* bottom: every robot */
+.strip {
+  grid-area: strip;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  min-width: 0;
+}
+.stripTools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.search {
+  width: 150px;
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-small);
+}
+.search:focus-visible {
+  border-color: var(--accent-data);
+}
+.filters {
+  display: flex;
+  gap: 4px;
+}
+.chip {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.chip:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover {
+    color: var(--text-primary);
+  }
+}
+.chip:focus-visible {
+  color: var(--text-primary);
+}
+.chipOn,
+.chipOn:focus-visible {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.tiles {
+  position: relative; /* tiles measure their offsets from the strip, for centring the pick */
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 2px 8px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+}
+.tiles li {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+}
+.tile {
+  position: relative;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  width: 128px;
+  height: 62px;
+  padding: 8px 12px 8px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 3px 0 0 var(--team);
+  color: var(--text-body);
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-out), border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.tile:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover {
+    border-color: var(--border-strong);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+.tile:focus-visible {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+.tileOn,
+.tileOn:focus-visible {
+  border-color: var(--accent-gold);
+  background: rgba(217, 198, 138, 0.12);
+}
+.tileNum {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--team);
+  font-variant-numeric: tabular-nums;
+}
+.tileName {
+  overflow: hidden;
+  font-size: 0.76rem;
+  color: var(--text-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tileHome {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.7rem;
+  color: var(--accent-gold);
+}
+.empty {
+  align-self: center;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+/* ---- pause menu */
+.pauseWrap {
+  background: rgba(5, 5, 5, 0.66);
+}
+.pause {
+  width: min(100%, 520px);
+}
+.pauseEyebrow {
+  margin: 0;
+  font-size: var(--fs-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.pauseMenu {
+  display: grid;
+  gap: var(--sp-2);
+  width: min(100%, 320px);
+}
+.pauseBtn {
+  width: 100%;
+}
+.pauseKeys {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px var(--sp-4);
+  width: 100%;
+  margin: var(--sp-2) 0 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-hairline);
+  text-align: left;
+}
+.pauseKeys div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-2);
+}
+.pauseKeys dt kbd {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.pauseKeys dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ---- results */
 .final {
   margin: 0;
   font-family: var(--font-display);
@@ -453,10 +1145,12 @@
   color: var(--danger);
 }
 
-/* ---- leaderboard */
+/* ---- leaderboard, under the field */
 .board {
   display: grid;
   gap: var(--sp-3);
+  width: min(100% - 2 * var(--gutter), var(--maxw-text));
+  margin: var(--sp-5) auto 0;
   padding: var(--sp-4);
   border-radius: var(--r-lg);
   background: var(--surface-raised);
@@ -500,57 +1194,97 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- tablets and phones: the picker becomes one column that scrolls */
 @media (max-width: 960px) {
-  .archs {
-    grid-template-columns: repeat(2, 1fr);
+  .picker {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'top'
+      'stage'
+      'info'
+      'strip'
+      'side';
+    align-content: start;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-4) var(--sp-5);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .pickTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .modeBox {
+    justify-items: stretch;
+  }
+  .tabs {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+  .tab {
+    padding: 0 8px;
+  }
+  .tabNote {
+    text-align: left;
+  }
+  .pickStage {
+    height: clamp(260px, 48vh, 420px);
+  }
+  .pickInfo {
+    align-self: start;
+  }
+  .specs {
+    margin-top: var(--sp-4);
+  }
+  .strip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-2);
+  }
+  .stripTools {
+    flex-wrap: wrap;
+  }
+  .search {
+    flex: 1 1 140px;
+  }
+  .pickSide {
+    align-self: start;
+  }
+  .breakdown {
+    grid-template-columns: repeat(2, auto);
+  }
+  .feed {
+    display: none;
   }
 }
-
-/* A phone: a taller field view, and the menus under it instead of over it. */
-@media (max-width: 720px) {
-  .canvas {
-    aspect-ratio: 4 / 5;
+@media (max-width: 560px) {
+  .tab {
+    min-height: 36px;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
   }
-  .frame {
-    overflow: visible;
-    border: 0;
-    background: none;
-  }
-  .canvas {
-    border-radius: var(--r-md);
-    border: 1px solid var(--border-hairline);
-    background: var(--bg-void);
-  }
-  .overlay {
-    position: static;
-    background: none;
-    padding: var(--sp-3) 0 0;
-  }
-  .panel {
-    padding: var(--sp-4);
+  .cycle {
+    width: 40px;
+    height: 40px;
+    top: calc(50% - 20px);
   }
   .hud {
-    top: var(--sp-2);
     gap: var(--sp-2);
   }
   .robot {
     left: var(--sp-2);
     bottom: var(--sp-2);
-    max-width: 55%;
+    max-width: 58%;
   }
   .toolbar {
     right: var(--sp-2);
-    top: auto;
     bottom: var(--sp-2);
     flex-direction: column;
     align-items: flex-end;
+    max-width: 40%;
   }
-  .breakdown {
-    grid-template-columns: repeat(2, auto);
-  }
-}
-@media (max-width: 420px) {
-  .archs {
-    grid-template-columns: 1fr;
+  .pauseKeys {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,0 +1,89 @@
+/* The weekly-code screen: the same space and look as the game it stands in for. */
+.gate {
+  display: grid;
+  place-items: center;
+  height: calc(100svh - var(--nav-h));
+  min-height: 520px;
+  padding: var(--sp-5) var(--gutter);
+  border-block: 1px solid var(--border-hairline);
+  background:
+    radial-gradient(45% 55% at 50% 45%, rgba(47, 116, 200, 0.2), transparent 72%),
+    var(--bg-void);
+}
+.card {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  width: min(100%, 420px);
+  text-align: center;
+}
+.eyebrow {
+  font-size: var(--fs-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.form {
+  display: grid;
+  justify-items: stretch;
+  gap: var(--sp-3);
+  width: 100%;
+  margin-top: var(--sp-5);
+}
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.note {
+  margin: 0;
+  font-size: var(--fs-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.card > .note {
+  margin-top: var(--sp-4);
+}
+.input {
+  min-height: 64px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.input::placeholder {
+  color: var(--text-faint);
+}
+.input:focus-visible {
+  border-color: var(--accent-gold);
+}
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.button {
+  width: 100%;
+  min-height: 52px;
+}
+.error {
+  min-height: 1.5em; /* room kept, so a message does not shift the form */
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--danger);
+}

@@ -18,7 +18,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "== packages"
 apt-get update -q
-apt-get install -yq curl ca-certificates gnupg debian-keyring debian-archive-keyring apt-transport-https sqlite3 iptables-persistent
+apt-get install -yq curl ca-certificates gnupg debian-keyring debian-archive-keyring apt-transport-https sqlite3 iptables-persistent openssl
 
 if ! command -v node >/dev/null || ! node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>22||(a===22&&b>=13)?0:1)'; then
   echo "== node 24"
@@ -39,8 +39,18 @@ echo "== app"
 id arcade >/dev/null 2>&1 || useradd --system --home /var/lib/arcade --shell /usr/sbin/nologin arcade
 install -d -o root -g root -m 755 /opt/arcade
 install -d -o arcade -g arcade -m 750 /var/lib/arcade /var/lib/arcade/backups
-install -m 644 "$HERE/server.mjs" "$HERE/main.mjs" "$HERE/package.json" /opt/arcade/
+install -m 644 "$HERE/server.mjs" "$HERE/main.mjs" "$HERE/access.mjs" "$HERE/code.mjs" "$HERE/package.json" /opt/arcade/
+install -m 755 "$HERE/deploy/code.sh" /opt/arcade/code.sh
 install -m 644 "$HERE/deploy/arcade.service" /etc/systemd/system/arcade.service
+
+# The weekly code's secret: made once, kept across updates, readable by root only
+# (systemd reads it for the service). Deleting the line makes the arcade open.
+touch /etc/arcade.env
+chmod 600 /etc/arcade.env
+if ! grep -q '^ARCADE_CODE_SECRET=' /etc/arcade.env; then
+  echo "ARCADE_CODE_SECRET=$(openssl rand -hex 32)" >> /etc/arcade.env
+  echo "made a new weekly-code secret in /etc/arcade.env"
+fi
 systemctl daemon-reload
 systemctl enable --now arcade
 systemctl restart arcade

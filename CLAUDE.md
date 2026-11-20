@@ -38,8 +38,9 @@ model. The data model and the rules/functions/client contract are in
 | `functions/` | Cloud Functions (region `us-west1`) and their tests in `functions/test/`. |
 | `scripts/backup/` | The nightly mirror, restore test, systemd units. |
 | `scripts/firebase/` | `seed-emulators.mjs`, the local test accounts. |
-| `src/lib/arcade3d/` | Cycle Rush (`#/arcade`), a 3D take on the 2026 game: `config.js` (field and fuel layout from maple-sim's 2026 arena and the team's `RebuiltField`), `rules.js` (hub shifts, from the team's `FmsUtil`), `ballistics.js`, `sim.js` (Rapier physics, passed in), `ai.js`, `scene.js` (three.js). `npm run test:arcade` plays headless matches. `src/lib/arcade/leaderboard.js` is the leaderboard client. |
-| `server/arcade/` | The arcade leaderboard API, on its own Oracle Cloud VM (not Firebase). No dependencies; `npm test` in that folder. Runbook: `docs/ARCADE.md`. |
+| `src/lib/arcade3d/` | Cycle Rush (`#/arcade`), a 3D take on the 2026 game: `config.js` (layout, timing, modes), `rules.js` (hub shifts, from the team's `FmsUtil`), `robots.js` (one spec per robot, from a descriptor or Numbers' `robot.json`), `sim.js` (Rapier physics, passed in; field colliders from `public/arcade/field.json`), `ai.js`, `faults.js` (the optional Realism setting: battery sag and brownouts, broken intakes, jams, radio drops, motor heat), `rig.js` (binds each model's `part:` joints to live state), `hopper.js` (the fuel a robot carries, as real balls in a small Rapier world of its own that rides with the robot; for looks only, `r.carry` is the count), `scene.js` (three.js; also drapes each hopper's net over its pile), `assets.js` (loads `public/arcade`). `npm run test:arcade` plays headless matches on the real assets. `src/lib/arcade/leaderboard.js` is the leaderboard client. |
+| `public/arcade/` | The arcade's field, FUEL and 21 robot models plus their descriptors, written by `tools/arcade-assets.mjs` from an asset export. Do not edit by hand; re-run the tool. |
+| `server/arcade/` | The arcade's API on its own Oracle Cloud VM (not Firebase): the weekly code that gates `#/arcade` (`access.mjs`; `src/components/ArcadeGate.jsx` is the lock screen) and the leaderboard. No dependencies; `npm test` in that folder. Runbook: `docs/ARCADE.md`. |
 | `docs/` | `PORTAL.md` (setup), `FIREBASE.md` (data model and contract), `BACKUP.md` (the backup runbook), `ARCADE.md` (the arcade leaderboard host). |
 
 ## Design system — the rules that matter
@@ -197,6 +198,14 @@ These are real, were found the hard way, and are easy to reintroduce.
    `npm run deploy` publishes with `gh-pages --add` (old hashed files stay on
    `gh-pages`), and `index.html` plus `vite:preloadError` in `src/main.jsx` reload
    the page once if one of our `/assets/` files fails to load. Do not drop `--add`.
+
+19. **WPILib (x, y) drawn straight into three.js (x, z) is a mirror image.** WPILib
+   is right-handed with z up; three.js is right-handed with y up, so y has to go to
+   **−z**. The arcade first used z = y and then flipped the field model to match,
+   which put every depot, outpost and tower on the wrong side. The game frame is now
+   z = W − y (`fromY` in `src/lib/arcade3d/config.js`), the field model is drawn
+   unflipped, and `npm run test:arcade` checks which side the blue depot is on. Do
+   not add a `scale.z = -1` anywhere to make something line up.
 
 ## Security posture
 

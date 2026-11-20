@@ -30,6 +30,18 @@ Console's bake gains a fix worth having, port it across by hand.
 Export the flagship robot from Onshape as glTF, run the command above, and update
 `src/data/robot.js`. Nothing else should need to change.
 
+## `arcade-assets.mjs` — the arcade's field and robots
+
+```bash
+node tools/arcade-assets.mjs ~/Desktop/assets
+```
+
+Imports an arcade asset export into `public/arcade`: the field and FUEL models and every robot in
+`inventory.json`, meshopt-compressed (about 3.5x smaller, node names and clips untouched), each robot's
+descriptor minus what only the exporter needed, `field.json`'s collision shapes converted to the game's
+frame, and `index.json` for the robot picker. Skins and `data/motion` are not copied (the motion
+captures are the same as the GLBs' own clips). Everything in `public/arcade` ships on deploy.
+
 ## `hub-from-field.mjs` — the HUB for the landing page's ending
 
 ```bash

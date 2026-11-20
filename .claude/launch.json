@@ -18,6 +18,18 @@
         "dev:emulators"
       ],
       "port": 5174
+    },
+    {
+      "name": "5805-built",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173
     }
   ]
 }

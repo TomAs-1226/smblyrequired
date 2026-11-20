@@ -7,13 +7,19 @@
 // is from the game manual, rounded.
 //
 // Coordinates: X runs the length of the field from the blue wall (0) to the red
-// wall, Z runs across it, Y is up. Metres, seconds, kilograms. The field is
-// rotationally symmetric: red's copy of anything is (L - x, W - z).
+// wall, Y is up, and Z runs across it to the RIGHT as seen from the blue driver
+// station. That makes (X, Y, Z) right-handed, which is what three.js draws and
+// what the robot and field models are built in; a WPILib field position (x, y)
+// is (x, W - y) here. Getting this backwards draws the whole field mirrored.
+// Metres, seconds, kilograms. The field is rotationally symmetric: red's copy of
+// anything is (L - x, W - z).
 
 const IN = 0.0254
 
 export const FIELD = { L: 16.541, W: 8.069 }
 export const mirror = (p) => ({ ...p, x: FIELD.L - p.x, z: FIELD.W - p.z })
+/** A WPILib field y as this file's z. */
+const fromY = (y) => FIELD.W - y
 
 export const FUEL = {
   r: 0.075, // 5.91 in foam ball
@@ -26,12 +32,16 @@ export const FUEL = {
 // RebuiltHub, RebuiltOutpost; BSD-3-Clause, Shenzhen Robotics Alliance), which
 // agrees with the team's RebuiltField to the millimetre where both have a value.
 const HUB_X = 4.625594
-const HUB_Z = 4.03463
+const HUB_Z = fromY(4.03463)
 const HUB_SIZE = 1.1938 // 47 in square
 export const HUB = {
   size: HUB_SIZE,
-  top: 72 * IN, // the opening fuel drops into (the hub model is 1.83 m tall)
+  top: 72 * IN, // the rim of the funnel (field.json: hub.rimHeight 1.8288)
   inner: 41 * IN,
+  // The funnel narrows to a throat; fuel through it is scored (field.json hub.*).
+  throat: 0.603504,
+  throatY: 1.433576,
+  boxTop: 0.765048,
   wall: 0.07,
   blue: { x: HUB_X, z: HUB_Z },
   red: { x: FIELD.L - HUB_X, z: FIELD.W - HUB_Z },
@@ -44,7 +54,7 @@ export const HUB = {
     { dz: -0.447675, yaw: -33.75 },
   ],
   exitOut: 0.5969 - 0.0282, // from the hub centre, toward the neutral zone
-  exitY: 1.5748 - 0.5,
+  exitY: (0.765048 + 0.9906) / 2, // between hub.exitBottom and hub.exitTop
 }
 
 // The hub line is closed off by a bump on each side of the hub (73 in long),
@@ -80,8 +90,8 @@ const UPRIGHT_X = 1.06204
 const UPRIGHT_Z = 3.31524
 const UPRIGHT_GAP = 33.75 * IN
 export const TOWER = {
-  blue: { x: UPRIGHT_X, z: UPRIGHT_Z + UPRIGHT_GAP / 2 },
-  red: { x: FIELD.L - UPRIGHT_X, z: FIELD.W - UPRIGHT_Z - UPRIGHT_GAP / 2 },
+  blue: { x: UPRIGHT_X, z: fromY(UPRIGHT_Z + UPRIGHT_GAP / 2) },
+  red: { x: FIELD.L - UPRIGHT_X, z: FIELD.W - fromY(UPRIGHT_Z + UPRIGHT_GAP / 2) },
   gap: UPRIGHT_GAP,
   upright: { x: 3.5 * IN, z: 1.5 * IN, h: 1.9 },
   width: UPRIGHT_GAP,
@@ -94,23 +104,27 @@ export const TOWER = {
 // touching. The outposts hold 24 more each, fed in by the human player.
 const PITCH_X = 5.991 * IN
 const PITCH_Z = 5.95 * IN
+// Each block is given by the centre of its ball with the lowest x and z. maple-sim
+// gives the block's outer corner with the lowest WPILib y: a ball radius in from
+// that, and the far end of the block in z.
+const block = (x, y, nx, nz) => ({ x: x + FUEL.r, z: fromY(y + FUEL.r + (nz - 1) * PITCH_Z), nx, nz })
 export const LAYOUT = {
   pitch: { x: PITCH_X, z: PITCH_Z },
-  centre: { x: 7.35737, z: 1.724406, nx: 12, nz: 30 },
+  centre: block(7.35737, 1.724406, 12, 30),
   depots: {
-    blue: { x: 0.02, z: 5.53, nx: 4, nz: 6 },
-    red: { x: 16.0274, z: 1.646936, nx: 4, nz: 6 },
+    blue: block(0.02, 5.53, 4, 6),
+    red: block(16.0274, 1.646936, 4, 6),
   },
 }
 export const DEPOT = {
-  blue: { x: 0.02 + (1.5 * PITCH_X), z: 5.53 + 2.5 * PITCH_Z },
-  red: { x: 16.0274 + 1.5 * PITCH_X, z: 1.646936 + 2.5 * PITCH_Z },
+  blue: { x: LAYOUT.depots.blue.x + 1.5 * PITCH_X, z: LAYOUT.depots.blue.z + 2.5 * PITCH_Z },
+  red: { x: LAYOUT.depots.red.x + 1.5 * PITCH_X, z: LAYOUT.depots.red.z + 2.5 * PITCH_Z },
   w: 4 * PITCH_X + 0.05,
   d: 6 * PITCH_Z + 0.05,
 }
 export const OUTPOST = {
-  blue: { x: 0, z: 0.665988 },
-  red: { x: FIELD.L, z: 7.403338 },
+  blue: { x: 0, z: fromY(0.665988) },
+  red: { x: FIELD.L, z: fromY(7.403338) },
   holds: 24,
   feedEvery: 0.15, // seconds per ball from the human player
   reach: 1.15, // robot centre within this of the chute, intake toward the wall
@@ -134,49 +148,24 @@ export const POINTS = {
 }
 
 // ------------------------------------------------------------- robots
-// len × wid includes bumpers. `height` decides who fits under a trench.
-// hood: launch angle above horizontal. exit: the fastest the shooter can throw.
-export const ARCHETYPES = {
-  turret: {
-    label: 'Turret',
-    blurb: 'Aims itself and shoots on the move. Too tall for the trench.',
-    len: 0.86, wid: 0.86, height: 0.72, mass: 56,
-    speed: 4.4, accel: 9, yawRate: 7,
-    capacity: 30, fireRate: 7, hood: 62, exit: 12.5, turret: true,
-    intake: 0.72, climb: 2, climbTime: 4.5,
-  },
-  trench: {
-    label: 'Trench runner',
-    blurb: 'Low and quick under the trench. Fixed shooter: face the hub to score.',
-    len: 0.82, wid: 0.82, height: 0.5, mass: 50,
-    speed: 4.9, accel: 10, yawRate: 8,
-    capacity: 22, fireRate: 9, hood: 60, exit: 12, turret: false,
-    intake: 0.78, climb: 1, climbTime: 2.5,
-  },
-  hopper: {
-    label: 'Hopper',
-    blurb: 'Holds 50 and dumps them fast, but slow and short-ranged.',
-    len: 0.9, wid: 0.9, height: 0.66, mass: 62,
-    speed: 3.7, accel: 7, yawRate: 5.5,
-    capacity: 50, fireRate: 13, hood: 70, exit: 8.6, turret: false,
-    intake: 0.88, climb: 1, climbTime: 3,
-  },
-  bruiser: {
-    label: 'Bruiser',
-    blurb: 'Heavy, low, fast. Small hopper. Climbs to the top rung.',
-    len: 0.84, wid: 0.84, height: 0.55, mass: 68,
-    speed: 4.6, accel: 12, yawRate: 7,
-    capacity: 12, fireRate: 5, hood: 62, exit: 12, turret: false,
-    intake: 0.5, climb: 3, climbTime: 5,
-  },
-}
-export const ARCHETYPE_IDS = Object.keys(ARCHETYPES)
+// Robots come from their descriptors (robots.js). What is left here is how hard
+// the computer drives them.
 export const PRELOAD = 8
 
+// spreadScale multiplies each robot's own measured shot spread.
 export const DIFFICULTY = {
-  rookie: { speed: 0.7, spreadSpeed: 0.045, spreadYaw: 0.06, react: 0.5, defend: false },
-  regional: { speed: 0.85, spreadSpeed: 0.025, spreadYaw: 0.03, react: 0.25, defend: false },
-  einstein: { speed: 0.97, spreadSpeed: 0.012, spreadYaw: 0.014, react: 0.1, defend: true },
+  rookie: { speed: 0.7, spreadSpeed: 0.04, spreadYaw: 0.05, spreadScale: 3, react: 0.5, defend: false },
+  regional: { speed: 0.85, spreadSpeed: 0.02, spreadYaw: 0.025, spreadScale: 1.6, react: 0.25, defend: false },
+  einstein: { speed: 0.97, spreadSpeed: 0.008, spreadYaw: 0.01, spreadScale: 1, react: 0.1, defend: true },
 }
-export const PARTNER = { speed: 0.85, spreadSpeed: 0.022, spreadYaw: 0.028, react: 0.25, defend: false }
-export const PLAYER_SPREAD = { spreadSpeed: 0.01, spreadYaw: 0.01 }
+export const PARTNER = { speed: 0.85, spreadSpeed: 0.02, spreadYaw: 0.025, spreadScale: 1.5, react: 0.25, defend: false }
+export const PLAYER_SPREAD = { spreadSpeed: 0, spreadYaw: 0 }
+
+// ------------------------------------------------------------- modes
+// total: seconds (null: no clock). shifts: the hub schedule (else always live).
+export const MODES = {
+  match: { label: 'Match', blueRobots: 3, redRobots: 3, total: MATCH.total, shifts: true, climb: true },
+  solo: { label: 'Solo match', blueRobots: 1, redRobots: 0, total: MATCH.total, shifts: true, climb: true },
+  skills: { label: 'Skills', blueRobots: 1, redRobots: 0, total: 60, shifts: false, climb: true },
+  practice: { label: 'Practice', blueRobots: 1, redRobots: 0, total: null, shifts: false, climb: true },
+}

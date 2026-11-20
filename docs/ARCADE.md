@@ -1,9 +1,10 @@
-# Arcade leaderboard (Oracle Cloud)
+# Arcade server: weekly code and leaderboard (Oracle Cloud)
 
-The Cycle Rush game (`#/arcade`) runs entirely in the browser and works without
-any of this. This document is about the optional **leaderboard**: a small API in
-`server/arcade/` that runs on an Oracle Cloud *Always Free* VM, behind Caddy for
-HTTPS.
+The Cycle Rush game (`#/arcade`) runs entirely in the browser. This document is
+about the small API in `server/arcade/` that runs on an Oracle Cloud *Always Free*
+VM, behind Caddy for HTTPS. It does two things: it checks the **weekly code** the
+arcade asks for, and it keeps the **leaderboard**. Until the site is built with
+`VITE_ARCADE_API` pointing at it, the arcade is open and has no leaderboard.
 
 > Public repo: no IPs, hostnames, or keys in this file. `<api-host>` is a
 > placeholder; the real one lives in the password manager with the VM's SSH key.
@@ -19,13 +20,50 @@ The leaderboard is public and anonymous. Keeping it off Firebase keeps it out of
 the portal's security rules entirely: nothing the arcade does can touch member
 data, and a flood of fake scores cannot cost the team's Firebase quota.
 
+## The weekly code
+
+The arcade asks for a short code (like `K7Q-X3M`) before the game loads. The code
+changes by itself at midnight every Monday, Pacific time: it is worked out from a
+secret only the server holds and the week's number (`server/arcade/access.mjs`), so
+nobody has to set it. A correct code gets a pass that works until the week rolls
+over; that browser is not asked again that week.
+
+**To get the code** for this week and next, on the VM:
+
+```bash
+sudo bash /opt/arcade/code.sh
+```
+
+Share it however the team shares things (it is fine to post next week's code ahead
+of time). Wrong guesses are limited to 8 per 10 minutes per address.
+
+**What it does and does not protect.** It keeps the arcade page closed to anyone
+without the code, and the leaderboard only takes scores from someone who has it.
+It does not hide the game's files: those are public on GitHub Pages like the rest
+of the site, and someone who goes looking can download them.
+
+**To change the code early** (say it leaked), replace the secret and restart:
+
+```bash
+sudo sed -i "s/^ARCADE_CODE_SECRET=.*/ARCADE_CODE_SECRET=$(openssl rand -hex 32)/" /etc/arcade.env
+sudo systemctl restart arcade
+```
+
+Everyone's pass stops working and this week's code changes. **To open the arcade
+to everyone**, delete the `ARCADE_CODE_SECRET` line from `/etc/arcade.env` and
+restart. If the server is down, the arcade says it cannot check codes and offers to
+try again; it does not open by itself.
+
 ## The API
 
 | Call | Does |
 |---|---|
 | `GET /api/health` | `{ ok: true }` |
-| `POST /api/runs` `{ difficulty }` | starts a match, returns `{ run }` |
-| `POST /api/scores` `{ run, name, difficulty, blue, red, made, fired }` | posts a finished match, returns `{ rank }` |
+| `GET /api/access` | `{ required }`: whether a code is asked for |
+| `POST /api/unlock` `{ code }` | this week's code in, `{ pass }` out |
+| `POST /api/check` `{ pass }` | `{ ok }`: is the pass good for this week |
+| `POST /api/runs` `{ difficulty }` | starts a match, returns `{ run }`. Needs `Authorization: Bearer <pass>` |
+| `POST /api/scores` `{ run, name, difficulty, blue, red, made, fired }` | posts a finished match, returns `{ rank }`. Needs the pass |
 | `GET /api/scores?difficulty=regional` | top 10 |
 
 The game is client-side, so **scores can be faked** by someone determined. What the
@@ -40,6 +78,7 @@ Environment (set in `/etc/arcade.env` on the VM to override the unit's defaults)
 | `ARCADE_ORIGINS` | `https://frc5805.com,https://www.frc5805.com,http://localhost:5173` |
 | `ARCADE_DB` | `/var/lib/arcade/arcade.db` |
 | `ARCADE_MIN_MATCH_SECONDS` | `158` |
+| `ARCADE_CODE_SECRET` | made by `setup.sh` on first install (64 hex characters). Unset: no code |
 
 ## Setting it up
 
@@ -127,7 +166,7 @@ are on the same disk; copy one off occasionally if the scores matter.
 
 ```bash
 cd server/arcade
-npm test                                         # 8 tests, throwaway database
+npm test                                         # 14 tests, throwaway database
 ARCADE_MIN_MATCH_SECONDS=0 ARCADE_DB=./data/dev.db npm start
 # then, in the repo root:
 VITE_ARCADE_API=http://localhost:8787 npm run dev

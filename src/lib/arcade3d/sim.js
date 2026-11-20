@@ -1,20 +1,40 @@
 // Cycle Rush 3D — the physics match. Rapier does the rigid-body physics (robots
-// pushing each other and plowing through fuel, fuel bouncing off hub rims and
-// rolling over bumps); this file adds what a physics engine does not know:
-// swerve drive with traction limits, intakes, shooters, air drag, scoring, the
-// hub shifts, and climbing.
+// pushing each other and plowing through fuel, fuel rolling down the hub funnel,
+// off the nets and over bumps); this file adds what a physics engine does not
+// know: swerve drive with traction limits, intakes, shooters, air drag, scoring,
+// the hub shifts, climbing and the game modes.
 //
-// Rapier is passed in, already initialised, so the browser and the Node tests
-// can each load it their own way. Nothing here touches the DOM.
+// Inputs, all passed in so the browser and the Node tests can each load them
+// their own way:
+//   R       Rapier, already initialised
+//   field   public/arcade/field.json (colliders in the game frame, plus constants)
+//   lineup  { blue: [spec…], red: [spec…] } from robots.js; blue[0] is the player
+// Nothing here touches the DOM.
+//
+// A robot is told what to do with a command, the same shape for the player and
+// the computer:
+//   vx, vz    drive, in the field's frame, length ≤ 1
+//   turn      −1..1, spin left or right (eased in and out, never a snap)
+//   aim       a heading to hold instead (the computer uses this)
+//   fire      hold: aim at the hub and shoot when lined up, in range and spun up
+//   special   hold: the robot's special. Climb if it can right now, else pass
+//             fuel back to its own zone
+//   intake    hold: intake out and running
+//   climb, pass   the two halves of `special`, for callers that want one
 import {
-  FIELD, FUEL, HUB, TRENCH, BUMP, LANES, TOWER, LAYOUT, OUTPOST, MATCH, POINTS,
-  ARCHETYPES, ARCHETYPE_IDS, PRELOAD, DIFFICULTY, PARTNER, PLAYER_SPREAD, mirror,
+  FIELD, FUEL, HUB, TOWER, LAYOUT, OUTPOST, MATCH, POINTS,
+  PRELOAD, DIFFICULTY, PARTNER, PLAYER_SPREAD, MODES, mirror,
 } from './config.js'
 import { periodOf, hubActive } from './rules.js'
 import { solveShot, launchVelocity } from './ballistics.js'
+import { tableElevation, hopperHoldsOpen } from './robots.js'
 import { think } from './ai.js'
+import { initHealth, faultStep, noteImpact, noteShot } from './faults.js'
 
 export const DT = 1 / 60
+const MAX_EXIT = 18 // m/s, the fastest any shooter here throws
+const TURN_ACCEL = 30 // rad/s², how hard a robot can start or stop spinning
+const PASS_ELEVATION = 46
 
 export function mulberry32(seed) {
   let a = seed >>> 0
@@ -29,147 +49,175 @@ export function mulberry32(seed) {
 export const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a))
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v)
 
-// Field heading ψ is measured in the floor plane from +x toward +z. Rapier's
-// yaw θ is a right-handed turn about +y, which runs the other way: ψ = -θ.
+// Heading ψ is measured in the floor plane from +x toward +z (clockwise seen from
+// above, in this right-handed frame). Rapier's yaw θ is a right-handed turn about
+// +y, which runs the other way: ψ = -θ.
 const quatFromPsi = (psi) => ({ x: 0, y: Math.sin(-psi / 2), z: 0, w: Math.cos(-psi / 2) })
 const psiFromQuat = (q) => -2 * Math.atan2(q.y, q.w)
 
+// Collision groups: membership in the high 16 bits, what it collides with in the low 16.
+const G = { FIELD: 1, ROBOT: 2, FUEL: 4, FUEL_ONLY: 8, BOUND: 16 }
+const groups = (member, filter) => (member << 16) | filter
+const GROUP_FIELD = groups(G.FIELD, G.ROBOT | G.FUEL)
+const GROUP_BOUND = groups(G.BOUND, G.ROBOT | G.FUEL) // the invisible box round the field
+const GROUP_FUEL_ONLY = groups(G.FUEL_ONLY, G.FUEL) // nets: fuel hits them, robots do not
+const GROUP_ROBOT = groups(G.ROBOT, G.FIELD | G.BOUND | G.ROBOT | G.FUEL)
+const GROUP_FUEL = groups(G.FUEL, G.FIELD | G.BOUND | G.FUEL_ONLY | G.ROBOT | G.FUEL)
+// A ball just leaving a shooter passes through robots: it starts inside one.
+const GROUP_SHOT = groups(G.FUEL, G.FIELD | G.BOUND | G.FUEL_ONLY | G.FUEL)
+// What a wheel stands on: the real field, not the nets or the invisible box.
+const RAY_SOLID = groups(G.ROBOT, G.FIELD)
+// What blocks a view: that, and the nets (see-through, but a camera behind one sees mostly net).
+const RAY_SIGHT = groups(G.ROBOT | G.FUEL, G.FIELD | G.FUEL_ONLY)
+
 // ------------------------------------------------------------------ world
-function buildField(R, world) {
-  const fixed = (desc, x, y, z) => {
-    const body = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(x, y, z))
-    world.createCollider(desc.setFriction(0.8), body)
-  }
-  const box = (hx, hy, hz) => R.ColliderDesc.cuboid(hx, hy, hz)
+function buildField(R, world, field) {
+  const body = world.createRigidBody(R.RigidBodyDesc.fixed())
+  const add = (desc, group = GROUP_FIELD) => world.createCollider(desc.setFriction(0.8).setCollisionGroups(group), body)
 
-  // carpet and walls (walls are tall and invisible above the rail, so fuel stays in)
-  fixed(box(FIELD.L / 2 + 1, 0.05, FIELD.W / 2 + 1), FIELD.L / 2, -0.05, FIELD.W / 2)
-  const wallH = 1.5
-  fixed(box(0.05, wallH, FIELD.W / 2), -0.05, wallH, FIELD.W / 2)
-  fixed(box(0.05, wallH, FIELD.W / 2), FIELD.L + 0.05, wallH, FIELD.W / 2)
-  fixed(box(FIELD.L / 2, wallH, 0.05), FIELD.L / 2, wallH, -0.05)
-  fixed(box(FIELD.L / 2, wallH, 0.05), FIELD.L / 2, wallH, FIELD.W + 0.05)
+  // Carpet, and a tall invisible box so nothing leaves the field.
+  add(R.ColliderDesc.cuboid(FIELD.L / 2 + 2, 0.05, FIELD.W / 2 + 2).setTranslation(FIELD.L / 2, -0.05, FIELD.W / 2))
+  const H = 2.5
+  add(R.ColliderDesc.cuboid(0.05, H, FIELD.W / 2 + 0.1).setTranslation(-0.06, H, FIELD.W / 2), GROUP_BOUND)
+  add(R.ColliderDesc.cuboid(0.05, H, FIELD.W / 2 + 0.1).setTranslation(FIELD.L + 0.06, H, FIELD.W / 2), GROUP_BOUND)
+  add(R.ColliderDesc.cuboid(FIELD.L / 2 + 0.1, H, 0.05).setTranslation(FIELD.L / 2, H, -0.06), GROUP_BOUND)
+  add(R.ColliderDesc.cuboid(FIELD.L / 2 + 0.1, H, 0.05).setTranslation(FIELD.L / 2, H, FIELD.W + 0.06), GROUP_BOUND)
 
-  for (const team of ['blue', 'red']) {
-    const h = HUB[team]
-    // Hub: four walls round an open top. Fuel that drops inside is scored.
-    const hs = HUB.size / 2
-    const t = HUB.wall / 2
-    fixed(box(t, HUB.top / 2, hs), h.x - hs + t, HUB.top / 2, h.z)
-    fixed(box(t, HUB.top / 2, hs), h.x + hs - t, HUB.top / 2, h.z)
-    fixed(box(hs, HUB.top / 2, t), h.x, HUB.top / 2, h.z - hs + t)
-    fixed(box(hs, HUB.top / 2, t), h.x, HUB.top / 2, h.z + hs - t)
-
-    // Bumps either side of the hub, a trench wall, then the trench lane.
-    const flip = team === 'red'
-    const zs = (z) => (flip ? FIELD.W - z : z)
-    for (const [a, b] of BUMP.spans) {
-      const z0 = Math.min(zs(a), zs(b))
-      const z1 = Math.max(zs(a), zs(b))
-      const pts = []
-      for (const z of [z0, z1]) {
-        pts.push(-BUMP.depth / 2, 0, z, BUMP.depth / 2, 0, z, -BUMP.top / 2, BUMP.height, z, BUMP.top / 2, BUMP.height, z)
+  let n = 0
+  for (const c of field.colliders) {
+    let desc
+    if (c.kind === 'box') {
+      desc = R.ColliderDesc.cuboid(c.size[0] / 2, c.size[1] / 2, c.size[2] / 2).setTranslation(...c.center)
+    } else if (c.kind === 'hull') {
+      desc = R.ColliderDesc.convexHull(new Float32Array(c.points))
+      if (!desc) continue
+    } else if (c.kind === 'cylinder') {
+      desc = R.ColliderDesc.cylinder(c.length / 2, c.radius).setTranslation(...c.center)
+      const [ax, ay, az] = c.axis
+      const len = Math.hypot(ax, ay, az) || 1
+      // Rapier's cylinder runs along +y; turn +y onto the axis.
+      const ux = ax / len, uy = ay / len, uz = az / len
+      const w = 1 + uy
+      if (w < 1e-6) desc.setRotation({ x: 1, y: 0, z: 0, w: 0 })
+      else {
+        const q = { x: uz, y: 0, z: -ux, w }
+        const m = Math.hypot(q.x, q.y, q.z, q.w)
+        desc.setRotation({ x: q.x / m, y: 0, z: q.z / m, w: q.w / m })
       }
-      const body = world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(h.x, 0, 0))
-      world.createCollider(R.ColliderDesc.convexHull(new Float32Array(pts)).setFriction(0.9), body)
+    } else continue
+    if (c.fuelOnly) {
+      // A net catches a ball: it kills the bounce and the ball drops.
+      desc.setRestitution(0.02).setRestitutionCombineRule(R.CoefficientCombineRule.Min)
+      add(desc, GROUP_FUEL_ONLY)
+    } else {
+      add(desc)
     }
-    const trenchH = TRENCH.clearance + TRENCH.roof
-    for (const side of [0, 1]) {
-      const wallZ = zs(side ? FIELD.W - TRENCH.wall.z : TRENCH.wall.z)
-      const laneZ = zs(side ? LANES.trench[1] : LANES.trench[0])
-      fixed(box(TRENCH.depth / 2, trenchH / 2, TRENCH.wall.t / 2), h.x, trenchH / 2, wallZ)
-      fixed(box(TRENCH.depth / 2, TRENCH.roof / 2, TRENCH.width / 2), h.x, TRENCH.clearance + TRENCH.roof / 2, laneZ)
-    }
-
-    // The tower's two uprights.
-    const tw = TOWER[team]
-    const u = TOWER.upright
-    for (const dz of [-TOWER.gap / 2, TOWER.gap / 2]) {
-      fixed(box(u.x / 2, u.h / 2, u.z / 2), tw.x, u.h / 2, tw.z + dz)
-    }
+    n++
   }
+  return n
 }
 
-function makeRobot(R, world, spec) {
-  const a = ARCHETYPES[spec.arch]
+function makeRobot(R, world, spec, place) {
   const body = world.createRigidBody(
     R.RigidBodyDesc.dynamic()
-      .setTranslation(spec.x, a.height / 2 + 0.005, spec.z)
-      .setRotation(quatFromPsi(spec.psi))
+      .setTranslation(place.x, 0.01, place.z)
+      .setRotation(quatFromPsi(place.psi))
       .setLinearDamping(0.3)
       .setAngularDamping(2)
       .setCanSleep(false)
       .setCcdEnabled(true),
   )
   body.setEnabledRotations(false, true, false, true)
-  world.createCollider(
-    // No contact friction: the chassis is not what grips. Traction is the drive's
-    // acceleration limit, and a frictionless box slides up a bump the way wheels roll.
-    R.ColliderDesc.cuboid(a.len / 2, a.height / 2, a.wid / 2)
-      .setMass(a.mass)
-      .setFriction(0)
-      .setFrictionCombineRule(R.CoefficientCombineRule.Min)
-      .setRestitution(0.05),
-    body,
-  )
+  // No contact friction: the chassis is not what grips. Traction is the drive's
+  // acceleration limit, and a frictionless box slides up a bump the way wheels roll.
+  const shape = (desc, mass) =>
+    world.createCollider(
+      desc.setMass(mass).setFriction(0).setFrictionCombineRule(R.CoefficientCombineRule.Min)
+        .setRestitution(0.05).setCollisionGroups(GROUP_ROBOT),
+      body,
+    )
+  // The robot stands on its wheels: a sphere at each swerve module rolls over the
+  // field's lips and seams the way a wheel does. The bumper box above them carries
+  // the mass and does the pushing.
+  const wr = spec.wheelRadius
+  for (const [mx, mz] of spec.modules) shape(R.ColliderDesc.ball(wr).setTranslation(mx, wr, mz), 0.5)
+  const bb = Math.max(spec.bumper.bottom, 0.02)
+  const bt = spec.bumper.top
+  shape(R.ColliderDesc.cuboid(spec.len / 2, (bt - bb) / 2, spec.wid / 2).setTranslation(0, (bt + bb) / 2, 0), spec.mass)
+  // The superstructure: what hits a trench roof or another robot up high.
+  for (const h of spec.hull) {
+    if (h.centre[1] + h.half[1] <= bt + 0.01) continue
+    shape(R.ColliderDesc.cuboid(h.half[0], h.half[1], h.half[2]).setTranslation(h.centre[0], h.centre[1], h.centre[2]), 0.01)
+  }
   return {
-    ...spec,
-    a,
+    ...place,
+    a: spec,
+    spec,
     body,
-    restY: a.height / 2 + 0.005,
     carry: PRELOAD,
     cooldown: 0,
+    lanes: spec.shot.exits.map(() => 0), // s until each feed lane has its next ball at the wheel
+    fedAt: -1,
     intakeBudget: 2,
-    turretYaw: spec.psi,
+    intakeOut: 0, // where the intake is: 0 stowed .. 1 out
+    intakeOn: false, // rollers running, picking up
+    agit: 0,
+    turretYaw: place.psi + spec.shot.yaw,
+    spin: 0, // shooter wheel, 0..1 of the speed the shot needs
+    firing: 0,
+    aim: null,
     climb: { state: 'none', level: 0, t: 0, from: null },
-    x: spec.x, z: spec.z, vx: 0, vz: 0, psi: spec.psi,
-    ai: { slot: spec.slot },
+    x: place.x, z: place.z, y: 0, vx: 0, vz: 0, psi: place.psi, om: 0,
+    ai: { slot: place.slot },
     cmd: null,
   }
 }
 
 // ------------------------------------------------------------------ setup
-export function createSim(R, { difficulty = 'regional', arch = 'turret', seed = (Date.now() & 0x7fffffff), demo = false } = {}) {
+/** The heading that points a robot's intake down the field, at the fuel. Most carry it on the back. */
+const intakeForward = (spec) => -spec.intake.dirs[0]
+
+/**
+ * mode: 'match' (3v3, the full rules) · 'solo' (your alliance only, the full rules)
+ *       'skills' (just you, 60 s, hub always live) · 'practice' (just you, no clock)
+ */
+export function createSim(R, { field, lineup, difficulty = 'regional', mode = 'match', realism = 'off', seed = (Date.now() & 0x7fffffff), demo = false } = {}) {
+  const rules = MODES[mode] || MODES.match
   const rng = mulberry32(seed)
   const world = new R.World({ x: 0, y: -9.81, z: 0 })
   world.timestep = DT
-  buildField(R, world)
+  const colliderCount = buildField(R, world, field)
 
   const redCfg = DIFFICULTY[difficulty] || DIFFICULTY.regional
-  const pick = (exclude = []) => {
-    const pool = ARCHETYPE_IDS.filter((id) => !exclude.includes(id))
-    return pool[Math.floor(rng() * pool.length)]
-  }
-  const playerArch = ARCHETYPES[arch] ? arch : 'turret'
-  const blueArchs = [playerArch, pick([playerArch]), pick()]
-  const redArchs = [pick(), pick(), redCfg.defend ? 'bruiser' : pick()]
-
-  const startX = 3.45
-  const slots = [2.35, 0.75, 5.75]
+  const startX = (field.startingLine ?? 3.978) - 0.6
+  const slots = [5.75, 7.3, 2.35] // across the field: clear of the tower, the hub and each other
   const robots = []
-  blueArchs.forEach((id, i) => {
-    robots.push(makeRobot(R, world, {
-      id: `b${i}`, team: 'blue', label: i === 0 ? '5805' : `B${i + 1}`, arch: id,
-      isPlayer: i === 0 && !demo, cfg: i === 0 ? { ...PARTNER, ...PLAYER_SPREAD } : PARTNER,
-      x: startX, z: slots[i], psi: 0, slot: [-0.75, 0, 0.75][i],
+  const blue = (lineup.blue || []).slice(0, rules.blueRobots)
+  const red = rules.redRobots ? (lineup.red || []).slice(0, rules.redRobots) : []
+  blue.forEach((spec, i) => {
+    robots.push(makeRobot(R, world, spec, {
+      id: `b${i}`, team: 'blue', label: spec.label, key: spec.key, arch: spec.key,
+      isPlayer: i === 0 && !demo, cfg: i === 0 && !demo ? { ...PARTNER, ...PLAYER_SPREAD } : PARTNER,
+      x: startX - (spec.len / 2 - 0.4), z: slots[i], psi: intakeForward(spec), slot: [0, 0.75, -0.75][i],
     }))
   })
-  redArchs.forEach((id, i) => {
-    const p = mirror({ x: startX, z: slots[i] })
-    const r = makeRobot(R, world, {
-      id: `r${i}`, team: 'red', label: `R${i + 1}`, arch: id, isPlayer: false, cfg: redCfg,
-      x: p.x, z: p.z, psi: Math.PI, slot: [-0.75, 0, 0.75][i],
+  red.forEach((spec, i) => {
+    const p = mirror({ x: startX - (spec.len / 2 - 0.4), z: slots[i] })
+    const r = makeRobot(R, world, spec, {
+      id: `r${i}`, team: 'red', label: spec.label, key: spec.key, arch: spec.key, isPlayer: false, cfg: redCfg,
+      x: p.x, z: p.z, psi: intakeForward(spec) + Math.PI, slot: [0, 0.75, -0.75][i],
     })
-    if (redCfg.defend && i === 2) r.ai.role = 'defender'
+    if (redCfg.defend && i === red.length - 1) r.ai.role = 'defender'
     robots.push(r)
   })
 
   const sim = {
-    R, world, rng, difficulty, demo,
+    R, world, rng, difficulty, demo, mode, rules, colliderCount, realism,
+    faultLog: [],
     clock: -MATCH.countdown,
     period: 'countdown',
     autoFuel: { blue: 0, red: 0 },
-    autoWinner: null,
+    autoWinner: rules.shifts ? null : 'blue',
     robots,
     balls: [],
     queue: [],
@@ -177,12 +225,14 @@ export function createSim(R, { difficulty = 'regional', arch = 'turret', seed = 
       blue: { total: 0, fuel: 0, auto: 0, climb: 0, wasted: 0 },
       red: { total: 0, fuel: 0, auto: 0, climb: 0, wasted: 0 },
     },
-    stats: { fired: 0, made: 0 },
+    stats: { fired: 0, made: 0, intaken: 0, distance: 0, topSpeed: 0, passed: 0 },
     events: [],
     outpost: { blue: OUTPOST.holds, red: OUTPOST.holds },
     outpostTimer: { blue: 0, red: 0 },
     over: false,
   }
+
+  for (const r of robots) r.health = initHealth(realism, rng)
 
   // Fuel where the field crew sets it: the midfield block and both depots.
   const { pitch, centre, depots } = LAYOUT
@@ -201,19 +251,20 @@ export function createSim(R, { difficulty = 'regional', arch = 'turret', seed = 
   return sim
 }
 
-function addBall(sim, x, y, z, vel, shooter, resting = false) {
+function addBall(sim, x, y, z, vel, shooter, resting = false, shot = false) {
   const { R, world } = sim
   // Starting fuel begins asleep: 400 touching balls settle instantly that way,
   // and wake the moment a robot or another ball touches them.
-  const desc = R.RigidBodyDesc.dynamic().setTranslation(x, y, z).setAngularDamping(1.2).setCcdEnabled(true)
+  const desc = R.RigidBodyDesc.dynamic().setTranslation(x, y, z).setAngularDamping(0.8).setCcdEnabled(true)
   if (resting) desc.setSleeping(true)
   const body = world.createRigidBody(desc)
-  world.createCollider(
-    R.ColliderDesc.ball(FUEL.r).setMass(FUEL.mass).setRestitution(0.45).setFriction(0.7),
+  const collider = world.createCollider(
+    R.ColliderDesc.ball(FUEL.r).setMass(FUEL.mass).setRestitution(0.55).setFriction(0.6)
+      .setCollisionGroups(shot ? GROUP_SHOT : GROUP_FUEL),
     body,
   )
   if (vel) body.setLinvel(vel, true)
-  const ball = { body, alive: true, shooter: shooter || null, air: Boolean(vel) }
+  const ball = { body, collider, alive: true, shooter: shooter || null, air: Boolean(vel), grace: shot ? 0.3 : 0 }
   sim.balls.push(ball)
   return ball
 }
@@ -222,47 +273,124 @@ function removeBall(sim, ball) {
   ball.alive = false
   sim.world.removeRigidBody(ball.body)
   ball.body = null
+  ball.collider = null
+}
+
+// ------------------------------------------------------------------ rules per mode
+/** Is `team`'s hub scoring right now, in this mode? */
+export function hubLive(sim, team, t = sim.clock) {
+  if (t < 0) return false
+  if (!sim.rules.shifts) return true
+  return hubActive(t, team, sim.autoWinner)
+}
+
+function periodFor(sim, t) {
+  const r = sim.rules
+  if (t < 0) return 'countdown'
+  if (r.total == null) return 'practice'
+  if (t >= r.total) return 'over'
+  if (!r.shifts) return t >= r.total - 15 ? 'endgame' : 'teleop'
+  return periodOf(t)
 }
 
 // ------------------------------------------------------------------ step
-/**
- * Advance one physics step. `input` drives the player's robot:
- * { vx, vz } field-relative (length ≤ 1), `aim` a target heading or null,
- * `turn` −1..1, `fire`, `climb`.
- */
+const IDLE = Object.freeze({ vx: 0, vz: 0, turn: 0, aim: null, fire: false, special: false, intake: false })
+
+/** Advance one physics step. `input` is the player's command (see the top of this file). */
 export function step(sim, input = {}) {
   if (sim.over) return sim
   const before = sim.clock
   sim.clock += DT
-  sim.period = periodOf(sim.clock)
-  if (before < MATCH.auto && sim.clock >= MATCH.auto) {
+  sim.period = periodFor(sim, sim.clock)
+  if (sim.rules.shifts && before < MATCH.auto && sim.clock >= MATCH.auto) {
     sim.autoWinner = sim.autoFuel.blue >= sim.autoFuel.red ? 'blue' : 'red'
   }
   if (sim.period === 'over') return finish(sim)
 
-  for (const r of sim.robots) sample(r)
+  for (const r of sim.robots) sample(sim, r)
 
   const live = sim.period !== 'countdown'
   for (const r of sim.robots) {
     r.cooldown = Math.max(0, r.cooldown - DT)
-    r.intakeBudget = Math.min(2, r.intakeBudget + 16 * DT)
-    // The player's robot runs its own auto routine; the driver takes over at teleop.
-    r.autopilot = !r.isPlayer || sim.period === 'auto'
-    let cmd
-    if (!live) cmd = { vx: 0, vz: 0, aim: null, fire: false }
-    else if (!r.autopilot) cmd = input
-    else cmd = think(sim, r, DT)
+    for (let i = 0; i < r.lanes.length; i++) r.lanes[i] = Math.max(0, r.lanes[i] - DT)
+    r.firing = Math.max(0, r.firing - DT)
+    r.intakeBudget = Math.min(2, r.intakeBudget + r.a.intakeRate * DT)
+    // The player drives from the first second, auto included; everyone else is the computer.
+    r.autopilot = !r.isPlayer
+    let cmd = !live ? IDLE : r.autopilot ? think(sim, r, DT) : input
+    // Battery, heat, radio and breakages (when realism is on) decide what the robot may do.
+    const lim = faultStep(sim, r, DT, r.driveLoad || { cmd: 0, speed: 0, accel: 0 })
+    r.limits = lim
+    if (lim.disabled) cmd = IDLE
     r.cmd = cmd
-    if (r.a.turret) {
-      // The turret tracks its hub all the time; it fires only once it is on target.
-      const h = HUB[r.team]
-      const want = Math.atan2(h.z - r.z, h.x - r.x)
-      r.turretYaw = wrap(r.turretYaw + clamp(wrap(want - r.turretYaw), -10 * DT, 10 * DT))
+
+    if (r.climb.state !== 'none') {
+      r.aim = null
+      r.intakeOn = false
+      climbStep(sim, r)
+      continue
     }
-    if (r.climb.state !== 'none') { climbStep(sim, r, cmd); continue }
-    drive(r, cmd)
-    if (live && cmd.fire) shoot(sim, r)
-    if (live && cmd.climb) startClimb(sim, r)
+
+    // --- what the shooter is being asked to do
+    const wantClimb = Boolean(cmd.climb) || (Boolean(cmd.special) && canClimbNow(sim, r))
+    const wantPass = !wantClimb && Boolean(cmd.pass || cmd.special) && !cmd.fire
+    const shooting = live && lim.shoot && r.carry > 0 && (Boolean(cmd.fire) || wantPass)
+    const aim = shooting ? solveAim(sim, r, wantPass ? 'pass' : 'hub') : null
+
+    // The wheel idles while there is fuel aboard, and runs up for a shot.
+    const spinTo = aim && aim.state !== 'home' ? 1 : r.carry > 0 ? 0.6 : 0
+    r.spin += clamp(spinTo - r.spin, -DT / 1.2, DT / 0.5)
+
+    // --- where to point: a fixed shooter turns the whole robot, a turret turns itself
+    let heading = cmd.aim ?? null
+    let err = Math.PI
+    if (aim && aim.state !== 'home') {
+      const s = r.a.shot
+      if (s.turret) {
+        const rel = wrap(aim.yaw - r.psi - s.yaw)
+        const lims = turretLimits(r)
+        // Out of the turret's travel: bring the chassis round so it can reach.
+        if (lims && (rel < lims[0] + 0.15 || rel > lims[1] - 0.15)) heading = aim.yaw - s.yaw
+      } else {
+        heading = aim.yaw - s.yaw
+      }
+    }
+    // A target that swings past as the robot drives: turn at the rate it does, and
+    // correct from there, or the robot is always a little behind it.
+    const swing = heading != null && r.headingWas != null ? clamp(wrap(heading - r.headingWas) / DT, -5, 5) : 0
+    r.headingWas = heading
+    trackTurret(r, aim && aim.state !== 'home' ? aim.yaw : null)
+    if (aim && aim.state === 'aiming') {
+      err = r.a.shot.turret ? wrap(aim.yaw - r.turretYaw) : wrap(aim.yaw - r.a.shot.yaw - r.psi)
+      const steady = r.a.shot.turret || Math.abs(r.om) < 2.5
+      if (Math.abs(err) < r.a.shot.headingTol && steady && r.spin >= 0.97) aim.state = 'ready'
+    }
+    r.aim = aim
+
+    // --- intake: out and running while asked for; it agitates the hopper while shooting
+    r.intakeOn = Boolean(r.autopilot ? cmd.intake !== false : cmd.intake) && lim.intake
+    // A hopper that grows with its intake cannot close on a full load: the fuel
+    // on board holds it open, most of the way (the pile gives a little).
+    const held = hopperHoldsOpen(r.a, r.carry) * 0.8
+    let out = Math.max(r.intakeOn ? 1 : 0, held)
+    if (r.firing > 0 && lim.intake) {
+      r.agit += DT
+      const lo = Math.max(0.26, held)
+      out = (1 + lo) / 2 + ((1 - lo) / 2) * Math.cos(2 * Math.PI * 1.8 * r.agit)
+    } else {
+      r.agit = 0
+    }
+    // A broken intake hangs where it broke.
+    if (!r.health.intakeBroken) r.intakeOut = clamp(r.intakeOut + clamp(out - r.intakeOut, -DT / 0.25, DT / 0.25), 0, 1)
+
+    drive(r, cmd, lim.drive, heading, swing)
+    if (aim && aim.state === 'ready') fire(sim, r, aim)
+    if (live && wantClimb) startClimb(sim, r)
+    if (r.isPlayer) {
+      const sp = Math.hypot(r.vx, r.vz)
+      sim.stats.distance += sp * DT
+      sim.stats.topSpeed = Math.max(sim.stats.topSpeed, sp)
+    }
   }
 
   sim.world.step()
@@ -270,33 +398,49 @@ export function step(sim, input = {}) {
   return sim
 }
 
-function sample(r) {
+function sample(sim, r) {
   const t = r.body.translation()
   const v = r.body.linvel()
+  const w = r.body.angvel()
+  // A sudden change in velocity that the drive could not have made is a collision.
+  if (sim.clock > 0 && r.climb.state === 'none') {
+    const jump = Math.hypot(v.x - r.vx, v.z - r.vz) - r.a.accel * DT
+    if (jump > 0.5) noteImpact(sim, r, jump)
+  }
   r.x = t.x; r.z = t.z; r.y = t.y
   r.vx = v.x; r.vz = v.z
+  r.om = -w.y
   r.psi = psiFromQuat(r.body.rotation())
 }
 
-function drive(r, cmd) {
+function drive(r, cmd, power = 1, heading = null, swing = 0) {
   const { a, body } = r
   let vx = cmd.vx || 0
   let vz = cmd.vz || 0
   const m = Math.hypot(vx, vz)
   if (m > 1) { vx /= m; vz /= m }
-  const max = a.speed * (r.autopilot ? r.cfg.speed : 1)
+  const max = a.speed * (r.autopilot ? r.cfg.speed : 1) * power
   // Traction- and motor-limited: the change in velocity per step is capped.
   let dvx = vx * max - r.vx
   let dvz = vz * max - r.vz
   const dl = Math.hypot(dvx, dvz)
   const lim = a.accel * DT
+  // How hard the drive worked this step, for the battery: asked, achieved, accelerating.
+  r.driveLoad = { cmd: Math.min(1, m) * power, speed: Math.hypot(r.vx, r.vz) / a.speed, accel: Math.min(1, dl / Math.max(lim, 1e-6)) * Math.min(1, m) }
   if (dl > lim) { dvx *= lim / dl; dvz *= lim / dl }
   const mass = body.mass()
   body.applyImpulse({ x: dvx * mass, y: 0, z: dvz * mass }, true)
 
-  let w = 0
-  if (cmd.aim != null) w = clamp(wrap(cmd.aim - r.psi) * 10, -a.yawRate, a.yawRate)
-  else if (cmd.turn) w = clamp(cmd.turn, -1, 1) * a.yawRate * 0.7
+  // Turning is eased: the robot spins up and slows down at TURN_ACCEL, so nothing
+  // snaps. Holding a heading aims for the fastest stop that does not overshoot.
+  let want = 0
+  if (heading != null) {
+    const e = wrap(heading - r.psi)
+    want = clamp(swing + Math.sign(e) * Math.min(a.yawRate, 10 * Math.abs(e), Math.sqrt(1.6 * TURN_ACCEL * Math.abs(e))), -a.yawRate, a.yawRate)
+  } else if (cmd.turn) {
+    want = clamp(cmd.turn, -1, 1) * Math.min(a.yawRate * 0.6, 5)
+  }
+  const w = power > 0 ? r.om + clamp(want - r.om, -TURN_ACCEL * DT, TURN_ACCEL * DT) : 0
   body.setAngvel({ x: 0, y: -w, z: 0 }, true)
 }
 
@@ -305,44 +449,198 @@ function gauss(rng) {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng())
 }
 
+// ------------------------------------------------------------------ shooting
+/** A point in the robot's frame (x forward, z right), out in the field. */
+function toField(r, x, z) {
+  const c = Math.cos(r.psi)
+  const s = Math.sin(r.psi)
+  return { x: r.x + c * x - s * z, z: r.z + s * x + c * z }
+}
+
+/** Where a ball leaves exit `e` when thrown along `yaw`. */
+function exitPoint(r, e, yaw) {
+  const p = toField(r, e.x, e.z)
+  const reach = r.a.shot.barrel + 0.12
+  return { x: p.x + Math.cos(yaw) * reach, y: r.y + r.a.shot.origin.y + 0.04, z: p.z + Math.sin(yaw) * reach }
+}
+
+/** The middle of the shooter's exits: where aiming is measured from. */
 export function shooterOrigin(r) {
-  const fwd = r.a.turret ? 0 : r.a.len * 0.2
-  return { x: r.x + Math.cos(r.psi) * fwd, y: r.a.height + 0.12, z: r.z + Math.sin(r.psi) * fwd }
+  const ex = r.a.shot.exits
+  let x = 0
+  let z = 0
+  for (const e of ex) { x += e.x; z += e.z }
+  const p = toField(r, x / ex.length, z / ex.length)
+  return { x: p.x, y: r.y + r.a.shot.origin.y + 0.04, z: p.z }
 }
 export const shotTarget = (team) => ({ x: HUB[team].x, y: HUB.top + 0.05, z: HUB[team].z })
 
-/** What this robot's shooter would do right now, without firing. */
-export function aimNow(r) {
-  const from = shooterOrigin(r)
-  const vel = { x: r.vx, z: r.vz }
-  const sol = solveShot(from, shotTarget(r.team), vel, r.a.hood, r.a.exit, r.a.turret)
-  return { from, vel, sol }
+/**
+ * Where a pass lands: in the robot's own zone, clear of the hub, its net and the
+ * trenches. Null when the robot is already home.
+ */
+function passTarget(r) {
+  const s = r.team === 'blue' ? 1 : -1
+  const h = HUB[r.team]
+  if (s * (r.x - h.x) < 0.6) return null
+  let z = clamp(r.z, 1.9, FIELD.W - 1.9)
+  if (Math.abs(z - h.z) < 1.25) z = h.z + (r.z >= h.z ? 1 : -1) * 1.6
+  return { x: h.x - s * 2.4, y: 0.4, z }
 }
 
-function shoot(sim, r) {
-  if (r.carry <= 0 || r.cooldown > 0) return
-  const { from, vel, sol } = aimNow(r)
-  let speed
-  let yaw
-  if (r.a.turret) {
-    if (!sol) return // a turret only fires when it has a solution
-    const turn = wrap(sol.yaw - r.turretYaw)
-    r.turretYaw = wrap(r.turretYaw + clamp(turn, -10 * DT, 10 * DT))
-    if (Math.abs(wrap(sol.yaw - r.turretYaw)) > 0.06) return
-    speed = sol.speed
-    yaw = sol.yaw
+/**
+ * The shot this robot would take now: where to point, how fast to throw, and
+ * whether it can. state: 'aiming' (lining up), 'near' / 'far' (out of range),
+ * 'home' (a pass from its own zone: nothing to do). step() turns 'aiming' into
+ * 'ready' once the robot is lined up and the wheel is at speed.
+ */
+// Shooting on the move. Past the speed a shooter is good to, this much of the
+// extra goes unaccounted for; and any moving shot scatters a little, more as the
+// robot nears that speed.
+const SOTF_LAG = 0.65
+const sotfScatter = (speed, limit) => speed * (0.02 + 0.05 * Math.min(1, speed / Math.max(limit, 0.2)) ** 2)
+
+// A shot has to get over the hub's near rim before it comes down into the opening.
+// From close in, a shooter's usual angle is still climbing when it gets there and
+// clips the lip, so the arc is steepened until it clears. Drag-free: the parabola
+// from the shooter through the target, asked to pass RIM_CLEAR above the rim.
+const RIM_OUT = 0.68 // from the hub's centre to just outside its rim
+const RIM_CLEAR = FUEL.r + 0.25
+function steepEnough(elev, dist, fromY) {
+  const run = dist - RIM_OUT
+  if (run < 0.05) return 80
+  const rise = HUB.top + 0.05 - fromY
+  const k = run / dist
+  const slope = (HUB.top + RIM_CLEAR - fromY - rise * k * k) / (run * (1 - k))
+  return Math.max(elev, Math.min(80, (Math.atan(slope) * 180) / Math.PI))
+}
+
+function solveAim(sim, r, kind) {
+  const s = r.a.shot
+  const from = shooterOrigin(r)
+  let target
+  let elev
+  let lo
+  let hi
+  if (kind === 'pass') {
+    target = passTarget(r)
+    if (!target) return { kind, state: 'home' }
+    elev = PASS_ELEVATION
+    lo = 1.5
+    hi = 12
   } else {
-    // A fixed shooter ranges off distance but throws wherever the robot faces.
-    speed = sol ? sol.speed : r.a.exit * 0.75
-    yaw = r.psi
+    target = shotTarget(r.team)
+    lo = s.minRange - 0.25
+    hi = s.maxRange + 0.15
   }
-  speed *= 1 + gauss(sim.rng) * r.cfg.spreadSpeed
-  yaw += gauss(sim.rng) * r.cfg.spreadYaw
-  const v = launchVelocity(speed, yaw, r.a.hood, vel)
-  addBall(sim, from.x, from.y, from.z, v, r)
-  r.carry--
-  r.cooldown = 1 / r.a.fireRate
-  if (r.isPlayer) sim.stats.fired++
+  const dist = Math.hypot(target.x - from.x, target.z - from.z)
+  if (kind !== 'pass') elev = steepEnough(tableElevation(r.a, clamp(dist, s.minRange, s.maxRange), from.y), dist, from.y)
+  // Lead for the robot's own motion: a ball keeps the velocity of the robot that
+  // threw it. Every shooter allows for that up to the speed it was built to shoot
+  // at; past it, it only keeps up with part of the rest, and its shots trail behind.
+  const vel = { x: r.vx, z: r.vz }
+  const speed = Math.hypot(vel.x, vel.z)
+  const limit = kind === 'pass' ? Infinity : s.moveSpeed
+  const known = speed <= limit ? 1 : (limit + (speed - limit) * (1 - SOTF_LAG)) / speed
+  const sol = solveShot(from, target, { x: vel.x * known, z: vel.z * known }, elev, MAX_EXIT, true)
+  const bearing = Math.atan2(target.z - from.z, target.x - from.x)
+  const state = dist < lo ? 'near' : dist > hi || !sol ? 'far' : 'aiming'
+  return { kind, state, sol, elev, from, vel, speed, fast: speed > limit + 0.15, dist, target, yaw: sol ? sol.yaw : bearing }
+}
+
+/** What this robot's shooter would do at its hub right now, without firing. */
+export function aimNow(r) {
+  return solveAim(null, r, 'hub')
+}
+
+function turretLimits(r) {
+  const t = r.a.shot.turret
+  if (!t) return null
+  const [lo, hi] = t.range
+  return hi - lo >= 2 * Math.PI - 1e-3 ? null : [lo, hi]
+}
+
+/** Turn the turret toward `yaw` (its hub, when it has nothing else to aim at), inside its travel. */
+function trackTurret(r, yaw) {
+  const s = r.a.shot
+  if (!s.turret) {
+    r.turretYaw = r.psi + s.yaw
+    return
+  }
+  let want = yaw
+  if (want == null) {
+    const h = HUB[r.team]
+    const o = shooterOrigin(r)
+    want = Math.atan2(h.z - o.z, h.x - o.x)
+  }
+  let rel = wrap(want - r.psi - s.yaw)
+  const lims = turretLimits(r)
+  if (lims) rel = clamp(rel, lims[0], lims[1])
+  const cur = wrap(r.turretYaw - r.psi - s.yaw)
+  // Follow the shorter way round unless a hard stop is in the way.
+  const d = lims ? rel - cur : wrap(rel - cur)
+  r.turretYaw = r.psi + s.yaw + cur + clamp(d, -10 * DT, 10 * DT)
+}
+
+/**
+ * Shoot: a ball from each feed lane that has one at the wheel. The lanes feed on
+ * their own, so a wide shooter throws a ragged stream across its width, one ball
+ * here and one there, and not a row at a time. Together they make its fire rate.
+ */
+function fire(sim, r, aim) {
+  if (r.carry <= 0 || r.cooldown > 0) return
+  const s = r.a.shot
+  const lanes = s.exits.length
+  const every = lanes / r.a.fireRate // s between balls in one lane
+  // Starting up, the lanes do not all have a ball waiting at once.
+  if (sim.clock - r.fedAt > 0.25) for (let i = 0; i < lanes; i++) r.lanes[i] = Math.max(r.lanes[i], every * sim.rng() * 0.9)
+  r.fedAt = sim.clock
+  const base = s.turret ? aim.sol.yaw : r.psi + s.yaw
+  const sp = s.spread
+  const k = r.autopilot ? r.cfg.spreadScale ?? 1 : 1
+  const scatter = aim.kind === 'hub' ? sotfScatter(aim.speed, s.moveSpeed) : 0
+  let n = 0
+  for (let i = 0; i < lanes && r.carry > 0; i++) {
+    if (r.lanes[i] > 0) continue
+    r.lanes[i] = every * (0.7 + 0.6 * sim.rng())
+    const speed = aim.sol.speed * (1 + gauss(sim.rng) * ((sp.speedPct ?? 1) / 100) * k + gauss(sim.rng) * r.cfg.spreadSpeed * 0.5)
+    const yaw = base + gauss(sim.rng) * (((sp.yawDeg ?? 0.5) * Math.PI) / 180) * k + gauss(sim.rng) * r.cfg.spreadYaw * 0.5
+    const pitch = aim.elev + gauss(sim.rng) * (sp.pitchDeg ?? 0.5) * k
+    const p = exitPoint(r, s.exits[i], yaw)
+    // What the ball really carries is the robot's whole velocity, give or take what a moving shot scatters.
+    const carried = scatter ? { x: aim.vel.x + gauss(sim.rng) * scatter, z: aim.vel.z + gauss(sim.rng) * scatter } : aim.vel
+    addBall(sim, p.x, p.y, p.z, launchVelocity(speed, yaw, pitch, carried), aim.kind === 'hub' ? r : null, false, true)
+    noteShot(sim, r)
+    r.carry--
+    n++
+  }
+  if (!n) return
+  r.firing = 0.35
+  if (r.isPlayer) {
+    if (aim.kind === 'hub') sim.stats.fired += n
+    else sim.stats.passed += n
+  }
+}
+
+/** Points along the flight of the shot `aim` describes, for drawing it. */
+export function aimArc(aim, n = 22) {
+  if (!aim?.sol) return []
+  const v = launchVelocity(aim.sol.speed, aim.sol.yaw, aim.elev, aim.vel)
+  const p = { ...aim.from }
+  const pts = [{ ...p }]
+  const h = (aim.sol.tof * 1.02) / n
+  for (let i = 0; i < n; i++) {
+    for (let k = 0; k < 4; k++) {
+      const q = h / 4
+      const sp = Math.hypot(v.x, v.y, v.z)
+      v.x -= FUEL.K * sp * v.x * q
+      v.y -= (9.81 + FUEL.K * sp * v.y) * q
+      v.z -= FUEL.K * sp * v.z * q
+      p.x += v.x * q; p.y += v.y * q; p.z += v.z * q
+    }
+    pts.push({ ...p })
+  }
+  return pts
 }
 
 // ------------------------------------------------------------------ climbing
@@ -353,12 +651,17 @@ export function inClimbZone(r) {
   return d > 0 && d < TOWER.zone.depth && Math.abs(r.z - tw.z) < TOWER.zone.width / 2
 }
 
+export function canClimbNow(sim, r) {
+  return r.a.climb > 0 && r.climb.state === 'none' && (sim.period === 'endgame' || sim.period === 'practice') && inClimbZone(r)
+}
+
 function startClimb(sim, r) {
-  if (r.climb.state !== 'none' || r.a.climb === 0) return
-  if (sim.period !== 'endgame' || !inClimbZone(r)) return
+  if (!canClimbNow(sim, r)) return
   r.climb = { state: 'climbing', level: r.a.climb, t: 0, from: { x: r.x, y: r.y, z: r.z } }
   r.body.setBodyType(sim.R.RigidBodyType.KinematicPositionBased, true)
 }
+
+const CLIMB_LIFT = [0.16, 0.55, 0.95]
 
 function climbStep(sim, r) {
   const c = r.climb
@@ -367,14 +670,17 @@ function climbStep(sim, r) {
     if (c.t >= r.a.climbTime) c.state = 'done'
   }
   const u = Math.min(1, c.t / r.a.climbTime)
-  const lift = TOWER.rungs[c.level - 1] * 0.62 * (u * u * (3 - 2 * u))
+  const lift = CLIMB_LIFT[c.level - 1] * (u * u * (3 - 2 * u))
   r.body.setNextKinematicTranslation({ x: c.from.x, y: c.from.y + lift, z: c.from.z })
 }
 
 // ------------------------------------------------------------------ after physics
 function afterStep(sim) {
   const ro = sim.robots
-  const inner = HUB.inner / 2
+  const throat = HUB.throat / 2 + 0.12
+  // Inside the hub a ramp under the throat carries fuel to the exits; anything
+  // through the throat and down to that ramp has scored.
+  const scoreBelow = HUB.throatY + 0.15
   for (const ball of sim.balls) {
     if (!ball.alive) continue
     const b = ball.body
@@ -382,21 +688,29 @@ function afterStep(sim) {
     const v = b.linvel()
     const speed = Math.hypot(v.x, v.y, v.z)
 
-    // Air drag in flight; rolling resistance on the carpet.
+    // Clear of the robot that threw it: from here on it hits robots like any other ball.
+    if (ball.grace > 0) {
+      ball.grace -= DT
+      if (ball.grace <= 0) ball.collider.setCollisionGroups(GROUP_FUEL)
+    }
+
     if (p.y > FUEL.r + 0.03) {
+      // In the air: drag, as the square of its speed.
       const k = FUEL.K * speed * DT
       b.setLinvel({ x: v.x * (1 - k), y: v.y * (1 - k), z: v.z * (1 - k) }, true)
-    } else {
-      const f = Math.exp(-1.1 * DT)
+    } else if (speed > 1e-3) {
+      // Rolling on carpet: a steady drag, so a ball coasts to a stop instead of creeping for ever.
+      const flat = Math.hypot(v.x, v.z)
+      const f = flat > 0.55 * DT ? (flat - 0.55 * DT) / flat : 0
       b.setLinvel({ x: v.x * f, y: v.y, z: v.z * f }, true)
       if (ball.air && speed < 2) ball.air = false
     }
 
-    // Scored: inside a hub's opening, on the way down.
+    // Scored: through the funnel's throat and into the hub.
     let scored = false
     for (const team of ['blue', 'red']) {
       const h = HUB[team]
-      if (Math.abs(p.x - h.x) < inner && Math.abs(p.z - h.z) < inner && p.y < HUB.top - 0.12 && p.y > 0.25) {
+      if (Math.abs(p.x - h.x) < throat && Math.abs(p.z - h.z) < throat && p.y < scoreBelow && p.y > HUB.boxTop) {
         award(sim, team, ball, p)
         removeBall(sim, ball)
         scored = true
@@ -405,20 +719,29 @@ function afterStep(sim) {
     }
     if (scored) continue
 
-    // Intakes: fuel on the floor, just in front of a robot, inside its intake width.
-    if (p.y < 0.22) {
-      for (const r of ro) {
-        if (r.carry >= r.a.capacity || r.climb.state !== 'none' || r.intakeBudget < 1) continue
+    // Intakes: fuel on the floor inside the mouth of an intake that is out and running.
+    if (p.y < 0.24) {
+      for (let i = 0; i < ro.length; i++) {
+        const r = ro[i]
+        if (!r.intakeOn || r.intakeOut < 0.7 || r.carry >= r.a.capacity || r.climb.state !== 'none' || r.intakeBudget < 1) continue
         const dx = p.x - r.x
         const dz = p.z - r.z
-        if (dx * dx + dz * dz > 1.2) continue
+        if (dx * dx + dz * dz > 1.6) continue
         const c = Math.cos(r.psi)
         const s = Math.sin(r.psi)
         const fwd = dx * c + dz * s
         const side = -dx * s + dz * c
-        if (fwd > r.a.len / 2 - 0.06 && fwd < r.a.len / 2 + 0.2 && Math.abs(side) < r.a.intake / 2) {
+        const z = r.a.intake
+        let mouth = false
+        for (const [cd, sd] of z.faces) {
+          const reach = fwd * cd + side * sd
+          if (reach > z.near - 0.03 && reach < z.far + 0.03 && Math.abs(side * cd - fwd * sd) < z.half) { mouth = true; break }
+        }
+        if (mouth) {
           r.carry++
           r.intakeBudget -= 1
+          if (r.isPlayer) sim.stats.intaken++
+          sim.events.push({ kind: 'intake', robot: i, x: p.x, y: p.y, z: p.z })
           removeBall(sim, ball)
           break
         }
@@ -446,24 +769,28 @@ function afterStep(sim) {
     )
   }
 
-  // Outposts: a robot parked at the chute, intake to the wall, gets fed by the human player.
+  // Outposts: a robot parked at the chute, intake running and toward the wall, is fed by the human player.
   for (const team of ['blue', 'red']) {
     sim.outpostTimer[team] = Math.max(0, sim.outpostTimer[team] - DT)
     if (sim.outpost[team] <= 0 || sim.outpostTimer[team] > 0) continue
     const o = OUTPOST[team]
     const toWall = team === 'blue' ? Math.PI : 0
-    const r = ro.find((x) =>
-      x.team === team && x.carry < x.a.capacity && x.climb.state === 'none' &&
-      Math.hypot(x.x - o.x, x.z - o.z) < OUTPOST.reach && Math.cos(x.psi - toWall) > 0.7)
-    if (!r) continue
+    const i = ro.findIndex((x) => {
+      if (x.team !== team || !x.intakeOn || x.carry >= x.a.capacity || x.climb.state !== 'none') return false
+      if (Math.hypot(x.x - o.x, x.z - o.z) > OUTPOST.reach) return false
+      return x.a.intake.dirs.some((d) => Math.cos(x.psi + d - toWall) > 0.7)
+    })
+    if (i < 0) continue
+    const r = ro[i]
     r.carry++
     sim.outpost[team]--
     sim.outpostTimer[team] = OUTPOST.feedEvery
+    sim.events.push({ kind: 'intake', robot: i, x: o.x + (team === 'blue' ? 0.15 : -0.15), y: 0.75, z: o.z })
   }
 }
 
 function award(sim, team, ball, p) {
-  const active = hubActive(sim.clock, team, sim.autoWinner)
+  const active = hubLive(sim, team)
   const sc = sim.score[team]
   if (active) {
     sc.total += POINTS.fuel
@@ -478,7 +805,7 @@ function award(sim, team, ball, p) {
 }
 
 function finish(sim) {
-  sim.clock = MATCH.total
+  sim.clock = sim.rules.total
   sim.period = 'over'
   for (const r of sim.robots) {
     if (r.climb.state === 'done') {
@@ -492,18 +819,37 @@ function finish(sim) {
   return sim
 }
 
+/** End a practice session on demand. */
+export function endNow(sim) {
+  if (!sim.over) finish(sim)
+}
+
 export function result(sim) {
   const b = sim.score.blue.total
   const r = sim.score.red.total
   const player = sim.robots.find((x) => x.id === 'b0')
   return {
-    outcome: b > r ? 'win' : b < r ? 'loss' : 'tie',
+    mode: sim.mode,
+    outcome: sim.rules.redRobots ? (b > r ? 'win' : b < r ? 'loss' : 'tie') : 'solo',
     blue: { ...sim.score.blue },
     red: { ...sim.score.red },
     fired: sim.stats.fired,
     made: sim.stats.made,
-    climb: player.climb.state === 'done' ? player.climb.level : 0,
+    passed: sim.stats.passed,
+    intaken: sim.stats.intaken,
+    distance: sim.stats.distance,
+    topSpeed: sim.stats.topSpeed,
+    climb: player?.climb.state === 'done' ? player.climb.level : 0,
     autoWinner: sim.autoWinner,
+    realism: sim.realism,
+    health: player?.health.on
+      ? {
+          brownouts: player.health.brownouts,
+          minVolts: player.health.minVolts,
+          intakeBroken: player.health.intakeBroken,
+          faults: sim.faultLog.filter((f) => f.player).length,
+        }
+      : null,
   }
 }
 
@@ -514,6 +860,24 @@ export function countFuel(sim) {
     sim.outpost.blue + sim.outpost.red +
     sim.robots.reduce((n, r) => n + r.carry, 0)
   )
+}
+
+// ------------------------------------------------------------------ looking at the world
+/**
+ * How far a ray travels before it hits the field (never robots, fuel or the
+ * invisible box), or null if it is clear for `max` metres. With `sight`, the
+ * nets count too: for a camera, which should not end up looking through one.
+ */
+export function rayField(sim, ox, oy, oz, dx, dy, dz, max, sight = false) {
+  const hit = sim.world.castRay(new sim.R.Ray({ x: ox, y: oy, z: oz }, { x: dx, y: dy, z: dz }), max, true, undefined, sight ? RAY_SIGHT : RAY_SOLID)
+  if (!hit) return null
+  return hit.timeOfImpact ?? hit.toi ?? null
+}
+
+/** The height of the field's surface under a point: the carpet, a bump, a ramp. */
+export function groundAt(sim, x, z) {
+  const t = rayField(sim, x, 0.5, z, 0, -1, 0, 0.7)
+  return t == null || t < 0.02 ? 0 : Math.max(0, 0.5 - t)
 }
 
 export function destroySim(sim) {

@@ -3,10 +3,11 @@
 // drive teams do: collect while its hub is dark, be in range and full when it
 // lights up, and leave for the tower with just enough time to climb.
 import { FIELD, HUB, TRENCH, LANES, TOWER, MATCH } from './config.js'
-import { hubActive, untilHubChange } from './rules.js'
-import { aimNow, inClimbZone, wrap } from './sim.js'
+import { untilHubChange } from './rules.js'
+import { aimNow, inClimbZone, hubLive } from './sim.js'
 
-const PREFERRED_RANGE = { turret: 3.2, trench: 2.9, hopper: 2.1, bruiser: 2.7 }
+// Where a robot likes to shoot from: inside its shot table, toward the near end.
+const preferredRange = (r) => Math.min(3.6, Math.max(1.9, (r.a.shot.minRange + r.a.shot.maxRange) / 2 - 0.5))
 
 // Which side of the two obstacle lines a point is on: 0 blue zone, 1 neutral, 2 red zone.
 const region = (x) => (x < HUB.blue.x ? 0 : x > HUB.red.x ? 2 : 1)
@@ -24,20 +25,27 @@ export function think(sim, r, dt) {
 
   let cmd = null
 
+  // A robot whose intake broke and that has nothing left to shoot gets out of the way.
+  if (r.health?.intakeBroken && r.carry === 0) {
+    const home = { x: r.team === 'blue' ? 1.6 : FIELD.L - 1.6, z: r.z < FIELD.W / 2 ? 1.6 : FIELD.W - 1.6 }
+    return { ...navigate(sim, r, home, 0.4), aim: null, fire: false }
+  }
+
   // --- endgame: go climb, leaving just enough time
-  if (r.a.climb > 0 && t > MATCH.endgame - 10) {
+  if (r.a.climb > 0 && (sim.period === 'endgame' || (sim.rules.shifts && t > MATCH.endgame - 10))) {
     const tw = TOWER[r.team]
     const s = r.team === 'blue' ? 1 : -1
     const spot = { x: tw.x + s * (TOWER.zone.from + r.a.len / 2 + 0.2), z: tw.z + ai.slot * 1.2 }
     const dist = pathLength(r, spot)
     const needed = dist / (r.a.speed * r.cfg.speed * 0.55) + r.a.climbTime + 3
-    if (sim.period === 'endgame' && remaining < needed + (r.carry > 0 ? 0 : 6)) {
+    const left = sim.rules.total == null ? Infinity : sim.rules.total - t
+    if (sim.period === 'endgame' && Math.min(remaining, left) < needed + (r.carry > 0 ? 0 : 6)) {
       const atSpot = Math.hypot(spot.x - r.x, spot.z - r.z) < 0.3
       if (inClimbZone(r) && atSpot) return { vx: 0, vz: 0, aim: s > 0 ? Math.PI : 0, climb: true, fire: false }
       cmd = navigate(sim, r, spot, 0.1)
       // Empty the hopper on the way if the hub is live and in range.
       const fire = r.carry > 0 && wantsToFire(sim, r, true)
-      return { ...cmd, aim: fire && !r.a.turret ? hubBearing(r) : travelHeading(r, cmd), fire }
+      return { ...cmd, aim: fire && !r.a.turret ? shooterHeading(r) : travelHeading(r, cmd), fire }
     }
   }
 
@@ -57,8 +65,8 @@ export function think(sim, r, dt) {
   }
 
   // --- score or collect
-  const active = hubActive(t, r.team, sim.autoWinner)
-  const soon = !active && untilHubChange(t, r.team, sim.autoWinner) < 4
+  const active = hubLive(sim, r.team)
+  const soon = !active && sim.rules.shifts && untilHubChange(t, r.team, sim.autoWinner) < 4
   const threshold = sim.period === 'auto' ? 1 : active ? Math.ceil(r.a.capacity * 0.5) : r.a.capacity
   if (r.carry === 0) ai.mode = 'collect'
   else if (r.carry >= threshold || (sim.period === 'auto' && ai.mode !== 'collect')) ai.mode = 'score'
@@ -86,25 +94,34 @@ function hubBearing(r) {
   return Math.atan2(h.z - r.z, h.x - r.x)
 }
 
+/** The heading that points this robot's shooter (which may face backward) at its hub. */
+function shooterHeading(r) {
+  return hubBearing(r) - r.a.shot.yaw
+}
+
 function travelHeading(r, cmd) {
   if (Math.hypot(cmd.vx, cmd.vz) < 0.2) return null
   return Math.atan2(cmd.vz, cmd.vx)
 }
 
+/**
+ * Should this robot hold its trigger? Lining up is the shooter's own job (the
+ * sim turns a fixed shooter to face the hub and fires once it is on target), so
+ * this only asks whether a shot from here is worth taking.
+ */
 function wantsToFire(sim, r, moving) {
-  if (!hubActive(sim.clock, r.team, sim.autoWinner)) return false
-  if (region(r.x) !== (r.team === 'blue' ? 0 : 2)) return false
-  const { sol } = aimNow(r)
-  if (!sol) return false
-  if (r.a.turret) return true
-  if (moving && Math.hypot(r.vx, r.vz) > 0.35) return false
-  return Math.abs(wrap(sol.yaw - r.psi)) < 0.035
+  if (!hubLive(sim, r.team)) return false
+  if (sim.rules.shifts && region(r.x) !== (r.team === 'blue' ? 0 : 2)) return false
+  if (aimNow(r).state !== 'aiming') return false
+  // No faster than this robot can shoot straight: a turret built for it fires at a
+  // run, a wide shooter has to all but stop.
+  return !(moving && Math.hypot(r.vx, r.vz) > Math.max(0.35, r.a.shot.moveSpeed))
 }
 
 function scoreMove(sim, r) {
   const h = HUB[r.team]
   const s = r.team === 'blue' ? 1 : -1
-  const range = PREFERRED_RANGE[r.archId || r.arch] || 2.8
+  const range = preferredRange(r)
   // A spot at the preferred range on our side of the hub, toward where we are.
   let dx = r.x - h.x
   let dz = r.z - h.z
@@ -117,13 +134,13 @@ function scoreMove(sim, r) {
   const there = Math.hypot(spot.x - r.x, spot.z - r.z) < 0.45 && region(r.x) === region(spot.x)
   if (r.a.turret) {
     const cmd = there ? { vx: 0, vz: 0 } : navigate(sim, r, spot, 0.3)
-    return { ...cmd, aim: travelHeading(r, cmd) ?? hubBearing(r), fire: wantsToFire(sim, r, true) }
+    return { ...cmd, aim: travelHeading(r, cmd) ?? shooterHeading(r), fire: wantsToFire(sim, r, true) }
   }
   if (!there) {
     const cmd = navigate(sim, r, spot, 0.3)
     return { ...cmd, aim: travelHeading(r, cmd), fire: false }
   }
-  return { vx: -r.vx * 0.2, vz: -r.vz * 0.2, aim: hubBearing(r), fire: wantsToFire(sim, r, false) }
+  return { vx: -r.vx * 0.2, vz: -r.vz * 0.2, aim: shooterHeading(r), fire: wantsToFire(sim, r, false) }
 }
 
 function collectMove(sim, r, dt) {
@@ -137,9 +154,10 @@ function collectMove(sim, r, dt) {
   if (!b) return { vx: 0, vz: 0, aim: null, fire: false }
   const p = b.body.translation()
   const cmd = navigate(sim, r, { x: p.x, z: p.z }, 0)
-  // Face the ball once on its side of the field, so the intake meets it.
+  // Turn the intake (wherever the robot carries it) to the ball once on its side of the field.
+  const flip = -r.a.intake.dirs[0]
   const aim = region(r.x) === region(p.x) && Math.hypot(p.x - r.x, p.z - r.z) < 2.5
-    ? Math.atan2(p.z - r.z, p.x - r.x)
+    ? Math.atan2(p.z - r.z, p.x - r.x) + flip
     : travelHeading(r, cmd)
   return { ...cmd, aim, fire: false }
 }
@@ -172,7 +190,7 @@ function pickBall(sim, r) {
 
 // ------------------------------------------------------------------ navigation
 function fitsTrench(r) {
-  return r.a.height < TRENCH.clearance - 0.02
+  return r.a.trench
 }
 
 function lanesFor(r) {

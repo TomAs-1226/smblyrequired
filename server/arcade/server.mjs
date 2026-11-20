@@ -1,9 +1,16 @@
-// Cycle Rush leaderboard API. One file, no dependencies: node:http + node:sqlite.
+// Cycle Rush API: the weekly code and the leaderboard. No dependencies: node:http + node:sqlite.
 //
 //   GET  /api/health
-//   POST /api/runs     { difficulty }                         → { run }
-//   POST /api/scores   { run, name, difficulty, blue, red, made, fired } → { rank }
-//   GET  /api/scores?difficulty=regional                    → { scores: [...] }
+//   GET  /api/access                                           → { required }
+//   POST /api/unlock   { code }                                → { pass }   (this week's code)
+//   POST /api/check    { pass }                                → { ok }
+//   POST /api/runs     { difficulty }                          → { run }    (needs a pass)
+//   POST /api/scores   { run, name, difficulty, blue, red, made, fired } → { rank } (needs a pass)
+//   GET  /api/scores?difficulty=regional                       → { scores: [...] }
+//
+// With ARCADE_CODE_SECRET set, the arcade asks for this week's code (access.mjs)
+// and the two POSTs that write need the pass it earns, sent as
+// "Authorization: Bearer <pass>". Without it, everything is open.
 //
 // It sits behind Caddy (TLS) on the Oracle VM; see docs/ARCADE.md.
 //
@@ -17,8 +24,14 @@ import crypto from 'node:crypto'
 import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { codeMatches, issuePass, passValid } from './access.mjs'
 
 const env = (k, d) => process.env[k] ?? d
+const SECRET = env('ARCADE_CODE_SECRET', '')
+if (SECRET && SECRET.length < 32) {
+  console.error('ARCADE_CODE_SECRET must be at least 32 characters (setup.sh makes a 64-character one).')
+  process.exit(1)
+}
 const PORT = Number(env('ARCADE_PORT', 8787))
 const HOST = env('ARCADE_HOST', '127.0.0.1')
 const DB_PATH = env('ARCADE_DB', './data/arcade.db')
@@ -160,7 +173,7 @@ async function handle(req, res) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400',
       Vary: 'Origin',
     })
@@ -172,6 +185,35 @@ async function handle(req, res) {
 
   if (req.method === 'GET' && url.pathname === '/api/health') {
     return send(res, 200, { ok: true }, origin)
+  }
+
+  // ---- the weekly code
+  if (req.method === 'GET' && url.pathname === '/api/access') {
+    return send(res, 200, { required: Boolean(SECRET) }, origin)
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/unlock') {
+    if (!SECRET) return send(res, 200, { pass: null }, origin)
+    // Eight tries per ten minutes per address: a guesser gets nowhere in a week.
+    if (limited(`unlock:${ip}`, 8, 600)) return send(res, 429, { error: 'Too many tries. Wait a few minutes.' }, origin)
+    const body = await readJson(req).catch(() => null)
+    if (!body || typeof body.code !== 'string' || !codeMatches(SECRET, body.code)) {
+      return send(res, 401, { error: 'That is not this week’s code.' }, origin)
+    }
+    return send(res, 200, { pass: issuePass(SECRET) }, origin)
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/check') {
+    if (limited(`check:${ip}`, 60, 600)) return send(res, 429, { error: 'Slow down.' }, origin)
+    const body = await readJson(req).catch(() => null)
+    return send(res, 200, { ok: !SECRET || passValid(SECRET, body?.pass) }, origin)
+  }
+
+  // Writing to the leaderboard needs a pass when there is a code.
+  if (req.method === 'POST' && SECRET && (url.pathname === '/api/runs' || url.pathname === '/api/scores')) {
+    const auth = req.headers.authorization || ''
+    const pass = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+    if (!passValid(SECRET, pass)) return send(res, 401, { error: 'Enter this week’s code to post scores.' }, origin)
   }
 
   if (req.method === 'GET' && url.pathname === '/api/scores') {

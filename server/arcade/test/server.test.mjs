@@ -110,3 +110,97 @@ test('a score posted before a match could have ended is refused', async () => {
     await new Promise((r) => child.once('exit', r))
   }
 })
+
+// ---------------------------------------------------------------- the weekly code
+const { weekId, weeklyCode, codeMatches, issuePass, passValid } = await import('../access.mjs')
+const SECRET = 'test-secret-'.padEnd(64, 'x')
+
+test('the week rolls over at midnight Monday in the team timezone, not UTC', () => {
+  // Sunday 23:30 in Los Angeles is already Monday in UTC.
+  const sundayNight = new Date('2026-11-23T07:30:00Z') // Sun 22 Nov 2026, 23:30 PST
+  const mondayMorning = new Date('2026-11-23T08:30:00Z') // Mon 23 Nov 2026, 00:30 PST
+  assert.notEqual(weekId(sundayNight), weekId(mondayMorning))
+  assert.equal(weekId(new Date('2026-11-24T20:00:00Z')), weekId(new Date('2026-11-29T20:00:00Z')), 'Tuesday and Sunday share a week')
+  assert.equal(weekId(new Date('2027-01-01T20:00:00Z')), '2026-W53', 'ISO weeks cross the new year')
+})
+
+test('each week has its own code, and the code is easy to read out', () => {
+  const codes = new Set()
+  for (let w = 1; w <= 52; w++) codes.add(weeklyCode(SECRET, `2027-W${String(w).padStart(2, '0')}`))
+  assert.ok(codes.size >= 51, 'codes do not repeat week to week')
+  for (const c of codes) assert.match(c, /^[A-HJ-NP-Z2-9]{3}-[A-HJ-NP-Z2-9]{3}$/)
+  assert.notEqual(weeklyCode(SECRET, '2027-W01'), weeklyCode(`${SECRET}y`, '2027-W01'), 'another secret, another code')
+})
+
+test('a code matches with any case, spaces or dashes; last week’s does not', () => {
+  const wk = weekId()
+  const code = weeklyCode(SECRET, wk)
+  assert.ok(codeMatches(SECRET, code))
+  assert.ok(codeMatches(SECRET, ` ${code.toLowerCase().replace('-', ' ')} `))
+  assert.ok(!codeMatches(SECRET, 'AAA-AAA'))
+  assert.ok(!codeMatches(SECRET, ''))
+  const lastWeek = weekId(new Date(Date.now() - 7 * 86400000))
+  assert.ok(!codeMatches(SECRET, weeklyCode(SECRET, lastWeek)))
+})
+
+test('a pass is good for its week only, and cannot be forged', () => {
+  const pass = issuePass(SECRET, '2027-W10')
+  assert.ok(passValid(SECRET, pass, '2027-W10'))
+  assert.ok(!passValid(SECRET, pass, '2027-W11'), 'expires at the rollover')
+  const [payload, mac] = pass.split('.')
+  const forged = Buffer.from(JSON.stringify({ wk: '2027-W11', n: 'x' })).toString('base64url')
+  assert.ok(!passValid(SECRET, `${forged}.${mac}`, '2027-W11'), 'a changed week breaks the signature')
+  assert.ok(!passValid(`${SECRET}y`, pass, '2027-W10'), 'another secret does not accept it')
+  assert.ok(!passValid(SECRET, `${payload}.`, '2027-W10'))
+  assert.ok(!passValid(SECRET, null))
+})
+
+test('with a secret set, the server asks for the code and guards the leaderboard', async () => {
+  const { spawn } = await import('node:child_process')
+  const port = 20000 + Math.floor(Math.random() * 20000)
+  const child = spawn(process.execPath, ['main.mjs'], {
+    cwd: new URL('..', import.meta.url),
+    env: { ...process.env, ARCADE_PORT: String(port), ARCADE_DB: join(dir, 'locked.db'), ARCADE_CODE_SECRET: SECRET, ARCADE_MIN_MATCH_SECONDS: '0' },
+    stdio: ['ignore', 'pipe', 'inherit'],
+  })
+  try {
+    await new Promise((r) => child.stdout.once('data', r))
+    const url = `http://127.0.0.1:${port}`
+    const post = (path, body, headers = {}) => fetch(url + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: 'https://frc5805.com', 'X-Forwarded-For': '10.7.7.7', ...headers },
+      body: JSON.stringify(body),
+    })
+    assert.deepEqual(await (await fetch(`${url}/api/access`)).json(), { required: true })
+    // No pass: no runs, no scores.
+    assert.equal((await post('/api/runs', { difficulty: 'regional' })).status, 401)
+    // The wrong code is refused; the right one earns a pass.
+    assert.equal((await post('/api/unlock', { code: 'AAA-AAA' })).status, 401)
+    const ok = await post('/api/unlock', { code: weeklyCode(SECRET, weekId()) })
+    assert.equal(ok.status, 200)
+    const { pass } = await ok.json()
+    assert.equal((await (await post('/api/check', { pass })).json()).ok, true)
+    assert.equal((await (await post('/api/check', { pass: 'nope.nope' })).json()).ok, false)
+    // The pass opens the leaderboard.
+    const auth = { Authorization: `Bearer ${pass}` }
+    const runRes = await post('/api/runs', { difficulty: 'regional' }, auth)
+    assert.equal(runRes.status, 201)
+    const { run } = await runRes.json()
+    const scored = await post('/api/scores', { run, name: 'Ada', difficulty: 'regional', blue: 100, red: 50, made: 10, fired: 12 }, auth)
+    assert.equal(scored.status, 201)
+    // Guessing is rate limited.
+    let last
+    for (let i = 0; i < 9; i++) last = await post('/api/unlock', { code: 'BBB-BBB' }, { 'X-Forwarded-For': '10.8.8.8' })
+    assert.equal(last.status, 429)
+  } finally {
+    child.kill()
+    await new Promise((r) => child.once('exit', r))
+  }
+})
+
+test('without a secret the arcade is open', async () => {
+  const res = await call('/api/access')
+  assert.deepEqual(await res.json(), { required: false })
+  const run = await call('/api/runs', { difficulty: 'regional' })
+  assert.equal(run.status, 201)
+})
