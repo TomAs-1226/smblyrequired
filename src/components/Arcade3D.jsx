@@ -26,16 +26,26 @@ const GAME_KEYS = new Set([
   'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
   'Space', 'ShiftLeft', 'ShiftRight', 'KeyX',
 ])
-const CAMERAS = ['follow', 'chase', 'top', 'station']
-const CAMERA_LABEL = { follow: 'Follow', chase: 'Chase', top: 'Overhead', station: 'Driver station' }
+const CAMERAS = ['chase', 'fixed', 'top', 'station']
+const CAMERA_LABEL = { chase: 'Behind robot', fixed: 'Fixed', top: 'Overhead', station: 'Driver station' }
+const CAMERA_KEY = 'frc5805.arcade.view'
+// How much of the picture to draw. Auto is Medium (no real shadows, which are what a
+// laptop's graphics cannot afford), and drops to Low when frames still run slow.
+const GRAPHICS = ['auto', 'high', 'medium', 'low']
+const GRAPHICS_LEVEL = { low: 0, medium: 1, high: 2 }
+const GRAPHICS_LABEL = { auto: 'Auto', high: 'High', medium: 'Medium', low: 'Low' }
+const SLOW_FRAME = 1 / 40 // s: an average worse than this, twice running, costs a level
 const AIM_LABEL = {
-  hub: { ready: 'Locked: firing', aiming: 'Lining up', near: 'Too close to the hub', far: 'Too far from the hub', fast: 'Too fast to shoot straight' },
+  hub: { ready: 'Locked: firing', aiming: 'Lining up', near: 'Too close to the hub', far: 'Too far from the hub', rush: 'Too fast for this shot: ease off', fast: 'Too fast to shoot straight', knocked: 'Knocked: aim settling' },
   pass: { ready: 'Passing', aiming: 'Lining up the pass', near: 'Too close to pass', far: 'Too far to pass', home: 'Already in your zone' },
 }
 // A shot lined up while going faster than the shooter can allow for will trail: say so.
-const aimState = (aim) => (aim.kind === 'hub' && aim.fast && (aim.state === 'ready' || aim.state === 'aiming') ? 'fast' : aim.state)
+const aimState = (aim) => {
+  if (aim.kind !== 'hub' || (aim.state !== 'ready' && aim.state !== 'aiming')) return aim.state
+  return aim.knocked ? 'knocked' : aim.fast ? 'fast' : aim.state
+}
 const NAME_KEY = 'frc5805.arcade.name'
-const MAX_STEPS_PER_FRAME = 4
+const MAX_STEPS_PER_FRAME = 3
 
 const fmtClock = (left) => {
   const s = Math.max(0, Math.ceil(left))
@@ -63,7 +73,7 @@ export default function Arcade3D() {
   const viewRef = useRef(null)
   const simRef = useRef(null)
   const screenRef = useRef('loading')
-  const camRef = useRef(CAMERAS.includes(readStored('frc5805.arcade.camera', '')) ? readStored('frc5805.arcade.camera', '') : 'follow')
+  const camRef = useRef(CAMERAS.includes(readStored(CAMERA_KEY, '')) ? readStored(CAMERA_KEY, '') : 'chase')
   const keys = useRef(new Set())
   const touches = useRef(new Map()) // the two thumbs on a touch screen
   const pads = useRef({ fire: false, intake: false, special: false }) // its three buttons
@@ -77,6 +87,14 @@ export default function Arcade3D() {
   const [difficulty, setDifficulty] = useState('regional')
   const [filter, setFilter] = useState('all')
   const [camera, setCameraState] = useState(camRef.current)
+  const gfxRef = useRef(GRAPHICS.includes(readStored('frc5805.arcade.graphics', '')) ? readStored('frc5805.arcade.graphics', '') : 'auto')
+  const governor = useRef({ level: 1, time: 0, frames: 0, slow: 0 })
+  const [graphics, setGraphicsState] = useState(gfxRef.current)
+  const [autoLevel, setAutoLevel] = useState(1)
+  // A frame-rate readout, for finding out what a machine is doing (pause menu).
+  const statsRef = useRef(readStored('frc5805.arcade.stats', '') === 'on')
+  const [stats, setStatsState] = useState(statsRef.current)
+  const [perf, setPerf] = useState('')
   const [hud, setHud] = useState(null)
   const [final, setFinal] = useState(null)
   const [board, setBoard] = useState({ loading: false, rows: [], error: '' })
@@ -142,6 +160,7 @@ export default function Arcade3D() {
           view.resize(width, height, Math.min(window.devicePixelRatio || 1, 2))
         })
         ro.observe(canvasRef.current)
+        if (gfxRef.current !== 'auto') view.setQuality(GRAPHICS_LEVEL[gfxRef.current])
         newDemo(rosterData.specs)
         setScreen('menu')
         // Development only: lets a test drive read the live sim and the scene's load state.
@@ -159,9 +178,11 @@ export default function Arcade3D() {
     let last = performance.now()
     let acc = 0
     let lastHud = 0
+    const tally = { frames: 0, time: 0, physics: 0, draw: 0, worst: 0 }
     function loop(now) {
       raf = requestAnimationFrame(loop)
-      const dt = Math.min(0.1, (now - last) / 1000)
+      const gap = (now - last) / 1000
+      const dt = Math.min(0.1, gap)
       last = now
       const sim = simRef.current
       const view = viewRef.current
@@ -169,6 +190,24 @@ export default function Arcade3D() {
       if (!sim || !view || !m) return
       const sc = screenRef.current
       const running = sc === 'playing' || sc === 'menu'
+      // Frames running slow on this machine: give up some of the picture, a level at
+      // a time, and keep the game smooth. A long gap is a hidden tab, not a slow frame.
+      const g = governor.current
+      if (running && gap < 0.25 && gfxRef.current === 'auto' && g.level > 0) {
+        g.time += gap
+        if (++g.frames >= 90) {
+          g.slow = g.time / g.frames > SLOW_FRAME ? g.slow + 1 : 0
+          g.time = 0
+          g.frames = 0
+          if (g.slow >= 2) {
+            g.slow = 0
+            g.level--
+            view.setQuality(g.level)
+            setAutoLevel(g.level)
+          }
+        }
+      }
+      const t0 = performance.now()
       if (running) {
         acc += dt
         let n = 0
@@ -182,8 +221,24 @@ export default function Arcade3D() {
       } else {
         acc = 0
       }
+      const t1 = performance.now()
       const focus = sim.demo ? null : sim.robots[0]
-      view.render(sim, dt, { focus })
+      // The physics ticks sixty times a second; the screen draws when it draws. What
+      // is left on the clock says how far between two ticks this frame falls, and
+      // everything is drawn there: even motion at any refresh rate.
+      view.render(sim, dt, { focus, alpha: running ? Math.min(1, acc / m.DT) : 1 })
+      if (statsRef.current && gap < 0.25) {
+        tally.frames++
+        tally.time += gap
+        tally.physics += t1 - t0
+        tally.draw += performance.now() - t1
+        tally.worst = Math.max(tally.worst, gap)
+        if (tally.time >= 0.5) {
+          const f = tally.frames
+          setPerf(`${Math.round(f / tally.time)} fps · worst frame ${Math.round(tally.worst * 1000)} ms · physics ${(tally.physics / f).toFixed(1)} ms · drawing ${(tally.draw / f).toFixed(1)} ms · ${['low', 'medium', 'high'][view.status().drawn.quality]} · ${(view.status().drawn.pixels / 1e6).toFixed(1)} MP`)
+          Object.assign(tally, { frames: 0, time: 0, physics: 0, draw: 0, worst: 0 })
+        }
+      }
 
       if (sc === 'menu' && sim.over) newDemo()
       if (sc === 'playing') {
@@ -389,8 +444,25 @@ export default function Arcade3D() {
     const next = CAMERAS[(CAMERAS.indexOf(camRef.current) + 1) % CAMERAS.length]
     camRef.current = next
     setCameraState(next)
-    store('frc5805.arcade.camera', next)
+    store(CAMERA_KEY, next)
     if (simRef.current && !simRef.current.demo) viewRef.current?.setCamera(next)
+  }, [])
+
+  const cycleGraphics = useCallback(() => {
+    const next = GRAPHICS[(GRAPHICS.indexOf(gfxRef.current) + 1) % GRAPHICS.length]
+    gfxRef.current = next
+    setGraphicsState(next)
+    store('frc5805.arcade.graphics', next)
+    // Back to Auto starts from the top again, and finds its own level.
+    Object.assign(governor.current, { level: 1, time: 0, frames: 0, slow: 0 })
+    setAutoLevel(1)
+    viewRef.current?.setQuality(next === 'auto' ? 1 : GRAPHICS_LEVEL[next])
+  }, [])
+
+  const toggleStats = useCallback(() => {
+    statsRef.current = !statsRef.current
+    setStatsState(statsRef.current)
+    store('frc5805.arcade.stats', statsRef.current ? 'on' : 'off')
   }, [])
 
   // ---- no page scrolling under a match (Lenis scrolls programmatically, so stop it too)
@@ -508,15 +580,21 @@ export default function Arcade3D() {
     const next = list[(i + dir + list.length) % list.length]
     if (next) setRobotKey(next.key)
   }
-  const maxOf = (f) => Math.max(...specs.map(f), 1)
+  // A bar runs from the least of the roster to the most, so the difference between two robots shows.
+  const bar = (f) => {
+    const all = specs.map(f)
+    const lo = Math.min(...all)
+    const hi = Math.max(...all)
+    return hi > lo ? 0.12 + (0.88 * (f(spec) - lo)) / (hi - lo) : 1
+  }
   // [label, 0..1 against the strongest robot, value, unit]
   const statRows = spec
     ? [
-        ['Top speed', spec.speed / maxOf((s) => s.speed), spec.speed.toFixed(1), 'm/s'],
-        ['Hopper', spec.capacity / maxOf((s) => s.capacity), String(spec.capacity), 'fuel'],
-        ['Fire rate', spec.fireRate / maxOf((s) => s.fireRate), String(Math.round(spec.fireRate)), 'per s'],
-        ['Range', spec.shot.maxRange / maxOf((s) => s.shot.maxRange), `${spec.shot.minRange.toFixed(1)}–${spec.shot.maxRange.toFixed(1)}`, 'm'],
-        ['Shoots moving', spec.shot.moveSpeed / maxOf((s) => s.shot.moveSpeed), `up to ${spec.shot.moveSpeed.toFixed(1)}`, 'm/s'],
+        ['Top speed', bar((s) => s.speed), spec.speed.toFixed(1), 'm/s'],
+        ['Pick-up', bar((s) => s.accel), spec.accel.toFixed(0), 'm/s²'],
+        ['Hopper', bar((s) => s.capacity), String(spec.capacity), 'fuel'],
+        ['Fire rate', bar((s) => s.fireRate), String(Math.round(spec.fireRate)), 'per s'],
+        ['Shoots moving', bar((s) => s.shot.moveSpeed), `up to ${spec.shot.moveSpeed.toFixed(1)}`, 'm/s'],
       ]
     : []
   const lanes = spec ? spec.shot.exits.length : 1
@@ -525,6 +603,7 @@ export default function Arcade3D() {
         spec.turret
           ? (lanes > 1 ? 'Twin turrets' : 'Turret')
           : lanes > 1 ? `Wide shooter, ${lanes} abreast` : 'Fixed shooter',
+        spec.shot.steady >= 0.66 ? 'hard to knock off its aim' : spec.shot.steady <= 0.34 ? 'easy to knock off its aim' : null,
         spec.trench ? 'fits under the trench' : 'too tall for the trench',
         spec.special === 'climb' ? `X climbs to L${spec.climb}` : 'X passes fuel home',
       ].filter(Boolean)
@@ -629,6 +708,8 @@ export default function Arcade3D() {
               <button type="button" className={styles.pad} {...hold('special')}>{hud.special}</button>
               <button type="button" className={`${styles.pad} ${styles.padMain}`} {...hold('fire')}>Shoot</button>
             </div>
+
+            {stats && perf && <p className={styles.perf}>{perf}</p>}
 
             <div className={styles.toolbar}>
               <button type="button" className={styles.tool} onClick={cycleCamera} title="Camera (V)">
@@ -810,6 +891,10 @@ export default function Arcade3D() {
                   <button type="button" className={`btn btn--ghost ${styles.pauseBtn}`} onClick={endPractice}>End session</button>
                 )}
                 <button type="button" className={`btn btn--ghost ${styles.pauseBtn}`} onClick={cycleCamera}>Camera: {CAMERA_LABEL[camera]}</button>
+                <button type="button" className={`btn btn--ghost ${styles.pauseBtn}`} onClick={cycleGraphics}>
+                  Graphics: {GRAPHICS_LABEL[graphics]}{graphics === 'auto' && autoLevel < 1 ? ' (now low)' : ''}
+                </button>
+                <button type="button" className={`btn btn--ghost ${styles.pauseBtn}`} onClick={toggleStats}>Frame rate: {stats ? 'shown' : 'hidden'}</button>
                 <button type="button" className={`btn btn--ghost ${styles.pauseBtn}`} onClick={toMenu}>Quit to setup</button>
               </div>
               <dl className={styles.pauseKeys}>

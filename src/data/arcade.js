@@ -58,7 +58,7 @@ export const arcade = {
       ['Space', 'Shoot: hold it. The robot aims itself and fires when it is lined up'],
       ['Shift', 'Intake: hold it to pick fuel up'],
       ['X', 'Special: climb at your tower in the endgame, otherwise pass fuel home'],
-      ['V', 'Camera: follow, chase, overhead, driver station'],
+      ['V', 'Camera: behind the robot, fixed, overhead, driver station'],
       ['R', 'Practice: back to the start'],
       ['Esc / P', 'Pause'],
     ],
@@ -76,6 +76,7 @@ export const arcade = {
     'turns the whole robot until its shooter faces the hub. A wide shooter feeds each of its lanes on ' +
     'its own, so fuel pours out across its width. Every ball then flies on its own, with gravity and ' +
     'drag, and can rattle out off the rim. Shooting on the move is a skill of the robot, not only of ' +
-    'the driver: each one is good up to its own speed (it is on the robot’s card), and past that its ' +
-    'shots trail behind. The line shows where the next ball will really go.',
+    'the driver: each one has its own speed it shoots well at (it is on the robot’s card), and the ' +
+    'faster you go past it, the more of its shots miss. A bump from another robot throws the aim off ' +
+    'for a moment too, less on a robot built low and wide.',
 }

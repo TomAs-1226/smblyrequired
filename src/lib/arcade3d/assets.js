@@ -46,7 +46,7 @@ export function createAssets(base) {
         const gltf = await load(`${models}robot-preview.glb`)
         const root = gltf.scene.clone(true)
         const rig = rigRobot(root, spec.manifest, { glassy: false })
-        return { root, clips: gltf.animations, rig: rigNumbers(rig), raw: rig }
+        return { root, clips: gltf.animations, rig: rigNumbers(rig, root, spec), raw: rig }
       }
       const gltf = await load(`${arcade}${spec.model}`)
       const root = gltf.scene.clone(true)

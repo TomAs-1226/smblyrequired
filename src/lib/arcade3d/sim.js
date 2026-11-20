@@ -33,7 +33,9 @@ import { initHealth, faultStep, noteImpact, noteShot } from './faults.js'
 
 export const DT = 1 / 60
 const MAX_EXIT = 18 // m/s, the fastest any shooter here throws
-const TURN_ACCEL = 30 // rad/s², how hard a robot can start or stop spinning
+const TURN_ACCEL = 55 // rad/s², how hard a robot can start or stop spinning
+const BRAKE = 1.7 // a swerve stops and reverses harder than it gets going
+const ROLL_DRAG = 1.1 // m/s²: foam on carpet. A ball shoved at 2 m/s rolls under two metres
 const PASS_ELEVATION = 46
 
 export function mulberry32(seed) {
@@ -158,6 +160,7 @@ function makeRobot(R, world, spec, place) {
     cooldown: 0,
     lanes: spec.shot.exits.map(() => 0), // s until each feed lane has its next ball at the wheel
     fedAt: -1,
+    shake: 0, // 0..1: how far a knock has thrown its aim off
     intakeBudget: 2,
     intakeOut: 0, // where the intake is: 0 stowed .. 1 out
     intakeOn: false, // rollers running, picking up
@@ -264,7 +267,12 @@ function addBall(sim, x, y, z, vel, shooter, resting = false, shot = false) {
     body,
   )
   if (vel) body.setLinvel(vel, true)
-  const ball = { body, collider, alive: true, shooter: shooter || null, air: Boolean(vel), grace: shot ? 0.3 : 0 }
+  const ball = {
+    body, collider, alive: true, shooter: shooter || null, air: Boolean(vel), grace: shot ? 0.3 : 0,
+    // Where it is and where it was a step ago (and how it is turned), kept here so
+    // the view can draw between the two without asking the physics for every ball.
+    x, y, z, x0: x, y0: y, z0: z, qx: 0, qy: 0, qz: 0, qw: 1,
+  }
   sim.balls.push(ball)
   return ball
 }
@@ -313,6 +321,8 @@ export function step(sim, input = {}) {
   for (const r of sim.robots) {
     r.cooldown = Math.max(0, r.cooldown - DT)
     for (let i = 0; i < r.lanes.length; i++) r.lanes[i] = Math.max(0, r.lanes[i] - DT)
+    r.shake *= Math.exp(-DT / SHAKE_TIME)
+    if (r.shake < 0.01) r.shake = 0
     r.firing = Math.max(0, r.firing - DT)
     r.intakeBudget = Math.min(2, r.intakeBudget + r.a.intakeRate * DT)
     // The player drives from the first second, auto included; everyone else is the computer.
@@ -375,13 +385,16 @@ export function step(sim, input = {}) {
     let out = Math.max(r.intakeOn ? 1 : 0, held)
     if (r.firing > 0 && lim.intake) {
       r.agit += DT
-      const lo = Math.max(0.26, held)
-      out = (1 + lo) / 2 + ((1 - lo) / 2) * Math.cos(2 * Math.PI * 1.8 * r.agit)
+      out = agitate(r.a.agitation, r.agit, held)
     } else {
       r.agit = 0
     }
-    // A broken intake hangs where it broke.
-    if (!r.health.intakeBroken) r.intakeOut = clamp(r.intakeOut + clamp(out - r.intakeOut, -DT / 0.25, DT / 0.25), 0, 1)
+    // A broken intake hangs where it broke. A working one moves at its own speed.
+    const most = DT / r.a.intakeTime
+    if (!r.health.intakeBroken) r.intakeOut = clamp(r.intakeOut + clamp(out - r.intakeOut, -most, most), 0, 1)
+    // And none comes out through a wall: against one it only comes out as far as
+    // there is room, and driven into one it is pushed back in.
+    if (r.intakeOut > 0.02) r.intakeOut = Math.min(r.intakeOut, intakeRoom(sim, r))
 
     drive(r, cmd, lim.drive, heading, swing)
     if (aim && aim.state === 'ready') fire(sim, r, aim)
@@ -405,7 +418,13 @@ function sample(sim, r) {
   // A sudden change in velocity that the drive could not have made is a collision.
   if (sim.clock > 0 && r.climb.state === 'none') {
     const jump = Math.hypot(v.x - r.vx, v.z - r.vz) - r.a.accel * DT
-    if (jump > 0.5) noteImpact(sim, r, jump)
+    if (jump > 0.5) {
+      noteImpact(sim, r, jump)
+      // A hit throws the aim off and takes speed out of the shooter wheel: less, the steadier the robot.
+      const knock = Math.min(1, jump * 0.55 * (1 - r.a.shot.steady))
+      r.shake = Math.min(1, r.shake + knock)
+      r.spin = Math.min(r.spin, 1 - knock * 0.6)
+    }
   }
   r.x = t.x; r.z = t.z; r.y = t.y
   r.vx = v.x; r.vz = v.z
@@ -424,7 +443,8 @@ function drive(r, cmd, power = 1, heading = null, swing = 0) {
   let dvx = vx * max - r.vx
   let dvz = vz * max - r.vz
   const dl = Math.hypot(dvx, dvz)
-  const lim = a.accel * DT
+  // Slowing down or turning back on itself, the wheels grip harder than when pulling away.
+  const lim = a.accel * DT * (dvx * r.vx + dvz * r.vz < 0 ? BRAKE : 1)
   // How hard the drive worked this step, for the battery: asked, achieved, accelerating.
   r.driveLoad = { cmd: Math.min(1, m) * power, speed: Math.hypot(r.vx, r.vz) / a.speed, accel: Math.min(1, dl / Math.max(lim, 1e-6)) * Math.min(1, m) }
   if (dl > lim) { dvx *= lim / dl; dvz *= lim / dl }
@@ -438,7 +458,7 @@ function drive(r, cmd, power = 1, heading = null, swing = 0) {
     const e = wrap(heading - r.psi)
     want = clamp(swing + Math.sign(e) * Math.min(a.yawRate, 10 * Math.abs(e), Math.sqrt(1.6 * TURN_ACCEL * Math.abs(e))), -a.yawRate, a.yawRate)
   } else if (cmd.turn) {
-    want = clamp(cmd.turn, -1, 1) * Math.min(a.yawRate * 0.6, 5)
+    want = clamp(cmd.turn, -1, 1) * (a.turn ?? Math.min(a.yawRate * 0.6, 5))
   }
   const w = power > 0 ? r.om + clamp(want - r.om, -TURN_ACCEL * DT, TURN_ACCEL * DT) : 0
   body.setAngvel({ x: 0, y: -w, z: 0 }, true)
@@ -447,6 +467,48 @@ function drive(r, cmd, power = 1, heading = null, swing = 0) {
 function gauss(rng) {
   const u = Math.max(rng(), 1e-9)
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng())
+}
+
+/**
+ * Where a robot's intake should be `t` seconds into a shot: every robot works
+ * its pile toward the shooter its own way (robots.js, agitationOf). `held` is
+ * how far out the fuel still on board keeps it.
+ */
+function agitate(a, t, held) {
+  const lo = Math.max(a.to, held)
+  const u = t - (a.delay || 0)
+  if (a.kind === 'pump' || a.kind === 'beat') {
+    // Starts out, strokes in to `lo` and back.
+    return u < 0 ? 1 : (1 + lo) / 2 + ((1 - lo) / 2) * Math.cos((2 * Math.PI * u) / a.period)
+  }
+  if (a.kind === 'hold' && a.ramp && u > a.ramp.delay) return Math.max(held, Math.min(a.ramp.to, a.to + (u - a.ramp.delay) * a.ramp.rate))
+  return lo
+}
+
+/**
+ * How far out (0..1) a robot's intake has room to be: the clear distance beyond
+ * its bumper on each side that has one, as a share of the intake's reach.
+ */
+function intakeRoom(sim, r) {
+  const z = r.a.intake
+  const c = Math.cos(r.psi)
+  const s = Math.sin(r.psi)
+  let room = 1
+  for (const [cd, sd] of z.faces) {
+    // Out along this face, in the field's frame, and across it.
+    const ox = c * cd - s * sd
+    const oz = s * cd + c * sd
+    const edge = Math.abs(cd) > 0.5 ? r.a.len / 2 : r.a.wid / 2
+    const reach = z.far - edge
+    if (reach < 0.03) continue
+    for (const side of [-0.85, 0, 0.85]) {
+      const px = r.x + ox * (edge - 0.06) - oz * side * z.half
+      const pz = r.z + oz * (edge - 0.06) + ox * side * z.half
+      const hit = rayField(sim, px, 0.14, pz, ox, 0, oz, reach + 0.1)
+      if (hit != null) room = Math.min(room, clamp((hit - 0.08) / reach, 0, 1))
+    }
+  }
+  return room
 }
 
 // ------------------------------------------------------------------ shooting
@@ -494,11 +556,18 @@ function passTarget(r) {
  * 'home' (a pass from its own zone: nothing to do). step() turns 'aiming' into
  * 'ready' once the robot is lined up and the wheel is at speed.
  */
-// Shooting on the move. Past the speed a shooter is good to, this much of the
-// extra goes unaccounted for; and any moving shot scatters a little, more as the
-// robot nears that speed.
-const SOTF_LAG = 0.65
-const sotfScatter = (speed, limit) => speed * (0.02 + 0.05 * Math.min(1, speed / Math.max(limit, 0.2)) ** 2)
+// How good a shot is, is the robot's, and it is a roll of the dice. Every ball
+// still flies for real; what a robot's skill decides is whether it was thrown
+// right. Standing still and left alone, it was. On the move, each shot may miss:
+// seldom at the speed the robot was built to shoot at, nearly always at three
+// times it. Knocked by another robot, the same, until its aim settles.
+const MISS_AT_LIMIT = 0.12
+const STILL = Object.freeze({ x: 0, z: 0 })
+const SHAKE_TIME = 0.55 // s for a knock to wear off, to a third
+export function missChance(r, speed) {
+  const moving = speed < 0.15 ? 0 : MISS_AT_LIMIT * (speed / Math.max(r.a.shot.moveSpeed, 0.15)) ** 2
+  return Math.min(0.95, moving + r.shake * 0.9)
+}
 
 // A shot has to get over the hub's near rim before it comes down into the opening.
 // From close in, a shooter's usual angle is still climbing when it gets there and
@@ -535,22 +604,53 @@ function solveAim(sim, r, kind) {
   }
   const dist = Math.hypot(target.x - from.x, target.z - from.z)
   if (kind !== 'pass') elev = steepEnough(tableElevation(r.a, clamp(dist, s.minRange, s.maxRange), from.y), dist, from.y)
-  // Lead for the robot's own motion: a ball keeps the velocity of the robot that
-  // threw it. Every shooter allows for that up to the speed it was built to shoot
-  // at; past it, it only keeps up with part of the rest, and its shots trail behind.
   const vel = { x: r.vx, z: r.vz }
   const speed = Math.hypot(vel.x, vel.z)
-  const limit = kind === 'pass' ? Infinity : s.moveSpeed
-  const known = speed <= limit ? 1 : (limit + (speed - limit) * (1 - SOTF_LAG)) / speed
-  const sol = solveShot(from, target, { x: vel.x * known, z: vel.z * known }, elev, MAX_EXIT, true)
   const bearing = Math.atan2(target.z - from.z, target.x - from.x)
-  const state = dist < lo ? 'near' : dist > hi || !sol ? 'far' : 'aiming'
-  return { kind, state, sol, elev, from, vel, speed, fast: speed > limit + 0.15, dist, target, yaw: sol ? sol.yaw : bearing }
+  // The shot from here as if the robot stood still. The same one as a moment ago
+  // (a robot at its spot) is not worked out again.
+  const key = `${kind}|${Math.round(from.x * 100)}|${Math.round(from.z * 100)}|${Math.round(from.y * 200)}|${Math.round(elev * 20)}`
+  const last = r.solved
+  const still = last && last.key === key ? last.sol : solveShot(from, target, STILL, elev, MAX_EXIT, false, last?.sol?.speed ?? null)
+  r.solved = { key, sol: still }
+  // On the move, the ball keeps the velocity of the robot that threw it. So the
+  // shooter throws what is left: the standing shot's velocity less the robot's
+  // own. Over the ground the ball then flies the standing shot's arc exactly, no
+  // higher and no further. (Solving for a target moved downrange instead, at a
+  // fixed steep angle, ran away with itself at speed: shots at 15 m/s, ten metres up.)
+  let sol = still
+  let rush = false
+  if (still && speed > 0.02) {
+    const pitch = (elev * Math.PI) / 180
+    const flat = still.speed * Math.cos(pitch)
+    const up = still.speed * Math.sin(pitch)
+    const hx = Math.cos(bearing) * flat - vel.x
+    const hz = Math.sin(bearing) * flat - vel.z
+    const mine = Math.hypot(hx, hz)
+    const yaw = Math.atan2(hz, hx)
+    // Driving at the target faster than the shot itself travels, or needing to
+    // throw well off to one side: no shooter does that. It waits.
+    rush = mine < flat * 0.3 || Math.abs(wrap(yaw - bearing)) > 1.05
+    elev = (Math.atan2(up, Math.max(mine, 0.05)) * 180) / Math.PI
+    sol = { speed: Math.min(MAX_EXIT, Math.hypot(mine, up)), yaw, tof: still.tof, dist: still.dist }
+  }
+  const state = dist < lo ? 'near' : dist > hi || !sol ? 'far' : rush ? 'rush' : 'aiming'
+  // A pass has a whole zone to land in: it does not miss.
+  const miss = kind === 'pass' ? 0 : missChance(r, speed)
+  return { kind, state, sol, elev, from, vel, speed, miss, fast: miss >= 0.35 && r.shake < 0.3, knocked: r.shake >= 0.3, dist, target, yaw: sol ? sol.yaw : bearing }
 }
 
-/** What this robot's shooter would do at its hub right now, without firing. */
+/**
+ * Whether this robot's shooter could take a shot at its hub from where it is:
+ * 'aiming' in range, 'near' or 'far' out of it. Range alone, nothing solved:
+ * the computer's robots ask this every step.
+ */
 export function aimNow(r) {
-  return solveAim(null, r, 'hub')
+  const s = r.a.shot
+  const from = shooterOrigin(r)
+  const target = shotTarget(r.team)
+  const dist = Math.hypot(target.x - from.x, target.z - from.z)
+  return { kind: 'hub', dist, state: dist < s.minRange - 0.25 ? 'near' : dist > s.maxRange + 0.15 ? 'far' : 'aiming' }
 }
 
 function turretLimits(r) {
@@ -598,7 +698,6 @@ function fire(sim, r, aim) {
   const base = s.turret ? aim.sol.yaw : r.psi + s.yaw
   const sp = s.spread
   const k = r.autopilot ? r.cfg.spreadScale ?? 1 : 1
-  const scatter = aim.kind === 'hub' ? sotfScatter(aim.speed, s.moveSpeed) : 0
   let n = 0
   for (let i = 0; i < lanes && r.carry > 0; i++) {
     if (r.lanes[i] > 0) continue
@@ -607,8 +706,14 @@ function fire(sim, r, aim) {
     const yaw = base + gauss(sim.rng) * (((sp.yawDeg ?? 0.5) * Math.PI) / 180) * k + gauss(sim.rng) * r.cfg.spreadYaw * 0.5
     const pitch = aim.elev + gauss(sim.rng) * (sp.pitchDeg ?? 0.5) * k
     const p = exitPoint(r, s.exits[i], yaw)
-    // What the ball really carries is the robot's whole velocity, give or take what a moving shot scatters.
-    const carried = scatter ? { x: aim.vel.x + gauss(sim.rng) * scatter, z: aim.vel.z + gauss(sim.rng) * scatter } : aim.vel
+    // A miss is a ball thrown as if the robot were moving some other way: it comes
+    // down most of a metre from where it was meant to, in whatever direction.
+    let carried = aim.vel
+    if (aim.miss > 0 && sim.rng() < aim.miss) {
+      const off = 0.75 + 0.6 * sim.rng()
+      const way = 2 * Math.PI * sim.rng()
+      carried = { x: aim.vel.x + Math.cos(way) * off, z: aim.vel.z + Math.sin(way) * off }
+    }
     addBall(sim, p.x, p.y, p.z, launchVelocity(speed, yaw, pitch, carried), aim.kind === 'hub' ? r : null, false, true)
     noteShot(sim, r)
     r.carry--
@@ -687,6 +792,12 @@ function afterStep(sim) {
     const p = b.translation()
     const v = b.linvel()
     const speed = Math.hypot(v.x, v.y, v.z)
+    ball.x0 = ball.x; ball.y0 = ball.y; ball.z0 = ball.z
+    ball.x = p.x; ball.y = p.y; ball.z = p.z
+    if (speed > 0.02) {
+      const q = b.rotation()
+      ball.qx = q.x; ball.qy = q.y; ball.qz = q.z; ball.qw = q.w
+    }
 
     // Clear of the robot that threw it: from here on it hits robots like any other ball.
     if (ball.grace > 0) {
@@ -701,7 +812,7 @@ function afterStep(sim) {
     } else if (speed > 1e-3) {
       // Rolling on carpet: a steady drag, so a ball coasts to a stop instead of creeping for ever.
       const flat = Math.hypot(v.x, v.z)
-      const f = flat > 0.55 * DT ? (flat - 0.55 * DT) / flat : 0
+      const f = flat > ROLL_DRAG * DT ? (flat - ROLL_DRAG * DT) / flat : 0
       b.setLinvel({ x: v.x * f, y: v.y, z: v.z * f }, true)
       if (ball.air && speed < 2) ball.air = false
     }
@@ -723,7 +834,7 @@ function afterStep(sim) {
     if (p.y < 0.24) {
       for (let i = 0; i < ro.length; i++) {
         const r = ro[i]
-        if (!r.intakeOn || r.intakeOut < 0.7 || r.carry >= r.a.capacity || r.climb.state !== 'none' || r.intakeBudget < 1) continue
+        if (!r.intakeOn || r.intakeOut < 0.25 || r.carry >= r.a.capacity || r.climb.state !== 'none' || r.intakeBudget < 1) continue
         const dx = p.x - r.x
         const dz = p.z - r.z
         if (dx * dx + dz * dz > 1.6) continue
@@ -734,8 +845,13 @@ function afterStep(sim) {
         const z = r.a.intake
         let mouth = false
         for (const [cd, sd] of z.faces) {
+          // The mouth is where the intake has got to: against a wall it is part-way
+          // out, and still takes the fuel lying between the bumper and the wall.
+          const edge = Math.abs(cd) > 0.5 ? r.a.len / 2 : r.a.wid / 2
+          const far = edge + (z.far - edge) * r.intakeOut
+          const near = Math.min(z.near, far - 0.12)
           const reach = fwd * cd + side * sd
-          if (reach > z.near - 0.03 && reach < z.far + 0.03 && Math.abs(side * cd - fwd * sd) < z.half) { mouth = true; break }
+          if (reach > near - 0.03 && reach < far + 0.03 && Math.abs(side * cd - fwd * sd) < z.half) { mouth = true; break }
         }
         if (mouth) {
           r.carry++

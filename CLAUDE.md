@@ -38,7 +38,7 @@ model. The data model and the rules/functions/client contract are in
 | `functions/` | Cloud Functions (region `us-west1`) and their tests in `functions/test/`. |
 | `scripts/backup/` | The nightly mirror, restore test, systemd units. |
 | `scripts/firebase/` | `seed-emulators.mjs`, the local test accounts. |
-| `src/lib/arcade3d/` | Cycle Rush (`#/arcade`), a 3D take on the 2026 game: `config.js` (layout, timing, modes), `rules.js` (hub shifts, from the team's `FmsUtil`), `robots.js` (one spec per robot, from a descriptor or Numbers' `robot.json`), `sim.js` (Rapier physics, passed in; field colliders from `public/arcade/field.json`), `ai.js`, `faults.js` (the optional Realism setting: battery sag and brownouts, broken intakes, jams, radio drops, motor heat), `rig.js` (binds each model's `part:` joints to live state), `hopper.js` (the fuel a robot carries, as real balls in a small Rapier world of its own that rides with the robot; for looks only, `r.carry` is the count), `scene.js` (three.js; also drapes each hopper's net over its pile), `assets.js` (loads `public/arcade`). `npm run test:arcade` plays headless matches on the real assets. `src/lib/arcade/leaderboard.js` is the leaderboard client. |
+| `src/lib/arcade3d/` | Cycle Rush (`#/arcade`), a 3D take on the 2026 game: `config.js` (layout, timing, modes), `rules.js` (hub shifts, from the team's `FmsUtil`), `robots.js` (one spec per robot, from a descriptor or Numbers' `robot.json`), `sim.js` (Rapier physics, passed in; field colliders from `public/arcade/field.json`), `ai.js`, `faults.js` (the optional Realism setting: battery sag and brownouts, broken intakes, jams, radio drops, motor heat), `rig.js` (binds each model's `part:` joints to live state), `hopper.js` (the fuel a robot carries, as real balls in a small Rapier world of its own that rides with the robot: walls, lid, driven floor, the end that slides with the intake; for looks only, `r.carry` is the count), `scene.js` (three.js; also drapes each hopper's net over its pile), `assets.js` (loads `public/arcade`). `npm run test:arcade` plays headless matches on the real assets. `src/lib/arcade/leaderboard.js` is the leaderboard client. |
 | `public/arcade/` | The arcade's field, FUEL and 21 robot models plus their descriptors, written by `tools/arcade-assets.mjs` from an asset export. Do not edit by hand; re-run the tool. |
 | `server/arcade/` | The arcade's API on its own Oracle Cloud VM (not Firebase): the weekly code that gates `#/arcade` (`access.mjs`; `src/components/ArcadeGate.jsx` is the lock screen) and the leaderboard. No dependencies; `npm test` in that folder. Runbook: `docs/ARCADE.md`. |
 | `docs/` | `PORTAL.md` (setup), `FIREBASE.md` (data model and contract), `BACKUP.md` (the backup runbook), `ARCADE.md` (the arcade leaderboard host). |
@@ -206,6 +206,53 @@ These are real, were found the hard way, and are easy to reintroduce.
    z = W − y (`fromY` in `src/lib/arcade3d/config.js`), the field model is drawn
    unflipped, and `npm run test:arcade` checks which side the blue depot is on. Do
    not add a `scale.z = -1` anywhere to make something line up.
+
+20. **The arcade's shot solver is not free, and it used to run 12 times a step.** A
+   solve flies a ball through the air with drag, many times over, to find the exit
+   speed. Every robot re-solving every physics step (and the computer's robots a
+   second time just to ask "am I in range?") was half of all CPU time and made the
+   whole game stutter. Now `solveAim` in `sim.js` reuses the last answer while the
+   shooter has not moved, `aimNow` (what the AI asks) is range arithmetic with no
+   solve, and `ballistics.js` steps at the physics rate. Do not call `solveShot`
+   from anything that runs per robot per step without going through that cache.
+   On the drawing side, real-time shadows are the cost: measured on a laptop's
+   integrated graphics they are about three times everything else per pixel. So
+   `scene.setQuality` has three levels and only the top one has them; Auto (the
+   default) is the middle one, with a dark patch under each robot and ball instead,
+   and drops to the lowest when frames still run slow. The pause menu has the
+   setting and a frame-rate readout. To time a frame honestly, render and then
+   `gl.readPixels` one pixel: without that the GPU's work is not in the number.
+
+   The other half was triangles: the imported fuel model is 1,216 of them, and drawn
+   for each of ~450 balls it was four-fifths of the frame. The balls are a 12x8
+   sphere now. Count what an instanced mesh costs before using a model for it.
+
+21. **The arcade draws between physics steps.** The sim ticks at 60 Hz; screens do
+   not all. `scene.render` takes `alpha` (how far into the next tick the clock is)
+   and puts every robot and ball between its last two positions (`r.x` and the
+   body for a robot, `ball.x0`/`ball.x` for fuel, both kept by `sim.js`). Draw
+   straight from the physics and motion judders on a 120 Hz panel, and on any
+   frame that happened to get zero or two ticks.
+
+22. **A moving shot is the standing shot less the robot's own velocity.** A ball
+   keeps the velocity of the robot that throws it, so `solveAim` solves the shot
+   as if standing still and has the shooter throw that velocity minus the
+   robot's: over the ground the ball flies the standing arc. The first version
+   solved for a target moved downrange at a fixed steep angle, which diverges at
+   speed (15 m/s exits, ten-metre apexes, on every robot). Whether a moving shot
+   then goes in is each robot's dice roll (`missChance`), not the solver's doing.
+
+23. **The descriptors know more than the first pass used.** Each robot's
+   `public/arcade/robots/*.json` carries how it really behaves: how it works its
+   pile while shooting (`hopper.slide.squeeze`, `brain.agitate`, `brain.compactDeg`),
+   how fast its intake moves, the speed it can shoot at (`brain.maxShotSpeed`), its
+   driven floor (`feed.floorSpeed`), every net panel (meshes whose material is named
+   `net`, not only `hopper.net.part`). `robots.js` turns these into the spec. For
+   Numbers the same facts are in the team's robot code (`HopperManager`: the shuffle)
+   and from the team itself: its roller floor is hinged at the feeder and swings down
+   as the hopper slides out (`floorHinge`), which the CAD does not show. Before
+   inventing a behaviour for a robot, look for it there; where watching the robot
+   says otherwise, `KNOWN` in `robots.js` overrides.
 
 ## Security posture
 

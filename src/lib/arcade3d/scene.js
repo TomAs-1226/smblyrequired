@@ -19,13 +19,14 @@ import { hopperRim } from './robots.js'
 import { createHopper } from './hopper.js'
 
 const UP = new THREE.Vector3(0, 1, 0)
-const CAMERAS = {
-  // arm length, resting elevation (radians above the floor), how far ahead of the robot to look
-  follow: { len: 5.6, elev: 0.6, ahead: 1.7 },
-  chase: { len: 4.4, elev: 0.5, ahead: 1.4 },
-}
+// The camera's arm: its length, resting elevation (radians above the floor), and how far ahead of the robot it looks.
+const ARM = { len: 5.6, elev: 0.6, ahead: 1.7 }
+// Behind the robot, the view comes round after it at its own pace: eased, and never faster than this (rad/s).
+const CHASE_EASE = 3.2
+const CHASE_RATE = 2.6
+const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a))
 const MAX_ELEV = 1.38
-const AIM_COLOR = { ready: '#7be3a4', aiming: '#d9c68a', near: '#f06363', far: '#f06363' }
+const AIM_COLOR = { ready: '#7be3a4', aiming: '#d9c68a', near: '#f06363', far: '#f06363', rush: '#f06363' }
 
 export function createScene(canvas, pal, assets) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
@@ -33,7 +34,7 @@ export function createScene(canvas, pal, assets) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.0
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.shadowMap.type = THREE.PCFShadowMap
 
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(pal.void)
@@ -121,6 +122,9 @@ export function createScene(canvas, pal, assets) {
       })
       wrapper.add(model)
       scene.add(wrapper)
+      // It never moves: place it once, and leave its matrices alone after that.
+      wrapper.updateMatrixWorld(true)
+      wrapper.traverse((o) => { o.matrixAutoUpdate = false })
       scene.remove(standIn)
       fieldLoaded = true
     })
@@ -145,7 +149,10 @@ export function createScene(canvas, pal, assets) {
   const MAX_FUEL = 700
   const MAX_CARRIED = 760
   const fuelMaterial = new THREE.MeshStandardMaterial({ color: pal.fuel, roughness: 0.6, map: foamTexture() })
-  const fuelMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 18, 12), fuelMaterial, MAX_FUEL)
+  // A light sphere: there are some 450 balls in play, most a few pixels across. (The
+  // imported fuel model is 1,216 triangles; drawn for every ball it was four-fifths
+  // of all the triangles in the picture.)
+  const fuelMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 8), fuelMaterial, MAX_FUEL)
   const carriedMesh = new THREE.InstancedMesh(fuelMesh.geometry, fuelMaterial, MAX_CARRIED)
   for (const m of [fuelMesh, carriedMesh]) {
     m.castShadow = true
@@ -160,24 +167,32 @@ export function createScene(canvas, pal, assets) {
       let mesh = null
       gltf.scene.traverse((o) => { if (o.isMesh && !mesh) mesh = o })
       if (!mesh) return
-      // The model's own colour and finish; its shape too, when it has the coordinates for the grain.
+      // The model's own colour and finish, on our own light sphere.
       fuelMaterial.color.copy(mesh.material.color)
       fuelMaterial.roughness = mesh.material.roughness ?? 0.6
-      if (mesh.geometry.getAttribute('uv')) {
-        const old = fuelMesh.geometry
-        fuelMesh.geometry = mesh.geometry
-        carriedMesh.geometry = mesh.geometry
-        old.dispose()
-      }
       fuelModel = true
     })
     .catch((err) => console.warn('[arcade] fuel model', err))
 
   // ---- robots
+  // ---- stand-in shadows, for when the real ones are off: a soft patch under each
+  // robot, a dark spot under each ball on the carpet
+  const shadeMap = shadeTexture()
+  const shadeMaterial = new THREE.MeshBasicMaterial({ map: shadeMap, transparent: true, depthWrite: false })
+  const spotGeometry = new THREE.CircleGeometry(1, 14)
+  const spotMesh = new THREE.InstancedMesh(spotGeometry, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false }), MAX_FUEL)
+  spotMesh.frustumCulled = false
+  spotMesh.count = 0
+  spotMesh.renderOrder = 1
+  scene.add(spotMesh)
+  const qFlat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+  const sclSpot = new THREE.Vector3()
+
   // ---- hopper nets: a mesh pinned round the hopper's rim, pushed up by the pile under it
   const NET_U = 12
   const NET_V = 10
   const NET_CELL = 0.04 // m: one square of the mesh
+  const NET_SAG = 0.018 // m: how far an empty net hangs in the middle
   const netMap = netTexture()
   netMap.anisotropy = renderer.capabilities.getMaxAnisotropy()
   const netMaterial = new THREE.MeshBasicMaterial({ map: netMap, transparent: true, side: THREE.DoubleSide, depthWrite: false })
@@ -199,22 +214,80 @@ export function createScene(canvas, pal, assets) {
     const mesh = new THREE.Mesh(geometry, netMaterial)
     mesh.frustumCulled = false
     mesh.renderOrder = 2
-    return { mesh, along, across }
+    return { mesh, along, across, wave: 0, speed: 0 }
+  }
+
+  // Netting comes in the models as panes of tinted glass, and not only the main
+  // lid: there is one over the part of the hopper that slides out, and frames
+  // of it down some robots' sides. Where our own net covers the hopper, the flat
+  // ones over it go; every other piece keeps its shape and becomes netting.
+  const netPanels = new Map()
+  function netPanel(color) {
+    // A coloured net keeps its colour; a black one is left neutral so its cord still shows.
+    const hsl = color.getHSL({ h: 0, s: 0, l: 0 })
+    const tint = hsl.s > 0.4 && hsl.l > 0.15 ? color.clone().lerp(new THREE.Color(0xffffff), 0.35) : new THREE.Color(0xffffff)
+    const key = tint.getHexString()
+    if (!netPanels.has(key)) netPanels.set(key, new THREE.MeshBasicMaterial({ map: netMap, color: tint, transparent: true, side: THREE.DoubleSide, depthWrite: false }))
+    return netPanels.get(key)
+  }
+  function dressNets(root, spec, covered) {
+    root.updateMatrixWorld(true)
+    const box = new THREE.Box3()
+    let lidColor = null
+    root.traverse((m) => {
+      if (!m.isMesh) return
+      const mat = Array.isArray(m.material) ? m.material[0] : m.material
+      if (!/^net\b/i.test(mat?.name || '')) return
+      m.geometry.computeBoundingBox()
+      box.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)
+      const flat = box.max.y - box.min.y < 0.03 && Math.abs(box.max.y - spec.hopper.roof) < 0.06
+      if (covered && flat) {
+        m.visible = false
+        lidColor = mat.color
+        return
+      }
+      // Its own UVs are one square a face: lay the mesh on by size instead, across its two longest sides.
+      const g = m.geometry.clone()
+      const b = g.boundingBox
+      const size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z]
+      const thin = size.indexOf(Math.min(...size))
+      const [ia, ib] = [0, 1, 2].filter((i) => i !== thin)
+      const pos = g.attributes.position
+      const uv = new Float32Array(pos.count * 2)
+      for (let i = 0; i < pos.count; i++) {
+        uv[i * 2] = pos.getComponent(i, ia) / NET_CELL
+        uv[i * 2 + 1] = pos.getComponent(i, ib) / NET_CELL
+      }
+      g.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
+      m.geometry = g
+      m.material = netPanel(mat.color)
+      m.castShadow = false
+    })
+    return lidColor
   }
 
   /** Lay a robot's net over its pile: `pile` is x, y, z for each of `count` balls, in the robot's frame. */
-  function drapeNet(r, v, pile, count) {
+  function drapeNet(r, v, pile, count, dt, jolt) {
     const { mesh, along, across } = v.net
     const h = r.a.hopper
     const rim = hopperRim(r.a, r.intakeOut)
     const pos = mesh.geometry.attributes.position
     const reach = (FUEL.r + 0.012) ** 2
+    // It is cloth, not a lid: tied at the rim, it hangs a little in the middle, and
+    // a jolt sets it bouncing until it settles.
+    const net = v.net
+    if (dt > 0) {
+      net.speed += (-260 * net.wave - 9 * net.speed) * dt + Math.max(-0.5, Math.min(0.5, jolt * 0.012))
+      net.wave = Math.max(-0.03, Math.min(0.03, net.wave + net.speed * dt))
+    }
     for (let n = 0; n < pos.count; n++) {
       const a = along[n]
       const b = across[n]
       const x = rim.x0 + (rim.x1 - rim.x0) * a
       const z = b * rim.half
-      let y = h.roof
+      // How far from the rim, 0 at it to 1 in the middle: that much of the sag and the bounce.
+      const slack = Math.sin(Math.PI * a) * Math.cos((Math.PI / 2) * b)
+      let y = h.roof + (net.wave - NET_SAG) * slack
       // The rim is where the net is tied down: nothing lifts it there.
       if (a > 1e-6 && a < 1 - 1e-6 && Math.abs(b) < 1 - 1e-6) {
         for (let k = 0; k < count * 3; k += 3) {
@@ -283,6 +356,13 @@ export function createScene(canvas, pal, assets) {
       tag.renderOrder = 10
       group.add(tag)
       robotRoot.add(group)
+      // A soft dark patch under the robot, for when real shadows are switched off.
+      const shade = new THREE.Mesh(new THREE.PlaneGeometry(spec.len + 0.42, spec.wid + 0.42), shadeMaterial)
+      shade.rotation.x = -Math.PI / 2
+      shade.position.y = 0.012
+      shade.renderOrder = 1
+      shade.visible = !quality.shadows
+      group.add(shade)
       const xs = spec.modules.map((m) => m[0])
       const zs = spec.modules.map((m) => m[1])
       const view = {
@@ -296,6 +376,10 @@ export function createScene(canvas, pal, assets) {
         hopper: createHopper(sim.R, spec),
         pile: new Float32Array(spec.capacity * 3),
         lane: 0,
+        push: 0,
+        at: { x: r.x, y: r.y, z: r.z, psi: r.psi }, // where it is drawn this frame
+        shade,
+        index: robotRoot.children.length,
         was: null, // the robot's velocity last frame, for what its pile feels
       }
       assets.robot(spec)
@@ -311,6 +395,9 @@ export function createScene(canvas, pal, assets) {
             if (lid) lid.visible = false
             tilt.add(view.net.mesh)
           }
+          // Our net takes the colour of the lid it replaces (one team's is red).
+          const lidColor = dressNets(root, spec, Boolean(view.net))
+          if (view.net && lidColor) view.net.mesh.material = netPanel(lidColor)
           view.model = root
           view.rig = rig
         })
@@ -336,9 +423,11 @@ export function createScene(canvas, pal, assets) {
   // robot. Its arm swings upward, never through things: over the alliance wall
   // when the robot backs up to it, over the hub when the robot is behind it.
   const cam = {
-    mode: 'follow',
+    mode: 'chase',
+    yaw: null, // which way it looks along the floor, behind the robot
+    held: false, // holding still after a shot
     focus: new THREE.Vector3(FIELD.L / 2, 0.5, FIELD.W / 2),
-    elev: CAMERAS.follow.elev,
+    elev: ARM.elev,
     dir: new THREE.Vector2(-1, 0), // from the robot back toward the camera, on the floor
     pos: new THREE.Vector3(-4, 6, FIELD.W / 2),
     look: new THREE.Vector3(FIELD.L / 2, 0, FIELD.W / 2),
@@ -346,7 +435,6 @@ export function createScene(canvas, pal, assets) {
   }
   const tmpPos = new THREE.Vector3()
   const tmpLook = new THREE.Vector3()
-  const tmpV2 = new THREE.Vector2()
 
   /**
    * The lowest elevation, from `rest` up, at which the camera sees the whole
@@ -365,7 +453,36 @@ export function createScene(canvas, pal, assets) {
     return MAX_ELEV
   }
 
-  function aimCamera(sim, dt, r) {
+  /**
+   * Which way the view behind a robot should look, or null to stay as it is.
+   * Ahead of the robot is where its intake points, and the view comes round to
+   * that, but never in a hurry and never against the robot:
+   *  - while the robot is spinning, it waits (a view that whips round with every
+   *    turn is what makes a chase camera sickening), and comes round after;
+   *  - while a fixed shooter swings the whole robot about to aim, it holds, and
+   *    goes on holding afterwards until the driver turns the robot again;
+   *  - if what is being shot at is well out of the picture, it turns to that.
+   */
+  function lookAngle(r, at) {
+    const aim = r.aim
+    if (aim && aim.state !== 'home' && aim.target && cam.yaw != null) {
+      const to = Math.atan2(aim.target.z - at.z, aim.target.x - at.x)
+      if (Math.abs(wrapAngle(to - cam.yaw)) > 1.1) return to
+      if (!r.a.shot.turret) {
+        cam.held = true
+        return null
+      }
+    } else if (cam.held) {
+      // The driver turning it, that is: a knock that spins the robot does not count.
+      if (!r.cmd?.turn) return null
+      cam.held = false
+    }
+    if (Math.abs(r.om) > 1.5) return null
+    return at.psi + r.a.intake.dirs[0]
+  }
+
+  /** `at` is where the robot is drawn this frame: between its last two physics steps. */
+  function aimCamera(sim, dt, r, at) {
     camera.up.copy(UP)
     const snap = cam.snap
     if (!r || cam.mode === 'broadcast') {
@@ -375,26 +492,33 @@ export function createScene(canvas, pal, assets) {
     } else if (cam.mode === 'top') {
       const s = r.team === 'blue' ? 1 : -1
       camera.up.set(s, 0, 0) // up the screen is up the field
-      tmpPos.set(r.x, 11.5, r.z)
-      tmpLook.set(r.x, 0, r.z)
+      tmpPos.set(at.x, 11.5, at.z)
+      tmpLook.set(at.x, 0, at.z)
     } else if (cam.mode === 'station') {
       // From the driver station: behind the alliance wall, high, the whole field in view.
       const s = r.team === 'blue' ? 1 : -1
       const wall = s > 0 ? 0 : FIELD.L
-      tmpLook.set(wall + s * Math.min(Math.max(Math.abs(r.x - wall) + 3, 5), 12.5), 0, FIELD.W / 2 + (r.z - FIELD.W / 2) * 0.55)
-      tmpPos.set(wall - s * 3.6, 6.4, FIELD.W / 2 + (r.z - FIELD.W / 2) * 0.35)
+      tmpLook.set(wall + s * Math.min(Math.max(Math.abs(at.x - wall) + 3, 5), 12.5), 0, FIELD.W / 2 + (at.z - FIELD.W / 2) * 0.55)
+      tmpPos.set(wall - s * 3.6, 6.4, FIELD.W / 2 + (at.z - FIELD.W / 2) * 0.35)
     } else {
-      const set = CAMERAS[cam.mode] || CAMERAS.follow
+      const set = ARM
       const s = r.team === 'blue' ? 1 : -1
-      // Which way the arm points on the floor: fixed for follow, behind the robot for chase.
-      if (cam.mode === 'chase') tmpV2.set(-Math.cos(r.psi), -Math.sin(r.psi))
-      else tmpV2.set(-s, 0)
-      if (snap) cam.dir.copy(tmpV2)
-      else cam.dir.lerp(tmpV2, 1 - Math.exp(-dt * 5)).normalize()
-      // Follow the robot closely, but not rigidly.
-      tmpLook.set(r.x, r.y, r.z)
-      if (snap) cam.focus.copy(tmpLook)
-      else cam.focus.lerp(tmpLook, 1 - Math.exp(-dt * 12))
+      if (cam.mode === 'fixed') {
+        // Back at the driver's own wall, whatever the robot does.
+        cam.yaw = s > 0 ? 0 : Math.PI
+      } else {
+        // Behind the robot, coming round after it as it turns.
+        if (snap) cam.held = false
+        const want = lookAngle(r, at)
+        if (snap || cam.yaw == null) cam.yaw = want ?? at.psi + r.a.intake.dirs[0]
+        else if (want != null) {
+          const most = CHASE_RATE * dt
+          cam.yaw += Math.max(-most, Math.min(most, wrapAngle(want - cam.yaw) * (1 - Math.exp(-dt * CHASE_EASE))))
+        }
+      }
+      cam.dir.set(-Math.cos(cam.yaw), -Math.sin(cam.yaw))
+      // The robot is the middle of the picture, exactly: it is the thing being driven.
+      cam.focus.set(at.x, at.y, at.z)
       const fy = cam.focus.y + 0.95
       const want = sim ? clearElevation(sim, cam.focus.x, cam.focus.y, cam.focus.z, cam.dir.x, cam.dir.y, set.len, set.elev) : set.elev
       // Rise quickly out of the way; settle back slowly, so a thin post does not make it bob.
@@ -406,7 +530,7 @@ export function createScene(canvas, pal, assets) {
       const ahead = set.ahead * Math.max(0, 1 - (cam.elev - set.elev) / (MAX_ELEV - set.elev))
       tmpLook.set(cam.focus.x - cam.dir.x * ahead, cam.focus.y + 0.4, cam.focus.z - cam.dir.y * ahead)
     }
-    const direct = cam.mode === 'follow' || cam.mode === 'chase'
+    const direct = cam.mode === 'chase' || cam.mode === 'fixed'
     if (snap || (direct && r)) {
       cam.pos.copy(tmpPos)
       cam.look.copy(tmpLook)
@@ -431,10 +555,20 @@ export function createScene(canvas, pal, assets) {
   const qBall = new THREE.Quaternion()
   const scl = new THREE.Vector3(FUEL.r, FUEL.r, FUEL.r)
 
-  function poseRobot(sim, r, v, dt) {
-    const t = r.body.translation()
+  function poseRobot(sim, r, v, dt, alpha) {
+    // The physics moves in sixtieths of a second and the screen draws when it
+    // draws: the robot is put between where it was a step ago (r.x ...) and where
+    // it is now, so it moves evenly whatever the screen's rate.
+    const now = r.body.translation()
     const rot = r.body.rotation()
-    v.group.quaternion.set(rot.x, rot.y, rot.z, rot.w)
+    const psiNow = -2 * Math.atan2(rot.y, rot.w)
+    const t = v.at
+    t.x = r.x + (now.x - r.x) * alpha
+    t.y = r.y + (now.y - r.y) * alpha
+    t.z = r.z + (now.z - r.z) * alpha
+    t.psi = r.psi + wrapAngle(psiNow - r.psi) * alpha
+    v.group.quaternion.set(0, Math.sin(-t.psi / 2), 0, Math.cos(-t.psi / 2))
+    if (v.shade) v.shade.visible = !quality.shadows && r.climb.state === 'none'
     const k = 1 - Math.exp(-dt * 16)
     if (r.climb.state !== 'none') {
       // Hanging: the physics has the height; level out.
@@ -445,8 +579,8 @@ export function createScene(canvas, pal, assets) {
     } else {
       // On its wheels: lean and height from the ground under each module.
       v.group.position.set(t.x, 0, t.z)
-      const c = Math.cos(r.psi)
-      const s = Math.sin(r.psi)
+      const c = Math.cos(t.psi)
+      const s = Math.sin(t.psi)
       let front = 0, back = 0, left = 0, right = 0, nf = 0, nb = 0, nl = 0, nr = 0, sum = 0
       for (const [mx, mz] of r.a.modules) {
         const h = groundAt(sim, t.x + c * mx - s * mz, t.z + s * mx + c * mz)
@@ -502,7 +636,9 @@ export function createScene(canvas, pal, assets) {
       az = -wx * s + wz * c
     }
     v.was = { x: r.vx, z: r.vz }
-    hop.step(r.intakeOut, ax, az, r.om, dt)
+    // The player's own pile every frame; the others' too when there is time for it,
+    // else every other frame.
+    if (r.isPlayer || quality.everyPile || (frame + v.index) % 2 === 0) hop.step(r.intakeOut, ax, az, r.om, dt, r.isPlayer ? 2 : 1, r.firing > 0 ? 1 : r.intakeOn ? 0.25 : 0)
 
     qTilt.setFromRotationMatrix(mw)
     const pile = v.pile
@@ -520,32 +656,52 @@ export function createScene(canvas, pal, assets) {
       carriedMesh.setMatrixAt(n++, m4.compose(p3, qBall, scl))
     })
     for (let j = 0; j < v.incoming.length && n < MAX_CARRIED; j++) {
+      // Up the intake to the hopper's throat, then in at the bottom: the way the
+      // rollers carry it, not a straight line through the hopper's front.
       const b = v.incoming[j]
       const e = hop.entry(b.from.x, b.from.z)
+      const th = hop.throat(e)
       const u = Math.min(1, b.t)
-      p3.copy(b.from).lerp(p4.set(e.x, e.y, e.z), u * u * (3 - 2 * u))
+      if (u < 0.65) p3.copy(b.from).lerp(p4.set(th.x, th.y, th.z), u / 0.65)
+      else p3.set(th.x, th.y, th.z).lerp(p4.set(e.x, e.y, e.z), (u - 0.65) / 0.35)
       p3.applyMatrix4(mw)
       carriedMesh.setMatrixAt(n++, m4.compose(p3, qId, scl))
     }
-    if (v.net && v.model) drapeNet(r, v, pile, count)
+    // What jolts a net: the robot's acceleration changing (a start, a stop, a hit).
+    const push = Math.hypot(ax, az)
+    if (v.net && v.model) drapeNet(r, v, pile, count, dt, push - v.push)
+    v.push = push
     return n
   }
 
-  function render(sim, dt, { focus = null } = {}) {
-    // loose fuel
+  /**
+   * Draw a frame. `alpha` is how far the clock has run into the next physics
+   * step (0..1): everything that moves is drawn that far from where it was a
+   * step ago toward where it is now.
+   */
+  function render(sim, dt, { focus = null, alpha = 1 } = {}) {
+    // loose fuel, and (without real shadows) a dark spot on the carpet under each ball near it
     let n = 0
+    let d = 0
+    const spots = !quality.shadows
     for (const b of sim.balls) {
       if (!b.alive || n >= MAX_FUEL) continue
-      const t = b.body.translation()
-      const r = b.body.rotation()
-      m4.compose(p3.set(t.x, t.y, t.z), q.set(r.x, r.y, r.z, r.w), scl)
+      p3.set(b.x0 + (b.x - b.x0) * alpha, b.y0 + (b.y - b.y0) * alpha, b.z0 + (b.z - b.z0) * alpha)
+      m4.compose(p3, q.set(b.qx, b.qy, b.qz, b.qw), scl)
       fuelMesh.setMatrixAt(n++, m4)
+      if (spots && p3.y < 0.5) {
+        const size = FUEL.r * (1.25 - p3.y)
+        p4.set(p3.x, 0.006, p3.z)
+        spotMesh.setMatrixAt(d++, m4.compose(p4, qFlat, sclSpot.set(size, size, size)))
+      }
     }
     fuelMesh.count = n
     fuelMesh.instanceMatrix.needsUpdate = true
+    spotMesh.count = d
+    spotMesh.instanceMatrix.needsUpdate = true
 
     // robots, their mechanisms, and what they carry
-    sim.robots.forEach((r, i) => { if (robotViews[i]) poseRobot(sim, r, robotViews[i], dt) })
+    sim.robots.forEach((r, i) => { if (robotViews[i]) poseRobot(sim, r, robotViews[i], dt, alpha) })
 
     // what happened since the last frame
     for (const e of sim.events) {
@@ -557,24 +713,28 @@ export function createScene(canvas, pal, assets) {
         v.incoming.push({ from: new THREE.Vector3(e.x, e.y, e.z).applyMatrix4(inv), t: 0 })
         continue
       }
-      const text = e.kind === 'climb' ? `L${e.level}` : e.active ? '+1' : '0'
-      const color = e.kind === 'score' && !e.active ? pal.muted : e.team === 'blue' ? pal.blue : pal.red
+      // A climb gets its level called out. Fuel scored just goes on the scoreboard.
+      if (e.kind !== 'climb') continue
+      const text = `L${e.level}`
+      const color = e.team === 'blue' ? pal.blue : pal.red
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: popupTexture(text, color), transparent: true, depthWrite: false }))
       sprite.scale.set(0.6, 0.3, 1)
       sprite.position.set(e.x, e.y, e.z)
       scene.add(sprite)
-      popups.push({ sprite, life: e.kind === 'climb' ? 2.5 : 0.9 })
+      popups.push({ sprite, life: 2.5 })
     }
     sim.events.length = 0
 
     let c = 0
+    frame++
     sim.robots.forEach((r, i) => { if (robotViews[i]) c = drawCarried(r, robotViews[i], dt, c) })
     carriedMesh.count = c
     carriedMesh.instanceMatrix.needsUpdate = true
 
     const me = focus
+    const at = me ? robotViews[sim.robots.indexOf(me)]?.at ?? me : null
     marker.visible = Boolean(me && me.isPlayer)
-    if (me) marker.position.set(me.x, groundAt(sim, me.x, me.z) + 0.014, me.z)
+    if (me) marker.position.set(at.x, groundAt(sim, at.x, at.z) + 0.014, at.z)
     for (const v of robotViews) v.tag.visible = cam.mode !== 'top'
 
     // the shot being lined up
@@ -614,17 +774,53 @@ export function createScene(canvas, pal, assets) {
       }
     }
 
-    aimCamera(sim, dt, me)
+    aimCamera(sim, dt, me, at)
     renderer.render(scene, camera)
   }
 
-  function resize(w, h, dpr) {
-    renderer.setPixelRatio(dpr)
-    renderer.setSize(w, h, false)
-    camera.aspect = w / h
-    camera.fov = w / h < 1.2 ? 60 : 48
+  // ---- what the picture costs. Three levels, low to high: how many pixels are
+  // drawn for each one on screen, how fine the real shadows are (0: none, and a
+  // soft dark patch under each robot and ball instead), and whether the other
+  // robots' fuel piles move every frame. Real shadows are most of the cost on a
+  // laptop's graphics (about three times everything else, per pixel), so only
+  // the top level has them.
+  const QUALITY = [
+    { dpr: 0.85, shadows: 0, everyPile: false },
+    { dpr: 1.25, shadows: 0, everyPile: false },
+    { dpr: 1.5, shadows: 2048, everyPile: true },
+  ]
+  let quality = QUALITY[1]
+  let level = 1
+  let frame = 0
+  const size = { w: 2, h: 1, dpr: 1 }
+  function fit() {
+    renderer.setPixelRatio(Math.min(size.dpr, quality.dpr))
+    renderer.setSize(size.w, size.h, false)
+    camera.aspect = size.w / size.h
+    camera.fov = size.w / size.h < 1.2 ? 60 : 48
     camera.updateProjectionMatrix()
   }
+  function resize(w, h, dpr) {
+    Object.assign(size, { w, h, dpr })
+    fit()
+  }
+  /** 0 low, 1 medium, 2 high. */
+  function setQuality(next) {
+    level = Math.max(0, Math.min(2, next))
+    quality = QUALITY[level]
+    key.castShadow = quality.shadows > 0
+    if (quality.shadows && key.shadow.mapSize.x !== quality.shadows) {
+      key.shadow.mapSize.set(quality.shadows, quality.shadows)
+      key.shadow.map?.dispose()
+      key.shadow.map = null
+    }
+    fuelMesh.castShadow = quality.shadows > 0
+    carriedMesh.castShadow = quality.shadows > 0
+    spotMesh.visible = !quality.shadows
+    for (const v of robotViews) if (v.shade) v.shade.visible = !quality.shadows
+    fit()
+  }
+  setQuality(level)
 
   /** The camera's forward and right along the floor, for camera-relative driving. */
   const fwd = new THREE.Vector3()
@@ -651,6 +847,7 @@ export function createScene(canvas, pal, assets) {
       loose: fuelMesh.count,
       carried: carriedMesh.count,
       camera: { mode: cam.mode, elev: cam.elev, x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      drawn: { quality: level, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls, pixels: renderer.domElement.width * renderer.domElement.height },
       robots: robotViews.map((v) => ({
         loaded: Boolean(v.model), rig: v.rig?.kind ?? null, deploy: v.rig?.deploy?.map((d) => d.name) ?? [],
         pitch: v.pitch, roll: v.roll, lift: v.lift, incoming: v.incoming.length,
@@ -681,11 +878,14 @@ export function createScene(canvas, pal, assets) {
     fuelMaterial.map?.dispose()
     netMap.dispose()
     netMaterial.dispose()
+    for (const m of netPanels.values()) m.dispose()
+    shadeMap.dispose()
+    shadeMaterial.dispose()
     for (const t of Object.values(popupTex)) t.dispose()
     for (const t of tagTex.values()) t.dispose()
   }
 
-  return { attach, render, resize, basis, setCamera, status, inspect, dispose, robotViews: () => robotViews }
+  return { attach, render, resize, setQuality, basis, setCamera, status, inspect, dispose, robotViews: () => robotViews }
 }
 
 // ------------------------------------------------------------------ pieces
@@ -759,6 +959,20 @@ function foamTexture() {
   t.colorSpace = THREE.SRGBColorSpace
   t.wrapS = THREE.RepeatWrapping
   return t
+}
+
+/** A soft dark patch: what a robot leaves on the carpet when real shadows are off. */
+function shadeTexture() {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')
+  const grad = g.createRadialGradient(32, 32, 10, 32, 32, 32)
+  grad.addColorStop(0, 'rgba(0, 0, 0, 0.5)')
+  grad.addColorStop(0.7, 'rgba(0, 0, 0, 0.28)')
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, 64, 64)
+  return new THREE.CanvasTexture(c)
 }
 
 /** One square of a knotless net: a cord along two edges, so the tile repeats into a mesh. */

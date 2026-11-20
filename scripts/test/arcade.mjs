@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import * as R from '@dimforge/rapier3d-compat/rapier.es.js'
 import { periodOf, shiftOf, hubActive, untilHubChange } from '../../src/lib/arcade3d/rules.js'
 import { solveShot, launchVelocity } from '../../src/lib/arcade3d/ballistics.js'
-import { createSim, step, result, countFuel, destroySim, endNow, hubLive, groundAt, rayField, DT } from '../../src/lib/arcade3d/sim.js'
+import { createSim, step, result, countFuel, destroySim, endNow, hubLive, groundAt, rayField, missChance, DT } from '../../src/lib/arcade3d/sim.js'
 import { specFromDescriptor, numbersSpec, hopperX, hopperZ, hopperHoldsOpen, hopperRim } from '../../src/lib/arcade3d/robots.js'
 import { createHopper } from '../../src/lib/arcade3d/hopper.js'
 import { MATCH, HUB, FUEL, LANES, FIELD, TOWER, OUTPOST, DEPOT } from '../../src/lib/arcade3d/config.js'
@@ -212,7 +212,7 @@ await t('turning eases in and out: no snapping to a speed or an angle', () => {
   assert.ok(Math.abs(p.om) < 1.2, `spun up to ${p.om.toFixed(2)} rad/s in one step`)
   run(sim, 0.6, { turn: 1 })
   const cruise = p.om
-  assert.ok(cruise > 3 && cruise < 6, `turn rate ${cruise.toFixed(2)} rad/s`)
+  assert.ok(cruise > 3 && cruise < 7, `turn rate ${cruise.toFixed(2)} rad/s`)
   step(sim, {})
   step(sim, {})
   assert.ok(p.om > cruise * 0.6, 'does not stop dead when the key is released')
@@ -248,10 +248,12 @@ await t('the intake collects on its own side, only while it is held', () => {
       // Drive intake-first into the midfield block.
       const psi = intakeFirst(spec)
       place(sim, p, 6.2, 3.0, psi)
-      run(sim, 2.5, { vx: 1, vz: 0, aim: psi, intake: held })
+      run(sim, 1.2, { vx: 1, vz: 0, aim: psi, intake: held })
+      const out = p.intakeOut
+      run(sim, 0.8, { vx: 1, vz: 0, aim: psi, intake: held })
       if (held) {
         assert.ok(p.carry >= 4, `${spec.label}: collected ${p.carry}`)
-        assert.ok(p.intakeOut > 0.95, 'the intake is out')
+        assert.ok(out > 0.95, `${spec.label}: the intake is ${out.toFixed(2)} out`)
         assert.ok(sim.events.some((e) => e.kind === 'intake' && e.robot === 0), 'each pickup is announced, for the view to animate')
       } else {
         assert.equal(p.carry, 0, `${spec.label}: collected without the intake`)
@@ -262,31 +264,55 @@ await t('the intake collects on its own side, only while it is held', () => {
   }
 })
 
-await t('the intake agitates the hopper while the robot shoots', () => {
-  const sim = solo(byNum(254))
-  const p = sim.robots[0]
-  p.carry = 60
-  place(sim, p, HUB.blue.x - 3, HUB.blue.z, 0)
-  let lo = 1
-  let hi = 0
-  let turns = 0
-  let prev = 0
-  let rising = true
-  for (let i = 0; i < 2.5 / DT; i++) {
-    step(sim, { fire: true }) // intake not held
-    if (sim.stats.fired > 0) {
-      lo = Math.min(lo, p.intakeOut)
-      hi = Math.max(hi, p.intakeOut)
-      const up = p.intakeOut > prev
-      if (up !== rising) { turns++; rising = up }
+await t('every robot works its pile its own way while it shoots', () => {
+  // How the intake moves through a second and a half of shooting: how far in it comes, and how often it turns back.
+  const watch = (num, carry) => {
+    const spec = byNum(num)
+    const sim = solo(spec)
+    const p = sim.robots[0]
+    p.carry = carry ?? spec.capacity
+    place(sim, p, HUB.blue.x - 3, HUB.blue.z - 1.2, -spec.shot.yaw)
+    let lo = 1
+    let turns = 0
+    let prev = 0
+    let rising = null
+    for (let i = 0; i < 2.2 / DT; i++) {
+      step(sim, { fire: true }) // intake not held
+      if (sim.stats.fired > 0) {
+        lo = Math.min(lo, p.intakeOut)
+        const d = p.intakeOut - prev
+        if (Math.abs(d) > 1e-4) {
+          const up = d > 0
+          if (rising != null && up !== rising) turns++
+          rising = up
+        }
+      }
+      prev = p.intakeOut
     }
-    prev = p.intakeOut
+    run(sim, 2, {})
+    const stowed = p.carry > spec.capacity * 0.5 || p.intakeOut < 0.05
+    destroySim(sim)
+    return { spec, lo, turns, stowed }
   }
-  assert.ok(hi > 0.9 && lo < 0.45, `intake moved between ${lo.toFixed(2)} and ${hi.toFixed(2)}`)
-  assert.ok(turns >= 4, `it changed direction ${turns} times`)
-  run(sim, 1.5, {})
-  assert.ok(p.intakeOut < 0.05, 'and stows again afterwards')
-  destroySim(sim)
+  // A slide that pumps on a timer (1690), an arm that flaps on a beat (9785), a slide that only
+  // closes in behind the pile (254), and Numbers' own shuffle.
+  const pump = watch(1690, 20)
+  const beat = watch(9785, 30)
+  const squeeze = watch(254, 30)
+  const ours = watch(5805, 20)
+  assert.equal(pump.spec.agitation.kind, 'pump')
+  assert.equal(beat.spec.agitation.kind, 'beat')
+  assert.equal(squeeze.spec.agitation.kind, 'squeeze')
+  assert.ok(pump.turns >= 3 && pump.lo < 0.7, `1690 pumped ${pump.turns} times, in to ${pump.lo.toFixed(2)}`)
+  assert.ok(beat.turns > pump.turns, `9785 beats faster: ${beat.turns} turns to 1690's ${pump.turns}`)
+  assert.ok(squeeze.turns <= 1, `254 squeezes in once and stays: ${squeeze.turns} turns`)
+  assert.ok(ours.turns >= 1 && ours.turns < pump.turns, `Numbers shuffles slower: ${ours.turns} turns`)
+  for (const w of [pump, beat, squeeze, ours]) assert.ok(w.stowed, `${w.spec.label} stows again afterwards`)
+  // And they deploy at their own speeds.
+  const times = new Set(SPECS.map((s) => s.intakeTime.toFixed(2)))
+  assert.ok(times.size >= 8, `${times.size} different intake speeds`)
+  const kinds = new Set(SPECS.map((s) => s.agitation.kind))
+  assert.ok(kinds.size >= 4, `agitation kinds: ${[...kinds].join(', ')}`)
 })
 
 await t('every robot starts intake-first: hold forward and intake from the kickoff and it collects', () => {
@@ -376,33 +402,36 @@ await t('the pile comes in through the intake, is left behind when the robot pul
   assert.ok(Math.abs(first - rim.x1) < 0.12, `it comes in at the open end (${first.toFixed(2)} of ${rim.x1.toFixed(2)})`)
   for (let i = 0; i < 20; i++) hop.step(1, 0, 0, 0, DT)
   hop.each((x) => assert.ok(Math.abs(x - rim.x1) > 0.2, 'and rolls in'))
-  for (let k = 0; k < 29; k++) {
+  // A dozen: enough for a pile, few enough to leave it room to move.
+  for (let k = 0; k < 11; k++) {
     hop.add(0, ((k % 5) - 2) * 0.12)
     for (let i = 0; i < 6; i++) hop.step(1, 0, 0, 0, DT)
   }
   for (let i = 0; i < 90; i++) hop.step(1, 0, 0, 0, DT)
-  assert.equal(hop.count(), 30)
+  assert.equal(hop.count(), 12)
   const centre = () => { let s = 0; hop.each((x) => { s += x }); return s / hop.count() }
   const rest = centre()
   // At rest it lies against the board, where the floor slopes to. Pulling away
   // hard, the robot goes and the pile stays: it heaps toward the open end.
   for (let i = 0; i < 30; i++) hop.step(1, 9, 0, 0, DT)
-  assert.ok(rest - centre() > 0.04, `the pile moved ${(rest - centre()).toFixed(3)} m back`)
+  assert.ok(rest - centre() > 0.1, `the pile moved ${(rest - centre()).toFixed(3)} m back`)
   // and lies still again once the robot is steady (where it was shoved to: foam does not flow).
   for (let i = 0; i < 90; i++) hop.step(1, 0, 0, 0, DT)
   const lay = centre()
   for (let i = 0; i < 10; i++) hop.step(1, 0, 0, 0, DT)
   assert.ok(Math.abs(centre() - lay) < 0.004, `the pile is still creeping: ${Math.abs(centre() - lay).toFixed(4)} m in a sixth of a second`)
-  // No two piles alike: it is not a grid.
-  const ys = new Set()
-  hop.each((x, y) => ys.add(y.toFixed(3)))
-  assert.ok(ys.size > 12, `${ys.size} different heights among 30 balls`)
+  // They are solid to each other: no two share a place.
+  const at = []
+  hop.each((x, y, z) => at.push([x, y, z]))
+  let nearest = Infinity
+  for (let i = 0; i < at.length; i++) for (let j = 0; j < i; j++) nearest = Math.min(nearest, Math.hypot(at[i][0] - at[j][0], at[i][1] - at[j][1], at[i][2] - at[j][2]))
+  assert.ok(nearest > 2 * hop.radius * 0.9, `two balls ${nearest.toFixed(3)} m apart, ${(2 * hop.radius).toFixed(3)} across`)
   // Shooting takes the ball nearest the feeder each time.
   const board = rim.x0
   let near = Infinity
   hop.each((x) => { near = Math.min(near, Math.abs(x - board)) })
   hop.take(0)
-  assert.equal(hop.count(), 29)
+  assert.equal(hop.count(), 11)
   let after = Infinity
   hop.each((x) => { after = Math.min(after, Math.abs(x - board)) })
   assert.ok(after >= near - 1e-6, 'the nearest one went')
@@ -527,6 +556,33 @@ await t('robots differ at shooting on the move: one built for it scores at a run
     assert.ok(slow.share >= 0.8, `${num} made ${slow.made}/${slow.fired} creeping`)
   }
   console.log('      ', report.join('  '))
+})
+
+await t('a bump throws a shooter off its aim for a moment, a steadier robot less', () => {
+  const steady = SPECS.map((s) => s.shot.steady)
+  assert.ok(Math.min(...steady) < 0.3 && Math.max(...steady) > 0.7, `steadiness runs ${Math.min(...steady).toFixed(2)} to ${Math.max(...steady).toFixed(2)}`)
+  const knocked = (spec) => {
+    const sim = solo(spec)
+    const p = sim.robots[0]
+    p.carry = 20
+    place(sim, p, HUB.blue.x - 3, HUB.blue.z - 1.5, -spec.shot.yaw)
+    run(sim, 1.5, { fire: true })
+    assert.equal(p.shake, 0, `${spec.label} is steady before the hit`)
+    assert.equal(missChance(p, 0), 0, 'and, standing still, does not miss')
+    p.body.setLinvel({ x: 0, y: 0, z: 1.6 }, true) // something ran into it
+    step(sim, { fire: true })
+    const shake = p.shake
+    const spin = p.spin
+    run(sim, 3, {})
+    assert.ok(p.shake === 0, `${spec.label} settles again`)
+    destroySim(sim)
+    return { shake, spin }
+  }
+  const shaky = knocked(SPECS.reduce((a, b) => (a.shot.steady < b.shot.steady ? a : b)))
+  const solid = knocked(SPECS.reduce((a, b) => (a.shot.steady > b.shot.steady ? a : b)))
+  assert.ok(shaky.shake > 0.5, `the shakiest robot was thrown off by ${shaky.shake.toFixed(2)}`)
+  assert.ok(solid.shake < shaky.shake * 0.4, `the steadiest by ${solid.shake.toFixed(2)}`)
+  assert.ok(shaky.spin < 0.8 && solid.spin > shaky.spin, 'and the hit took speed out of the shooter wheel')
 })
 
 await t('a fixed shooter has to face the hub; a turret leaves the chassis alone', () => {

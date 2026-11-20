@@ -17,7 +17,7 @@
 //                             (stowed) to the captured value (deployed): no direction is guessed
 // 5805's Numbers uses the site's own rig (robotRig.js) through the same interface.
 import * as THREE from 'three'
-import { hoodFor, rpmFor, numbersHoodDeg } from './robots.js'
+import { hoodFor, rpmFor, numbersHoodDeg, hingeAngle } from './robots.js'
 import { HUB } from './config.js'
 
 const CAPTURE = 'Simulator capture - freeplay controls'
@@ -211,8 +211,17 @@ export function rigDescriptorRobot(root, spec, clips = []) {
 }
 
 /** Numbers, through the site's own rig (robotRig.rigRobot). */
-export function rigNumbers(rig) {
+export function rigNumbers(rig, root, spec) {
   const travel = rig.manifest?.intake?.travel ?? 0.3
+  // The floor's rollers: each swings about the hinge at the feeder as the hopper slides.
+  const hinge = spec?.hopper?.hinge
+  const floor = hinge
+    ? (rig.manifest?.rollers || [])
+      .filter((r) => r.role === 'conveyor')
+      .map((r) => ({ node: root.getObjectByName(r.node), dx: r.center[0] - hinge.x, dy: r.center[1] - hinge.y }))
+      .filter((r) => r.node)
+      .map((r) => ({ ...r, rest: r.node.position.clone() }))
+    : []
   return {
     kind: 'numbers',
     deploy: [{ name: 'intake' }],
@@ -225,6 +234,13 @@ export function rigNumbers(rig) {
       const dist = Math.hypot(HUB[r.team].x - r.x, HUB[r.team].z - r.z)
       rig.setHood(numbersHoodDeg(dist))
       rig.setExtension(r.intakeOut * travel)
+      if (floor.length) {
+        // Turned from where the CAD has it (up) by however far it has swung down.
+        const turn = hingeAngle(hinge, r.intakeOut) - hinge.up
+        const c = Math.cos(turn)
+        const s = Math.sin(turn)
+        for (const f of floor) f.node.position.set(f.rest.x + f.dx * c - f.dy * s - f.dx, f.rest.y + f.dx * s + f.dy * c - f.dy, f.rest.z)
+      }
     },
   }
 }

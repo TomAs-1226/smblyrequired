@@ -57,9 +57,11 @@ function hopperSlots(h, capacity) {
       const jit = (j - Math.floor(j) - 0.5) * 0.02
       const edge = Math.min(along, lenOut - along, halfOut - Math.abs(z))
       let cap = hopperCeiling(h, edge)
-      if (h.slope && (x - h.slope.to[0]) * dir > 0) {
-        const open = h.board + dir * lenOut
-        cap = Math.min(cap, h.slope.to[1] + ((h.slope.from - h.slope.to[1]) * (x - h.slope.to[0])) / (open - h.slope.to[0]))
+      if (h.slope) {
+        // The bevel rides out with the open end: it starts as far back from it as it does stowed.
+        const bevel = Math.abs(h.slope.to[0] - h.front)
+        const u = bevel > 0.02 ? 1 - (lenOut - along) / bevel : 0
+        if (u > 0) cap = Math.min(cap, h.slope.to[1] + (h.slope.from - h.slope.to[1]) * Math.min(1, u))
       }
       cap -= 0.006
       if (floor + 2 * FUEL.r > cap) continue // no room for a ball here
@@ -169,6 +171,75 @@ function intakeZone(a, b, half, top, dirs) {
   return { near: Math.min(a, b), far: Math.max(a, b), half, top, dirs, faces: dirs.map((d) => [Math.cos(d), Math.sin(d)]) }
 }
 
+/**
+ * How well a robot holds its aim when it is bumped, 0..1: a wide stance, a low
+ * build and a heavy shooter wheel all help; a turret is one more thing to shake.
+ */
+function steadiness(modules, height, wheelInertia, turret) {
+  const xs = modules.map((m) => m[0])
+  const zs = modules.map((m) => m[1])
+  const stance = modules.length ? Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)) : 0.53
+  const s = 0.55 + (stance - 0.53) * 3.2 - (height - 0.56) * 1.6 + Math.log10((wheelInertia || 0.004) / 0.004) * 0.13 + (turret ? -0.06 : 0.04)
+  return Math.min(0.95, Math.max(0.15, s))
+}
+
+const clamp01 = (v) => Math.min(1, Math.max(0, v))
+
+/**
+ * How a robot works its pile toward the shooter while it fires, from what its own
+ * code does. `to` is how far in the intake comes (0 stowed .. 1 out):
+ *  - 'pump':    the hopper's slide strokes in and out, one cycle every `period` s;
+ *  - 'beat':    the intake arm flaps up and back down on a quick beat;
+ *  - 'squeeze': the slide just closes in behind the pile as it shrinks;
+ *  - 'hold':    the intake goes to one position and stays (after `ramp.delay`, on to `ramp.to`).
+ */
+function agitationOf(d) {
+  const slide = d.hopper?.slide || {}
+  const sq = slide.squeeze
+  const brain = d.brain || {}
+  const arm = d.intake?.arm
+  const down = brain.intakeDownDeg || (arm ? (Math.abs(arm.range[1] - arm.range[0]) * 180) / Math.PI : 0)
+  if (brain.agitate && down) return { kind: 'beat', period: brain.agitate.beat, to: clamp01(1 - brain.agitate.liftDeg / down), delay: 0 }
+  if (sq?.agitate && slide.travel) return { kind: 'pump', period: sq.agitate, to: clamp01((sq.to || 0) / slide.travel), delay: 0 }
+  if (sq && slide.travel > 0.02) return { kind: 'squeeze', to: clamp01((sq.to || 0) / slide.travel), delay: 0 }
+  // Drawers out the sides close in the same way.
+  if (sq && d.intake?.sides) return { kind: 'squeeze', to: 0, delay: 0 }
+  if (arm && brain.compactDeg != null && down) {
+    const r = brain.compactRamp
+    return {
+      kind: 'hold', to: clamp01(brain.compactDeg / down), delay: 0,
+      ramp: r ? { delay: r.delay, to: clamp01((brain.compactDeg + r.stepDeg) / down), rate: r.rate / down } : null,
+    }
+  }
+  // Nothing known about how it does it: an arm that works the pile at an ordinary pace.
+  if (arm && brain.compactDeg == null) return { kind: 'beat', period: 0.5, to: 0.7, delay: 0 }
+  return { kind: 'hold', to: 1, delay: 0 }
+}
+
+/** Seconds for a robot's intake to go from stowed to out: its slide's or its arm's own speed. */
+function intakeTimeOf(d) {
+  const slide = d.hopper?.slide || {}
+  const arm = d.intake?.arm
+  let t = 0.25
+  if (arm) {
+    const swing = Math.abs(arm.range[1] - arm.range[0])
+    t = Math.max(swing / (arm.cruise || 8), 2 * Math.sqrt(swing / (arm.accel || 60)))
+  } else if (slide.travel > 0.02 && slide.cruise) {
+    t = Math.max(slide.travel / slide.cruise, 2 * Math.sqrt(slide.travel / (slide.accel || 15)))
+  }
+  return Math.min(0.8, Math.max(0.12, t))
+}
+
+/**
+ * What is known about a robot from watching it play, where the numbers above say
+ * otherwise. `moveSpeed`: the speed (m/s) it still shoots well at; `steady`: 0..1,
+ * how well it holds its aim when bumped. Add a robot here by its slug.
+ */
+const KNOWN = {
+  // Re•Blitz has to stop to shoot, and a nudge while it does spoils the volley.
+  '2910-re-blitz': { moveSpeed: 0.2, steady: 0.2 },
+}
+
 /** A spec from an imported descriptor and its index entry. */
 export function specFromDescriptor(d, entry) {
   const top = Math.max(d.bumper.top, ...d.hull.map((h) => h.centre[1] + h.half[1]))
@@ -223,7 +294,7 @@ export function specFromDescriptor(d, entry) {
     pack: hop.packRadius ?? 0.9,
     pillars: hop.pillars || [],
     shelves,
-    // A lid that slopes from `to` ([x, height]) down to `from` at the open end.
+    // A lid bevelled from `to` ([x, height], with the intake in) down to `from` at the open end.
     slope: hop.chamfer ? { from: hop.chamfer.from, to: hop.chamfer.to } : null,
     // The lid: a roof, or a net that stretches up to netMax over a full load.
     roof: typeof hop.roof === 'number' ? hop.roof : top,
@@ -258,6 +329,8 @@ export function specFromDescriptor(d, entry) {
     speed: feel.maxSpeed ?? d.drive.maxSpeed ?? 4.2,
     accel: feel.accel ?? 9,
     yawRate: Math.min(feel.turnRate ?? 7, 9),
+    // How fast it spins on Q and E: a share of what its drive can do.
+    turn: Math.min((feel.turnRate ?? 9) * 0.55, 6.5),
     capacity,
     hopper,
     fireRate: sh.fireRate ?? 10,
@@ -265,6 +338,10 @@ export function specFromDescriptor(d, entry) {
       ? intakeZone(Math.abs(zone.x0), Math.abs(zone.x1), zone.half, zone.top ?? 0.22, sides ? [Math.PI / 2, -Math.PI / 2] : [zone.x0 + zone.x1 < 0 ? Math.PI : 0])
       : intakeZone(d.bumper.length / 2 - 0.05, d.bumper.length / 2 + 0.2, 0.3, 0.22, [0]),
     intakeRate: d.intake?.rate ?? 15,
+    intakeTime: intakeTimeOf(d),
+    agitation: agitationOf(d),
+    // The hopper's floor is driven: it carries fuel to the feeder at this speed (m/s).
+    floorSpeed: d.feed?.floorSpeed ?? 3,
     shot: {
       yaw: ((sh.yawDeg ?? 0) * Math.PI) / 180,
       origin: { x: axisX, y: sh.axis?.[1] ?? top },
@@ -276,9 +353,11 @@ export function specFromDescriptor(d, entry) {
       elevation: 62,
       minRange: brain.minRange ?? 1.3,
       maxRange: brain.maxRange ?? 5.6,
-      // How fast the robot can be going and still put its shots in: what its own code
-      // allows. Past this it falls behind its own motion and the shots trail.
-      moveSpeed: brain.maxShotSpeed ?? (turret ? 3 : 0.5),
+      // Shooting on the move: the speed this robot's own code is happy to shoot at.
+      // The faster it goes against that, the likelier each shot is to miss.
+      moveSpeed: KNOWN[entry.slug]?.moveSpeed ?? brain.maxShotSpeed ?? (turret ? 3 : 0.5),
+      // And how well it holds its aim when something runs into it.
+      steady: KNOWN[entry.slug]?.steady ?? steadiness((d.drive.modules || []).map((m) => [m[0], m[1]]), top, sh.inertia, Boolean(turret)),
       spread: sh.spread || { pitchDeg: 0.5, yawDeg: 0.5, speedPct: 1 },
       hood: sh.hood ? { part: sh.hood.part, range: sh.hood.range.map(Number) } : null,
       headingTol: ((brain.headingToleranceDeg ?? 2.5) * Math.PI) / 180,
@@ -295,6 +374,36 @@ export function specFromDescriptor(d, entry) {
     net: d.hopper?.net || null,
     model: entry.model,
   }
+}
+
+/**
+ * Numbers' hopper floor is an eleven-roller conveyor hinged at the feeder. With
+ * the hopper in it stands at the CAD's angle (`up`); as the hopper slides out it
+ * swings down until its free end rests on the floor of the part that slid out
+ * (`down`), one ramp from the intake to the feeder. Coming back in it lifts, and
+ * tips what is on it toward the shooter.
+ */
+function floorHinge(manifest, fixed, moving) {
+  const f = manifest.hopper?.section?.floor
+  if (!f || !fixed.length || !moving) return null
+  const x = Math.min(...fixed.map((b) => b.min[0]))
+  const [lipX, lipY] = f.through
+  const up = (f.slopeDeg * Math.PI) / 180
+  const y = lipY - Math.tan(up) * (lipX - x)
+  const sill = moving.min[1] // the floor of the part that slides out
+  return { x, y, up, down: Math.atan2(sill - y, moving.min[0] - x), len: (lipX - x) / Math.cos(up), sill }
+}
+
+/** How steep a hinged floor stands with the intake `out` (0 in .. 1 out), radians. */
+export const hingeAngle = (hinge, out) => hinge.up + (hinge.down - hinge.up) * out
+
+/** The height of a hinged floor at x: the conveyor as far as its free end, then level with what it leads to. */
+export function hingedFloorAt(hinge, x, out) {
+  const a = hingeAngle(hinge, out)
+  const tipX = hinge.x + hinge.len * Math.cos(a)
+  if (x <= tipX) return hinge.y + Math.max(0, x - hinge.x) * Math.tan(a)
+  const tipY = hinge.y + hinge.len * Math.sin(a)
+  return hinge.sill + (tipY - hinge.sill) * (1 - out)
 }
 
 /** 5805's Numbers, from the site's CAD manifest (public/models/robot.json). */
@@ -323,6 +432,8 @@ export function numbersSpec(manifest) {
       ...fixed.map((b) => ({ x0: b.min[0], x1: b.max[0], y: b.min[1] })),
       ...(moving ? [{ x0: moving.min[0], x1: moving.max[0] + 0.05, y: moving.min[1] }] : []),
     ],
+    // The floor moves: see floorHinge.
+    hinge: floorHinge(manifest, fixed, moving),
     pillars: [],
   }
   hopper.slots = hopperSlots(hopper, capacity)
@@ -354,12 +465,19 @@ export function numbersSpec(manifest) {
     speed: 4.5,
     accel: 10,
     yawRate: 7.5,
+    turn: 5.6,
     capacity,
     hopper,
     fireRate: 12,
     // The intake deploys out the front; the mouth is its lowest roller.
     intake: intakeZone(mouth.center[0] - 0.16, mouth.center[0] + 0.1, mouth.width / 2, 0.22, [0]),
     intakeRate: 14,
+    intakeTime: 0.35,
+    // Numbers' own code (HopperManager): the hopper shuffles between out and its
+    // stow length, 0.65 s a stroke, starting 0.2 s into the shot.
+    agitation: { kind: 'pump', period: 1.3, to: 5 / 11.8, delay: 0.2 },
+    // Its floor is an eleven-roller conveyor that runs fuel down its slope to the feeder.
+    floorSpeed: 3,
     shot: {
       // Numbers shoots out its back.
       yaw: Math.PI,
@@ -374,6 +492,7 @@ export function numbersSpec(manifest) {
       maxRange: 6,
       // A fixed wide shooter: it shoots straightest close to still.
       moveSpeed: 1,
+      steady: steadiness((manifest.modules || []).map((m) => [m.position[0], m.position[2]]), top, 0.01, false),
       spread: { pitchDeg: 0.5, yawDeg: 0.5, speedPct: 1 },
       hood: { range: [13, 45] },
       headingTol: (2.5 * Math.PI) / 180,

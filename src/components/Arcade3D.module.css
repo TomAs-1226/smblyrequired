@@ -160,7 +160,9 @@
 }
 .aim[data-state='near'],
 .aim[data-state='far'],
-.aim[data-state='fast'] {
+.aim[data-state='rush'],
+.aim[data-state='fast'],
+.aim[data-state='knocked'] {
   color: var(--danger);
 }
 
@@ -319,6 +321,22 @@
   color: var(--text-primary);
 }
 
+/* the frame-rate readout, when it is switched on */
+.perf {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+  margin: 0;
+  max-width: 46%;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  background: rgba(5, 5, 5, 0.6);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-align: right;
+  pointer-events: none;
+}
 .toolbar {
   position: absolute;
   right: var(--sp-3);
